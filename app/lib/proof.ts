@@ -1,0 +1,73 @@
+/** Every claim on /proof, with the transaction or test that proves it. Kept in
+ *  step with docs/proof/testnet-runs.md. */
+export type ProofRow = { what: string; hash?: string; note?: string };
+export type ProofGroup = { title: string; how: string; rows: ProofRow[] };
+
+export const forkTests: { name: string; output: string }[] = [
+  {
+    name: 'One governance call moves the idle savings',
+    output:
+      'sMUSD owner (Mezo multisig): 0x98D8899c3030741925BE630C710A98B57F397C7a\nMUSD moved out of IdleStrategy: 7382416\nlendable at 20% cap: 1476483',
+  },
+  { name: 'Borrower interest reaches savers', output: 'saver deposits 10,000 MUSD → withdraws 10,060.87 after a borrower repays 1M + 50k interest' },
+  { name: 'Withdrawals stay open at max lending', output: 'cap fully lent (1,476,483) → saver withdraws 1M → 5,905,933 still liquid' },
+  { name: 'Keel reads mainnet veBTC', output: 'BTC locked in #6114 (an Enclave lock): 500' },
+  { name: 'Peg oracle reads MUSD on mainnet', output: '24h average of the mUSDC/MUSD wall: $0.991043 · basic pool: $0.989539' },
+];
+
+export const testnetGroups: ProofGroup[] = [
+  {
+    title: 'Savings vault → Keel',
+    how: "Our own copy of Mezo's verified MUSDSavingsRate contract, which we own, so setStrategy can run on testnet.",
+    rows: [
+      { what: 'Savings vault deployed behind a proxy', hash: '0x832b6fe8f50f5a2106823fafd128baee2407309dd515b0b6b99894c0ff16fe2a' },
+      { what: 'KeelStrategy plugged in with setStrategy', hash: '0x3564f948658940a95fee70d3cee6d6451cc4c30d5aacb9546e4d4623d44e3486' },
+      { what: 'Saver deposits 1,500 MUSD, allocated straight to Keel', hash: '0x3fabc2249706e970312000b42e518aff2fd019c03fe80ccb790eb987e42b3596' },
+      {
+        what: 'Live migration: 1,500 MUSD moves from one KeelStrategy to the next, the same call Mezo would make on mainnet',
+        hash: '0x10bccb32ec2709499f347c2bd5e9f40a7e32737a491bb47f06b0c47c0a7b3436',
+      },
+    ],
+  },
+  {
+    title: 'Loans outside redemptions',
+    how: 'Real loans in KeelMarket, priced by the MUSD system’s own testnet PriceFeed.',
+    rows: [
+      { what: 'Permanent veBTC #393 → 30 MUSD (limit 40%)', hash: '0x7af06047ae2067dd9385be3b51a71db790ea32a6aca17b73e68b98ad796c07d8' },
+      { what: 'Timed veBTC #394 → 20 MUSD (limit 45%)', hash: '0x0a27d0415e8e0581ac62c531f36e49a2c5877c85025d355d1be960a96cbcf08d' },
+      { what: 'Borrower votes with #394 through Keel', hash: '0xf6e2abe69a325d612ee21bf1e3dc9cf9da08b753964ba17442c846b01f9c2d60' },
+      { what: '0.003 BTC → 110 MUSD', hash: '0xa05b1a2be696fcaa3cf0c4038d0422109fc9ade6c92bbe858599d989a412e557' },
+      { what: 'Repay in full: interest first, to savers', hash: '0xd4cfb053c5a1d26666c3e2bfb1c0b7849068506ca766e7a6f1c5d90fe69953e3' },
+    ],
+  },
+  {
+    title: 'Liquidation',
+    how: "Testnet's BTC price can't be moved, so the admin tightened the risk settings to push a loan over its line, then put them back. The liquidations are real, run by a separate wallet.",
+    rows: [
+      { what: 'Tighten BTC settings to 30% / 40%', hash: '0x57e7eef352dfa0e6d9906481e320011746f17fb44585500a50b6ee75aee85058' },
+      { what: 'Liquidator repays 55 MUSD, receives 0.000696 BTC (55 × 1.05 ÷ 82,991)', hash: '0xe8033b84608d54eec88de9e4afb7ff87b85761c444e48a01bd3267bbde237f88' },
+      { what: 'Tighten permanent-veBTC settings to 20% / 30%', hash: '0x95393889e77fcdb0445603384e2ee0c03f287d46db79c472313939c9c22471d1' },
+      {
+        what: 'Liquidator buys veBTC #393 at a 10% discount; 44.72 MUSD surplus goes back to the borrower',
+        hash: '0xa1770693b1bdb7456997aa48b0ef6a4e61dbcedf53f937c8ac27e195fac82582',
+      },
+      { what: 'Settings restored', hash: '0x081f3eee41af421fef95c6330f27e4fb6a9bd1c8eed765cfa78b236e7ebe0e3f' },
+    ],
+  },
+  {
+    title: 'Throttle, peg rate, yield',
+    how: "The throttle watches the mUSDC side of a pool. The peg step reads the testnet pool's time-weighted price, which is a test price ($0.80), not the real market.",
+    rows: [
+      { what: 'Throttle floor set above the pool’s mUSDC: borrowing pauses', hash: '0x8697ad19f777e2184e03a3085ac0626027e3fe7d897de132aedb4cdd812a3d96' },
+      { what: 'Repay still works while paused', hash: '0x305fa3b9eee26a809ff2ea544b81fdfece564f6751d43f726878a3870782f44e' },
+      { what: 'Peg step: rate moves one 1% step, 3% → 4%', hash: '0xf50e07bad16b85eb50bb8caa4a32fe7564fb7bdff24dd3afdf038a6dd00532cd' },
+      { what: 'Vault claims Keel’s yield', hash: '0x2416a4f79df9c41fa9a1169a15bc3ebe0b4e19cb22743de03928d8b9dead906e' },
+      { what: 'Saver withdraws 100 sMUSD, receives 100.0000371 MUSD', hash: '0x244b706632850dc86fd2fc9f684c7b5e58f9449bafbd52882d5d4d099b9f93d8' },
+    ],
+  },
+];
+
+export const notYet = [
+  'Forwarding a gauge reward to a borrower is unit-tested, but testnet gauges have no fees or bribes to claim yet.',
+  "The mainnet peg oracle (the wall pool's average) is proven on a mainnet fork. On testnet the same mechanism reads a test pool.",
+];

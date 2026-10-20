@@ -2,14 +2,16 @@
   "name": "keel-app",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "sync": "node scripts/sync-deployments.mjs",
+    "dev": "npm run sync && next dev",
+    "build": "npm run sync && next build",
     "start": "next start"
   },
   "dependencies": {
     "next": "15.5.4",
     "react": "19.1.1",
     "react-dom": "19.1.1",
+    "server-only": "^0.0.1",
     "viem": "2.37.8"
   },
   "devDependencies": {
