@@ -195,9 +195,9 @@ contract KeelStrategy is IVaultStrategy {
     // Admin
     // ---------------------------------------------------------------------
 
-    /// @notice Wires the market once.
+    /// @notice Wires the market. It can only be replaced while nothing is lent.
     function setMarket(address _market) external onlyAdmin {
-        if (market != address(0)) revert MarketAlreadySet();
+        if (market != address(0) && lent != 0) revert MarketAlreadySet();
         market = _market;
         emit MarketSet(_market);
     }

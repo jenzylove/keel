@@ -17,7 +17,7 @@ contract MockVeBTC {
     function mint(address to, uint256 amount, uint256 end, bool permanent) external returns (uint256 id) {
         id = nextId++;
         ownerOf[id] = to;
-        _locked[id] = IVeBTC.LockedBalance(int128(int256(amount)), end, permanent, 0);
+        _locked[id] = IVeBTC.LockedBalance(int128(int256(amount)), end, permanent);
     }
 
     function locked(uint256 id) external view returns (IVeBTC.LockedBalance memory) {

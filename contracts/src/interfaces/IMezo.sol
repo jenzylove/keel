@@ -3,11 +3,13 @@ pragma solidity 0.8.28;
 
 /// @notice The parts of Mezo's veBTC (VotingEscrow) that Keel uses.
 interface IVeBTC {
+    /// @dev Mainnet veBTC returns a fourth field (boost) after these three;
+    ///      testnet veBTC returns only these three. Declaring three decodes
+    ///      both, since extra return data is ignored.
     struct LockedBalance {
         int128 amount;
         uint256 end;
         bool isPermanent;
-        uint256 boost;
     }
 
     /// @dev 0 = NORMAL, 1 = LOCKED (in a managed NFT), 2 = MANAGED.

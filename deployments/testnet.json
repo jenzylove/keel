@@ -1,0 +1,36 @@
+{
+  "chainId": 31611,
+  "explorer": "https://explorer.test.mezo.org",
+  "contracts": {
+    "vault": "0x3a5B1c73A0Da60a1b38D553dF022c17d635d3cf9",
+    "vaultImplementation": "0x40429f7c1950151970b30d67b242108ba8504d9b",
+    "idleStrategy": "0xF7604B604593E5FfD8F6Bfb2E7478373b4304BEE",
+    "keelStrategy": "0xf53d01AaBdA4735C5222816B382bf6405DCCce7D",
+    "keelMarket": "0x4f76149009c016b4b09d1017ef30fAF5e8CE2654"
+  },
+  "mezo": {
+    "musd": "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503",
+    "btc": "0x7b7C000000000000000000000000000000000000",
+    "veBTC": "0xB63fcCd03521Cf21907627bd7fA465C129479231",
+    "voter": "0x72F8dd7F44fFa19E45955aa20A5486E8EB255738",
+    "priceFeed": "0x86bCF0841622a5dAC14A313a15f96A95421b9366",
+    "pyth": "0x2880aB155794e7179c9eE2e38200202908C17B43"
+  },
+  "params": {
+    "maxLentBps": 2000,
+    "reserveBps": 1000,
+    "risk": { "btc": [5000, 6500, 500], "veTimed": [4500, 6000, 800], "vePermanent": [4000, 5500, 1000] },
+    "rates": { "base": "3%", "slope1": "4%", "slope2": "75%", "kink": "80%" },
+    "peg": { "startBelow": "0.995", "fullAt": "0.985", "maxPremium": "4%", "maxStep": "1%", "interval": "7 days", "maxPriceAge": "1 hour" },
+    "minLoan": "10 MUSD (testnet only; mainnet proposal is 100)"
+  },
+  "txs": {
+    "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186",
+    "vaultImplementation": "0x0913c924a8968974f5576f7b6ab7c475f8dae7710ff612886cdec94e18dce631",
+    "vaultProxy": "0x832b6fe8f50f5a2106823fafd128baee2407309dd515b0b6b99894c0ff16fe2a",
+    "keelStrategy": "0xc469f086533187fe2086088bb126fc20d3ba5e7aadb41ac5eae035f6f17967a4",
+    "keelMarket": "0x19725610468bd06522d1a4704aa099dde9438bfaf233e161afa4b0af0cacfd60",
+    "setMarket": "0x64a23f70a444a7b46d1ab2bf847fd27a25485abdfe25863045be934f74dd7be1",
+    "setStrategy": "0x3564f948658940a95fee70d3cee6d6451cc4c30d5aacb9546e4d4623d44e3486"
+  }
+}
