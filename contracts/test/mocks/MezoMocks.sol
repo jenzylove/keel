@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {IVeBTC, IPyth} from "../../src/interfaces/IMezo.sol";
+import {IVeBTC} from "../../src/interfaces/IMezo.sol";
 import {MockERC20} from "./MockERC20.sol";
 
 /// @dev veBTC stand-in: ownership, lock data, and Mezo's rule that an NFT has
@@ -97,33 +97,23 @@ contract MockPriceFeed {
     }
 }
 
-/// @dev Pyth stand-in: one settable price, staleness enforced like Pyth.
-contract MockPyth {
-    int64 public price;
-    int32 public expo = -8;
-    uint256 public publishTime;
-    uint256 public fee = 1;
+/// @dev Peg oracle stand-in: a settable MUSD price that can be made to fail.
+contract MockPegOracle {
+    uint256 public price = 1e18;
+    bool public broken;
 
-    error StalePrice();
+    error NoPrice();
 
-    function set(int64 p, uint256 t) external {
+    function set(uint256 p) external {
         price = p;
-        publishTime = t;
     }
 
-    function getUpdateFee(bytes[] calldata) external view returns (uint256) {
-        return fee;
+    function breakIt(bool b) external {
+        broken = b;
     }
 
-    function updatePriceFeeds(bytes[] calldata data) external payable {
-        require(msg.value >= fee, "fee");
-        (int64 p, uint256 t) = abi.decode(data[0], (int64, uint256));
-        price = p;
-        publishTime = t;
-    }
-
-    function getPriceNoOlderThan(bytes32, uint256 age) external view returns (IPyth.Price memory) {
-        if (block.timestamp > publishTime + age) revert StalePrice();
-        return IPyth.Price(price, 0, expo, publishTime);
+    function musdPrice() external view returns (uint256) {
+        if (broken) revert NoPrice();
+        return price;
     }
 }

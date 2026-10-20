@@ -32,17 +32,3 @@ interface IVoter {
 interface IPriceFeed {
     function fetchPrice() external returns (uint256);
 }
-
-/// @notice The parts of Pyth that Keel uses.
-interface IPyth {
-    struct Price {
-        int64 price;
-        uint64 conf;
-        int32 expo;
-        uint256 publishTime;
-    }
-
-    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256);
-    function updatePriceFeeds(bytes[] calldata updateData) external payable;
-    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (Price memory);
-}

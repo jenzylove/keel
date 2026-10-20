@@ -5,24 +5,25 @@
     "vaultImplementation": "0x40429f7c1950151970b30d67b242108ba8504d9b",
     "idleStrategy": "0xF7604B604593E5FfD8F6Bfb2E7478373b4304BEE",
     "keelStrategy": "0x8f09EC8c08C0c24245F6EA99a19191868AD8187a",
-    "keelMarket": "0xD4161B55FFD95199ff02188f3cA0Ff3fAFb69591"
+    "keelMarket": "0x6CD31ea80F9cF3f59A17Aa4Ee91ff711ed7F8579",
+    "pegOracle": "0x003fAC6701B5B8b8c951043660990E450b4E97e8"
   },
   "mezo": {
     "musd": "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503",
     "btc": "0x7b7C000000000000000000000000000000000000",
     "veBTC": "0xB63fcCd03521Cf21907627bd7fA465C129479231",
     "voter": "0x72F8dd7F44fFa19E45955aa20A5486E8EB255738",
-    "priceFeed": "0x86bCF0841622a5dAC14A313a15f96A95421b9366",
-    "pyth": "0x2880aB155794e7179c9eE2e38200202908C17B43"
+    "priceFeed": "0x86bCF0841622a5dAC14A313a15f96A95421b9366"
   },
   "txs": {
     "vaultImplementation": "0x0913c924a8968974f5576f7b6ab7c475f8dae7710ff612886cdec94e18dce631",
     "vaultProxy": "0x832b6fe8f50f5a2106823fafd128baee2407309dd515b0b6b99894c0ff16fe2a",
     "keelStrategy": "0xfcde3da588c472c9dd2ff66b15669b1f31822362b23d3973187939672cd0ffe0",
-    "keelMarket": "0xb273f3fcf168e329e06c1254a859382bb011a700490be8eef52848cc80cc62e7",
-    "setMarket": "0x0c463fb9ba5b93f1d370b0a67750dd2a09a492b57eb94af664659d8edc9f765c",
+    "keelMarket": "0x11b98986cf8391671e619b535c2b63ba6b0a3be8109d906c2d4526f9e4fcbb3a",
+    "setMarket": "0x50d9b047c13d902e09c47387b0b1ec7ee14a71b6124e9e5984e5daf96a77e144",
     "setStrategy": "0x10bccb32ec2709499f347c2bd5e9f40a7e32737a491bb47f06b0c47c0a7b3436",
-    "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186"
+    "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186",
+    "pegOracle": "0x2c35199ff6ab5a3aaf51b429b8019995248b152e0f660442e2ef0031ac2a4533"
   },
   "explorer": "https://explorer.test.mezo.org",
   "params": {
@@ -52,12 +53,12 @@
       "kink": "80%"
     },
     "peg": {
+      "source": "MUSD/mUSDC basic pool quote(), 48 observations (~24h)",
       "startBelow": "0.995",
       "fullAt": "0.985",
       "maxPremium": "4%",
       "maxStep": "1%",
-      "interval": "7 days",
-      "maxPriceAge": "1 hour"
+      "interval": "7 days"
     },
     "minLoan": "10 MUSD (testnet only; mainnet proposal is 100)"
   },
@@ -80,6 +81,10 @@
         "btcLoanClose": "0x7bdaedcc07c1068ca743839e835b5d9e567bb72b7b69fc57437e63ad475505d9",
         "releaseReserve": "0xf2f3bb3205a342664db54ebe223e030052fd87779c4215bd482cebf123583c96"
       }
+    },
+    {
+      "note": "Market replaced by the peg-oracle version (Pyth dropped); all its loans were closed first.",
+      "keelMarket": "0xD4161B55FFD95199ff02188f3cA0Ff3fAFb69591"
     }
   ]
 }

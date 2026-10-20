@@ -92,13 +92,13 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
 5. **Rates.** The yearly rate is base + utilization slope + a peg term.
    - The peg term rises as MUSD falls below $0.995, up to a cap.
    - It moves in bounded weekly steps, so a short price push can't swing it.
-   - The MUSD price comes from Pyth MUSD/USD, with the update posted by the keeper and a maximum age enforced. If no fresh price is available, the peg term holds its last value.
+   - The MUSD price is a time-weighted average from a Mezo pool. On mainnet that's the mUSDC/MUSD concentrated-liquidity pool holding Mezo's peg wall (24-hour average). On testnet it's the MUSD/mUSDC basic pool's `quote()` (about 24 hours of observations). Both are free and on chain. If the oracle can't produce a price, the peg term holds its last value.
 6. **Throttle.** New borrowing pauses while a watched pool's dollar-side balance is below a set floor. On mainnet that's the mUSDC/MUSD wall. Repaying, adding collateral and liquidating always stay open.
 7. **Reserve.** A set share of interest (proposed 10%) builds a bad-debt reserve, which lives in the strategy.
 
 ### Off-chain
 8. **Keeper:**
-   - posts Pyth updates and steps the rate weekly;
+   - steps the rate weekly;
    - calls `receiveYieldFromStrategy`;
    - runs liquidations;
    - casts the votes borrowers chose each epoch.
@@ -141,6 +141,7 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 | "veBTC works as collateral" | Testnet transactions: deposit NFT, borrow, vote, repay, return |
 | "Liquidation works, including permanent veBTC" | Testnet liquidation transaction(s), plus tests |
 | Any APR shown | Computed live from on-chain rate state, never typed in |
+| "The rate reads MUSD's real price" | Mainnet fork: both oracle adapters read about $0.991 from Mezo's own pools. On testnet the mechanism runs live, but the price is testnet's pool and is labelled as such |
 
 ## 6. What Keel does not do
 
@@ -154,5 +155,5 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 
 - **Borrower demand on Mezo is small:** about 60 free BTC, plus about 7 veBTC locks of 1–15 BTC.
 - **Savers take the bad-debt risk** beyond the reserve.
-- **The price feed depends on the keeper** posting fresh Pyth updates.
+- **The peg price comes from a thin pool** (about $58k on the dollar side on mainnet). A day-long average plus small weekly steps limit what moving it could gain, but it could be pushed.
 - **The size of the payoff depends on Mezo choosing to migrate.**

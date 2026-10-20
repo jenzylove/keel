@@ -69,7 +69,17 @@ An earlier run pointed the throttle at the pool's MUSD side by mistake (`0x8a82�
 | Vault claims KeelStrategy's yield (`receiveYieldFromStrategy`) | `0x2416a4f79df9c41fa9a1169a15bc3ebe0b4e19cb22743de03928d8b9dead906e` |
 | Saver withdraws 100 sMUSD and receives 100.0000371 MUSD. The extra is borrower interest from the minutes the loans were open | `0x244b706632850dc86fd2fc9f684c7b5e58f9449bafbd52882d5d4d099b9f93d8` |
 
+## 8. Peg oracle and rate step (current market `0x6CD3…8579`)
+
+The market was replaced to drop Pyth. Every open loan was repaid and closed first (`0x0811…a2fe`, `0x1a15…c3f5`, `0xeb37…c7b9`, `0xe93f…37d3be`), then the strategy accepted the new market.
+
+| Step | Transaction |
+|---|---|
+| Testnet peg oracle reads MUSD at $0.8006 from the testnet pool (a test price) | read: `musdPrice()` on `0x003f…97e8` |
+| `stepPeg`: premium moves one 1% step toward the 4% target, so the borrow rate goes from 3.00% to 4.00% | `0xf50e07bad16b85eb50bb8caa4a32fe7564fb7bdff24dd3afdf038a6dd00532cd` |
+| A second step straight after is refused (`PegStepTooSoon`) | not sent: rejected in simulation |
+| Demo loans reopened: veBTC #394 (20 MUSD), 0.003 BTC (100 MUSD) | `0xb2d2de9d53659ae2b0e72c7569658f2eb66ad88fcb4d18b8e9b0890ac38877b6`, `0xc8b8513243742ec025a7882bb39a90e233fa4d75ffc8c7ecad34df0504708185` |
+
 ## Still to run live
 
 - Reward claim forwarded to the borrower (needs gauge fees or bribes on testnet)
-- Peg step with a fresh Pyth price (needs a Hermes API key)

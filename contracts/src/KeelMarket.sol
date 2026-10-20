@@ -7,7 +7,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {KeelMath} from "./libraries/KeelMath.sol";
 import {KeelStrategy} from "./KeelStrategy.sol";
-import {IVeBTC, IVoter, IPriceFeed, IPyth} from "./interfaces/IMezo.sol";
+import {IVeBTC, IVoter, IPriceFeed} from "./interfaces/IMezo.sol";
+import {IPegOracle} from "./oracles/PegOracles.sol";
 
 /// @title KeelMarket
 /// @notice Lends MUSD from KeelStrategy against BTC or a veBTC NFT. Loans live
@@ -16,7 +17,8 @@ import {IVeBTC, IVoter, IPriceFeed, IPyth} from "./interfaces/IMezo.sol";
 ///         rewards.
 /// @dev One loan holds either BTC or one veBTC NFT. BTC price comes from the
 ///      MUSD system's PriceFeed. The rate adds a peg premium that moves in
-///      bounded steps toward a target set by the Pyth MUSD/USD price.
+///      bounded steps toward a target set by MUSD's time-weighted price in a
+///      Mezo pool.
 contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     using SafeERC20 for IERC20;
 
@@ -53,8 +55,6 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     }
 
     struct PegParams {
-        bytes32 musdFeed;
-        uint256 maxPriceAge;
         uint256 startBelow;
         uint256 fullAt;
         uint256 maxPremium;
@@ -67,7 +67,6 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     IVeBTC public immutable ve;
     IVoter public immutable voter;
     IPriceFeed public immutable priceFeed;
-    IPyth public immutable pyth;
     KeelStrategy public immutable strategy;
 
     address public admin;
@@ -79,6 +78,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
 
     RateParams public rates;
     PegParams public peg;
+    IPegOracle public pegOracle;
     uint256 public pegPremium;
     uint256 public lastPegStep;
     uint256 public lastMusdPrice;
@@ -138,7 +138,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         IVeBTC ve;
         IVoter voter;
         IPriceFeed priceFeed;
-        IPyth pyth;
+        IPegOracle pegOracle;
         KeelStrategy strategy;
     }
 
@@ -155,7 +155,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         ve = d.ve;
         voter = d.voter;
         priceFeed = d.priceFeed;
-        pyth = d.pyth;
+        pegOracle = d.pegOracle;
         strategy = d.strategy;
         admin = _admin;
         _setRisk(risks);
@@ -376,22 +376,15 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     // Peg premium
     // ---------------------------------------------------------------------
 
-    /// @notice Posts a fresh Pyth update (optional) and steps the peg premium
-    ///         toward its target. Anyone may call it once per interval.
-    /// @dev Reverts if the MUSD price is older than `maxPriceAge`, so a stale
-    ///      price never moves the rate.
-    function stepPeg(bytes[] calldata pythUpdate) external payable nonReentrant {
+    /// @notice Steps the peg premium toward its target. Anyone may call it
+    ///         once per interval.
+    /// @dev If the oracle can't produce a price the call reverts and the
+    ///      premium keeps its last value.
+    function stepPeg() external nonReentrant {
         uint256 nextAt = lastPegStep + peg.interval;
         if (block.timestamp < nextAt) revert PegStepTooSoon(nextAt);
-        if (pythUpdate.length > 0) {
-            uint256 fee = pyth.getUpdateFee(pythUpdate);
-            pyth.updatePriceFeeds{value: fee}(pythUpdate);
-            if (msg.value > fee) {
-                (bool ok, ) = msg.sender.call{value: msg.value - fee}("");
-                require(ok, "refund");
-            }
-        }
-        uint256 p = _musdPrice();
+        uint256 p = pegOracle.musdPrice();
+        if (p == 0) revert BadParams();
         _accrue();
         uint256 target = KeelMath.pegTarget(p, peg.startBelow, peg.fullAt, peg.maxPremium);
         pegPremium = KeelMath.stepToward(pegPremium, target, peg.maxStep);
@@ -462,6 +455,10 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
 
     function setPeg(PegParams calldata p) external onlyAdmin {
         _setPeg(p);
+    }
+
+    function setPegOracle(IPegOracle o) external onlyAdmin {
+        pegOracle = o;
     }
 
     function setThrottle(address pool, IERC20 token, uint256 floor) external onlyAdmin {
@@ -564,14 +561,6 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     function _btcPrice() internal returns (uint256 p) {
         p = priceFeed.fetchPrice();
         lastBtcPrice = p;
-    }
-
-    function _musdPrice() internal view returns (uint256) {
-        IPyth.Price memory p = pyth.getPriceNoOlderThan(peg.musdFeed, peg.maxPriceAge);
-        if (p.price <= 0) revert BadParams();
-        uint256 raw = uint256(uint64(p.price));
-        int32 e = p.expo + 18;
-        return e >= 0 ? raw * 10 ** uint32(e) : raw / 10 ** uint32(-e);
     }
 
     function _setRisk(Risk[3] memory risks) internal {

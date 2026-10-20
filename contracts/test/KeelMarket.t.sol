@@ -3,11 +3,12 @@ pragma solidity 0.8.28;
 
 import {Test} from "./utils/Test.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
-import {MockVeBTC, MockVoter, MockPriceFeed, MockPyth} from "./mocks/MezoMocks.sol";
+import {MockVeBTC, MockVoter, MockPriceFeed, MockPegOracle} from "./mocks/MezoMocks.sol";
 import {KeelStrategy} from "../src/KeelStrategy.sol";
 import {KeelMarket} from "../src/KeelMarket.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IVeBTC, IVoter, IPriceFeed, IPyth} from "../src/interfaces/IMezo.sol";
+import {IVeBTC, IVoter, IPriceFeed} from "../src/interfaces/IMezo.sol";
+import {IPegOracle} from "../src/oracles/PegOracles.sol";
 
 /// @dev The test contract plays the savings vault and the admin.
 contract KeelMarketTest is Test {
@@ -17,7 +18,7 @@ contract KeelMarketTest is Test {
     MockVeBTC ve;
     MockVoter voter;
     MockPriceFeed feed;
-    MockPyth pyth;
+    MockPegOracle peg;
     KeelStrategy strat;
     KeelMarket m;
 
@@ -34,8 +35,7 @@ contract KeelMarketTest is Test {
         voter = new MockVoter(ve, reward);
         feed = new MockPriceFeed();
         feed.set(PRICE);
-        pyth = new MockPyth();
-        pyth.set(1e8, block.timestamp);
+        peg = new MockPegOracle();
 
         strat = new KeelStrategy(IERC20(address(musd)), address(this), address(this), 2_000, 1_000);
         KeelMarket.Risk[3] memory risks = [
@@ -46,12 +46,12 @@ contract KeelMarketTest is Test {
         m = new KeelMarket(
             KeelMarket.Deps(
                 IERC20(address(musd)), IERC20(address(btc)), IVeBTC(address(ve)), IVoter(address(voter)),
-                IPriceFeed(address(feed)), IPyth(address(pyth)), strat
+                IPriceFeed(address(feed)), IPegOracle(address(peg)), strat
             ),
             address(this),
             risks,
             KeelMarket.RateParams(0.03e18, 0.04e18, 0.75e18, 0.8e18),
-            KeelMarket.PegParams(bytes32("MUSD"), 1 hours, 0.995e18, 0.985e18, 0.04e18, 0.01e18, 7 days),
+            KeelMarket.PegParams(0.995e18, 0.985e18, 0.04e18, 0.01e18, 7 days),
             100e18
         );
         strat.setMarket(address(m));
@@ -267,43 +267,33 @@ contract KeelMarketTest is Test {
     }
 
     function test_peg_steps_toward_target_in_bounded_steps() external {
-        pyth.set(0.99e8, block.timestamp); // target premium 2%
-        m.stepPeg(new bytes[](0));
+        peg.set(0.99e18); // target premium 2%
+        m.stepPeg();
         assertEq(m.pegPremium(), 0.01e18, "one step of 1%");
         vm.expectRevert();
-        m.stepPeg(new bytes[](0));
+        m.stepPeg();
         vm.warp(block.timestamp + 7 days);
-        pyth.set(0.99e8, block.timestamp);
-        m.stepPeg(new bytes[](0));
+        m.stepPeg();
         assertEq(m.pegPremium(), 0.02e18, "reached target");
         vm.warp(block.timestamp + 7 days);
-        pyth.set(1e8, block.timestamp);
-        m.stepPeg(new bytes[](0));
+        peg.set(1e18);
+        m.stepPeg();
         assertEq(m.pegPremium(), 0.01e18, "steps back down at par");
     }
 
-    function test_stale_price_never_moves_the_rate() external {
-        pyth.set(0.97e8, block.timestamp - 2 hours);
-        vm.expectRevert(MockPyth.StalePrice.selector);
-        m.stepPeg(new bytes[](0));
+    function test_missing_price_never_moves_the_rate() external {
+        peg.set(0.97e18);
+        peg.breakIt(true);
+        vm.expectRevert(MockPegOracle.NoPrice.selector);
+        m.stepPeg();
         assertEq(m.pegPremium(), 0, "unchanged");
-    }
-
-    function test_peg_step_accepts_a_pyth_update_and_refunds() external {
-        pyth.set(1e8, block.timestamp - 2 hours);
-        bytes[] memory up = new bytes[](1);
-        up[0] = abi.encode(int64(0.985e8), block.timestamp);
-        vm.deal(address(this), 1 ether);
-        m.stepPeg{value: 100}(up);
-        assertEq(m.lastMusdPrice(), 0.985e18, "fresh price used");
-        assertEq(m.pegPremium(), 0.01e18, "stepped");
     }
 
     function test_rate_rises_with_peg_premium() external {
         _openBtc(1e18, 20_000e18);
         uint256 before = m.currentRate();
-        pyth.set(0.97e8, block.timestamp);
-        m.stepPeg(new bytes[](0));
+        peg.set(0.97e18);
+        m.stepPeg();
         assertEq(m.currentRate(), before + 0.01e18, "premium added");
     }
 

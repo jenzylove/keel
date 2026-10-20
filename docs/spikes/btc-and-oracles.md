@@ -53,3 +53,7 @@ Testnet has everything Keel needs live:
 - A BTC price feed that tracks the real market ($76.5k 30 days ago, $82.6k now).
 
 Mezo's own testnet sMUSD is owned by Mezo, so on testnet Keel runs behind a copy of the verified `MUSDSavingsRate` contract that we deploy and own. Mezo's real vault is migrated in the mainnet fork test.
+
+**Decision 2026-10-21.** Pyth is dropped. Keel reads MUSD's price from Mezo's own pools:
+- **Mainnet:** `ClPoolTwapPegOracle` over the mUSDC/MUSD concentrated-liquidity pool `0xCC37…ac1a`, via `observe()`. 24-hour average = **$0.991043** on a fork.
+- **Testnet, or as a fallback:** `BasicPoolTwapPegOracle` over a basic pool's `quote()`. Mainnet MUSD/mUSDC basic pool = **$0.989539** on a fork. The testnet pool reads about $0.80, which is a thin test pool, not a real price.
