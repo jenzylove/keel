@@ -87,7 +87,7 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
 4. **Liquidation.** When a loan passes its threshold, anyone can repay the debt and receive the collateral at the bonus.
    - **BTC:** paid out directly.
    - **Timed veBTC:** the NFT is transferred to the liquidator.
-   - **Permanent veBTC:** votes are reset, `unlockPermanent` is called, and the now-timed NFT is transferred.
+   - **Permanent veBTC:** the NFT is transferred as it is, and the liquidator unlocks it themselves (a further 28-day lock). That's why its bonus is the largest. Transfer works even if the NFT voted this epoch (proven on testnet), whereas unlocking would have to wait for the next epoch.
    - If a loan's debt ever exceeds its collateral value, the shortfall is taken from the reserve first, and the event is recorded.
 5. **Rates.** The yearly rate is base + utilization slope + a peg term.
    - The peg term rises as MUSD falls below $0.995, up to a cap.
