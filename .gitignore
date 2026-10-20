@@ -1,0 +1,14 @@
+.env*
+!.env.example
+*.key
+*keypair*.json
+wallets/
+broadcast/*/31611/run-latest.json.local
+cache/
+out/
+node_modules/
+dist/
+.next/
+coverage/
+lcov.info
+.DS_Store
