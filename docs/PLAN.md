@@ -5,7 +5,7 @@ Each phase ends with a check that proves it's done. A phase is only done once it
 
 | # | Phase | When (UTC) | Done when |
 |---|---|---|---|
-| 0 | Spikes | Tue 20 | ✅ sMUSD migration passes on a mainnet fork. ✅ BTC-on-fork limit found. ✅ Pyth staleness found. ⏳ veBTC custody live on testnet (waiting on faucet funds) |
+| 0 | Spikes | Tue 20 | ✅ sMUSD migration passes on a mainnet fork. ✅ BTC-on-fork limit found. ✅ Pyth staleness found. ✅ veBTC custody, permanent lock, vote and hand-back proven live on testnet |
 | 1 | Core math | Wed 21 | Pure libraries for interest accrual, health, liquidation amounts and the rate curve with its bounded peg step. Unit and fuzz tests pass |
 | 2 | KeelStrategy | Wed 21 | Implements `IVaultStrategy`. Tests: allocate, deallocate up to the liquid buffer at max lending, claimYield minus the reserve, migrate in and out. The mainnet fork test passes with the real vault and the real 7.38M |
 | 3 | KeelMarket (BTC) | Thu 22 | Borrow, repay, add/remove collateral, liquidate with BTC collateral. Unit tests pass. Deployed to testnet, with one real borrow and repay on the explorer |
@@ -21,10 +21,10 @@ Each phase ends with a check that proves it's done. A phase is only done once it
 
 | Risk | Status | Plan |
 |---|---|---|
-| Testnet BTC for the deployer and demo wallets | **Blocks phase 3+** | You fund `0x471F65677F73B63929aA657B7a8240824Bad1523` from faucet.test.mezo.org |
-| veBTC custody and voting by a contract | Needs spike | Source says yes. Prove it live as soon as there's BTC. If it fails, fall back to BTC-only collateral and say so |
+| Testnet BTC for the deployer and demo wallets | Funded (0.05 BTC) | Top up from faucet.test.mezo.org if needed |
+| veBTC custody and voting by a contract | Proven live | See docs/spikes/btc-and-oracles.md. Never vote in the deposit block (flash protection) |
 | BTC calls revert on forks | Known | Fork tests cover MUSD-only paths. BTC paths are proven on live testnet |
-| Pyth MUSD price is stale on chain | Known | The keeper posts Hermes updates. Needs `hermes.pyth.network` reachable from the keeper host. Until then, the peg term holds (fail closed) |
+| Pyth MUSD price is stale on chain; Hermes needs an API key | Known | The keeper posts Hermes updates with a key. Without one, the peg term holds (fail closed) |
 | Solidity compiler download is blocked here | Known | solc-js shim for local builds. Hosted CI uses normal solc |
 | sMUSD needs MUSDSavingsRate source at 0.8.33 | Known | Install solc-js 0.8.33 for the testnet copy |
 | Vote windows (once per epoch, none right after Thursday 00:00 UTC) | Known | Keeper schedules votes inside the window. Tests cover the edges |

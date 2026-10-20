@@ -6,4 +6,4 @@ evm_version = "cancun"
 
 [rpc_endpoints]
 mezo = "https://mezo.drpc.org"
-mezo_testnet = "https://mezo-testnet.drpc.org"
+mezo_testnet = "https://rpc.test.mezo.org"
