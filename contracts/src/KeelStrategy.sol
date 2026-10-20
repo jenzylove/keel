@@ -5,6 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IVaultStrategy} from "./interfaces/IVaultStrategy.sol";
 
+interface IOwnable {
+    function owner() external view returns (address);
+}
+
 /// @title KeelStrategy
 /// @notice A strategy for Mezo's MUSD Savings Rate vault. It holds savers'
 ///         principal, lets KeelMarket borrow a capped share of it, and sends
@@ -12,6 +16,10 @@ import {IVaultStrategy} from "./interfaces/IVaultStrategy.sol";
 /// @dev The vault calls `deallocate` inside a saver's withdrawal, so at least
 ///      `1 - maxLentBps` of principal always stays liquid here. Principal can
 ///      only be migrated away once nothing is lent out.
+///
+///      Keel adds no new party to trust: its admin is whoever owns the vault,
+///      read live. On mainnet that is the Mezo multisig, which can already move
+///      the whole vault with `setStrategy`.
 contract KeelStrategy is IVaultStrategy {
     using SafeERC20 for IERC20;
 
@@ -22,7 +30,6 @@ contract KeelStrategy is IVaultStrategy {
     IERC20 public immutable musd;
     address public immutable vault;
 
-    address public admin;
     address public market;
 
     /// @notice Savers' principal this strategy is responsible for.
@@ -40,7 +47,6 @@ contract KeelStrategy is IVaultStrategy {
     uint256 public reserveBps;
 
     event MarketSet(address market);
-    event AdminChanged(address admin);
     event ParamsSet(uint256 maxLentBps, uint256 reserveBps);
     event Drawn(address to, uint256 amount);
     event Repaid(uint256 principalPart, uint256 interestPart, uint256 toReserve);
@@ -68,20 +74,23 @@ contract KeelStrategy is IVaultStrategy {
     }
 
     modifier onlyAdmin() {
-        if (msg.sender != admin) revert OnlyAdmin();
+        if (msg.sender != admin()) revert OnlyAdmin();
         _;
+    }
+
+    /// @notice The vault's owner, who governs Keel too.
+    function admin() public view returns (address) {
+        return IOwnable(vault).owner();
     }
 
     constructor(
         IERC20 _musd,
         address _vault,
-        address _admin,
         uint256 _maxLentBps,
         uint256 _reserveBps
     ) {
         musd = _musd;
         vault = _vault;
-        admin = _admin;
         _setParams(_maxLentBps, _reserveBps);
     }
 
@@ -214,11 +223,6 @@ contract KeelStrategy is IVaultStrategy {
         reserve -= amount;
         yieldOwed += amount;
         emit ReserveReleased(amount);
-    }
-
-    function setAdmin(address _admin) external onlyAdmin {
-        admin = _admin;
-        emit AdminChanged(_admin);
     }
 
     function _setParams(uint256 _maxLentBps, uint256 _reserveBps) private {

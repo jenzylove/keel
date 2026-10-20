@@ -19,6 +19,12 @@ import {IPegOracle} from "./oracles/PegOracles.sol";
 ///      MUSD system's PriceFeed. The rate adds a peg premium that moves in
 ///      bounded steps toward a target set by MUSD's time-weighted price in a
 ///      Mezo pool.
+///
+///      Governance is the savings vault's owner (via KeelStrategy). Risk,
+///      rates, peg settings, the oracle and the minimum loan only change after
+///      `configDelay`, so borrowers can repay or add collateral before a
+///      tighter setting applies. The borrowing throttle is instant because it
+///      can only pause new borrowing.
 contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     using SafeERC20 for IERC20;
 
@@ -62,14 +68,23 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         uint256 interval;
     }
 
+    /// @notice Everything that changes only after `configDelay`.
+    struct Config {
+        Risk[3] risks;
+        RateParams rates;
+        PegParams peg;
+        IPegOracle pegOracle;
+        uint256 minLoan;
+    }
+
     IERC20 public immutable musd;
     IERC20 public immutable btc;
     IVeBTC public immutable ve;
     IVoter public immutable voter;
     IPriceFeed public immutable priceFeed;
     KeelStrategy public immutable strategy;
-
-    address public admin;
+    /// @notice Wait between proposing and applying a config change.
+    uint256 public immutable configDelay;
 
     Risk public btcRisk;
     Risk public veTimedRisk;
@@ -95,6 +110,10 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     uint256 public nextLoanId = 1;
     mapping(uint256 => Loan) public loans;
 
+    Config internal pending;
+    /// @notice When the pending config may be applied (0 = nothing pending).
+    uint256 public pendingEta;
+
     event LoanOpened(uint256 indexed id, address indexed owner, Kind kind, uint256 btc, uint256 nftId);
     event Borrowed(uint256 indexed id, uint256 amount);
     event Repaid(uint256 indexed id, address payer, uint256 amount, uint256 interestPart);
@@ -105,7 +124,9 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     event Voted(uint256 indexed id, uint256 nftId);
     event RewardsForwarded(uint256 indexed id, address token, uint256 amount);
     event PegStepped(uint256 musdPrice, uint256 target, uint256 premium);
-    event AdminChanged(address admin);
+    event ConfigProposed(uint256 eta);
+    event ConfigApplied();
+    event ConfigCancelled();
 
     error OnlyAdmin();
     error NotLoanOwner();
@@ -121,10 +142,20 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     error PegStepTooSoon(uint256 nextAt);
     error BadParams();
     error NotVeBTC();
+    error NoDebt();
+    error PriceAboveMax(uint256 price, uint256 max);
+    error NothingPending();
+    error TooEarly(uint256 eta);
+    error RateTooHigh();
 
     modifier onlyAdmin() {
-        if (msg.sender != admin) revert OnlyAdmin();
+        if (msg.sender != admin()) revert OnlyAdmin();
         _;
+    }
+
+    /// @notice The savings vault's owner, read through the strategy.
+    function admin() public view returns (address) {
+        return strategy.admin();
     }
 
     modifier onlyLoanOwner(uint256 id) {
@@ -142,26 +173,15 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         KeelStrategy strategy;
     }
 
-    constructor(
-        Deps memory d,
-        address _admin,
-        Risk[3] memory risks,
-        RateParams memory _rates,
-        PegParams memory _peg,
-        uint256 _minLoan
-    ) {
+    constructor(Deps memory d, Config memory c, uint256 _configDelay) {
         musd = d.musd;
         btc = d.btc;
         ve = d.ve;
         voter = d.voter;
         priceFeed = d.priceFeed;
-        pegOracle = d.pegOracle;
         strategy = d.strategy;
-        admin = _admin;
-        _setRisk(risks);
-        _setRates(_rates);
-        _setPeg(_peg);
-        minLoan = _minLoan;
+        configDelay = _configDelay;
+        _setConfig(c);
         lastAccrual = block.timestamp;
     }
 
@@ -212,6 +232,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         _accrue();
         Loan storage loan = loans[id];
         uint256 debt = KeelMath.debtOf(loan.scaled, borrowIndex);
+        if (debt == 0) revert NoDebt();
         paid = amount > debt ? debt : amount;
         uint256 left = debt - paid;
         if (left != 0 && left < minLoan) revert BelowMinLoan(left, minLoan);
@@ -331,8 +352,9 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     /// @notice Liquidates an unhealthy loan.
     /// @dev BTC loans: repay up to `maxRepay` and receive BTC worth the repaid
     ///      amount plus the bonus. veBTC loans: pay the NFT's value less the
-    ///      bonus and receive the NFT; anything above the debt goes to the
-    ///      borrower. Unrecoverable principal is written off in the strategy.
+    ///      bonus, at most `maxRepay`, and receive the NFT; anything above the
+    ///      debt goes to the borrower. Unrecoverable principal is written off
+    ///      in the strategy.
     function liquidate(uint256 id, uint256 maxRepay) external nonReentrant {
         _accrue();
         uint256 price = _btcPrice();
@@ -355,6 +377,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
             emit Liquidated(id, msg.sender, pay, seized, 0, 0, lost);
         } else {
             uint256 sale = KeelMath.salePrice(val, r.bonusBps);
+            if (sale > maxRepay) revert PriceAboveMax(sale, maxRepay);
             address owner = loan.owner;
             uint256 nftId = loan.nftId;
             uint256 toDebt = sale > debt ? debt : sale;
@@ -422,8 +445,17 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     function position(
         uint256 id
     ) external view returns (uint256 collateralValue, uint256 debt, uint256 healthWad, uint256 borrowLimit) {
+        return positionAt(id, lastBtcPrice);
+    }
+
+    /// @notice The same at a BTC price the caller supplies, e.g. a fresh read
+    ///         of the PriceFeed, so keepers don't judge health on a stale price.
+    function positionAt(
+        uint256 id,
+        uint256 price
+    ) public view returns (uint256 collateralValue, uint256 debt, uint256 healthWad, uint256 borrowLimit) {
         Loan storage loan = loans[id];
-        (uint256 val, Risk memory r) = _valueAndRisk(loan, lastBtcPrice);
+        (uint256 val, Risk memory r) = _valueAndRisk(loan, price);
         debt = debtOf(id);
         collateralValue = val;
         healthWad = KeelMath.health(val, debt, r.liqLtvBps);
@@ -444,36 +476,38 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     // Admin
     // ---------------------------------------------------------------------
 
-    function setRisk(Risk[3] calldata risks) external onlyAdmin {
-        _setRisk(risks);
+    /// @notice Queues a new config. It can be applied after `configDelay`.
+    function proposeConfig(Config calldata c) external onlyAdmin {
+        _validate(c);
+        pending = c;
+        pendingEta = block.timestamp + configDelay;
+        emit ConfigProposed(pendingEta);
     }
 
-    function setRates(RateParams calldata r) external onlyAdmin {
+    /// @notice Applies the queued config once its delay has passed. Anyone may
+    ///         call it.
+    function applyConfig() external nonReentrant {
+        if (pendingEta == 0) revert NothingPending();
+        if (block.timestamp < pendingEta) revert TooEarly(pendingEta);
         _accrue();
-        _setRates(r);
+        _setConfig(pending);
+        pendingEta = 0;
+        emit ConfigApplied();
     }
 
-    function setPeg(PegParams calldata p) external onlyAdmin {
-        _setPeg(p);
+    function cancelConfig() external onlyAdmin {
+        pendingEta = 0;
+        emit ConfigCancelled();
     }
 
-    function setPegOracle(IPegOracle o) external onlyAdmin {
-        pegOracle = o;
+    function pendingConfig() external view returns (Config memory) {
+        return pending;
     }
 
     function setThrottle(address pool, IERC20 token, uint256 floor) external onlyAdmin {
         watchPool = pool;
         watchToken = token;
         watchFloor = floor;
-    }
-
-    function setMinLoan(uint256 m) external onlyAdmin {
-        minLoan = m;
-    }
-
-    function setAdmin(address a) external onlyAdmin {
-        admin = a;
-        emit AdminChanged(a);
     }
 
     /// @notice Refreshes the stored BTC price used by views.
@@ -563,25 +597,32 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         lastBtcPrice = p;
     }
 
-    function _setRisk(Risk[3] memory risks) internal {
+    /// @dev Highest yearly rate the curve may reach before the peg premium.
+    uint256 internal constant MAX_CURVE_RATE = 1e18;
+
+    function _validate(Config memory c) internal pure {
         for (uint256 i = 0; i < 3; ++i) {
-            Risk memory r = risks[i];
+            Risk memory r = c.risks[i];
             if (r.maxLtvBps >= r.liqLtvBps || r.liqLtvBps >= BPS || r.bonusBps >= BPS - r.liqLtvBps) {
                 revert BadParams();
             }
         }
-        btcRisk = risks[0];
-        veTimedRisk = risks[1];
-        vePermanentRisk = risks[2];
+        if (c.rates.kink > WAD) revert BadParams();
+        if (c.rates.baseRate + c.rates.slope1 + c.rates.slope2 > MAX_CURVE_RATE) revert RateTooHigh();
+        if (c.peg.fullAt >= c.peg.startBelow || c.peg.startBelow > WAD || c.peg.maxPremium > MAX_CURVE_RATE) {
+            revert BadParams();
+        }
+        if (address(c.pegOracle) == address(0)) revert BadParams();
     }
 
-    function _setRates(RateParams memory r) internal {
-        if (r.kink > WAD) revert BadParams();
-        rates = r;
-    }
-
-    function _setPeg(PegParams memory p) internal {
-        if (p.fullAt >= p.startBelow || p.startBelow > WAD) revert BadParams();
-        peg = p;
+    function _setConfig(Config memory c) internal {
+        _validate(c);
+        btcRisk = c.risks[0];
+        veTimedRisk = c.risks[1];
+        vePermanentRisk = c.risks[2];
+        rates = c.rates;
+        peg = c.peg;
+        pegOracle = c.pegOracle;
+        minLoan = c.minLoan;
     }
 }

@@ -25,6 +25,20 @@ contract KeelMarketTest is Test {
     address alice = address(0xA11CE);
     address liq = address(0x1100);
     uint256 constant PRICE = 80_000e18;
+    uint256 constant DELAY = 2 days;
+
+    /// @dev The test contract plays the savings vault, so it owns Keel.
+    address public owner = address(this);
+
+    function _config(uint16 btcMax, uint16 btcLiq, uint16 permMax, uint16 permLiq) internal view returns (KeelMarket.Config memory c) {
+        c.risks[0] = KeelMarket.Risk(btcMax, btcLiq, 500);
+        c.risks[1] = KeelMarket.Risk(4_500, 6_000, 800);
+        c.risks[2] = KeelMarket.Risk(permMax, permLiq, 1_000);
+        c.rates = KeelMarket.RateParams(0.03e18, 0.04e18, 0.75e18, 0.8e18);
+        c.peg = KeelMarket.PegParams(0.995e18, 0.985e18, 0.04e18, 0.01e18, 7 days);
+        c.pegOracle = IPegOracle(address(peg));
+        c.minLoan = 100e18;
+    }
 
     function setUp() external {
         vm.warp(1_800_000_000);
@@ -37,22 +51,14 @@ contract KeelMarketTest is Test {
         feed.set(PRICE);
         peg = new MockPegOracle();
 
-        strat = new KeelStrategy(IERC20(address(musd)), address(this), address(this), 2_000, 1_000);
-        KeelMarket.Risk[3] memory risks = [
-            KeelMarket.Risk(5_000, 6_500, 500),
-            KeelMarket.Risk(4_500, 6_000, 800),
-            KeelMarket.Risk(4_000, 5_500, 1_000)
-        ];
+        strat = new KeelStrategy(IERC20(address(musd)), address(this), 2_000, 1_000);
         m = new KeelMarket(
             KeelMarket.Deps(
                 IERC20(address(musd)), IERC20(address(btc)), IVeBTC(address(ve)), IVoter(address(voter)),
                 IPriceFeed(address(feed)), IPegOracle(address(peg)), strat
             ),
-            address(this),
-            risks,
-            KeelMarket.RateParams(0.03e18, 0.04e18, 0.75e18, 0.8e18),
-            KeelMarket.PegParams(0.995e18, 0.985e18, 0.04e18, 0.01e18, 7 days),
-            100e18
+            _config(5_000, 6_500, 4_000, 5_500),
+            DELAY
         );
         strat.setMarket(address(m));
 
@@ -225,7 +231,10 @@ contract KeelMarketTest is Test {
         feed.set(59_000e18); // 36k / 59k = 61% > 60%
         uint256 aliceBefore = musd.balanceOf(alice);
         vm.prank(liq);
-        m.liquidate(id, 0);
+        vm.expectRevert(abi.encodeWithSelector(KeelMarket.PriceAboveMax.selector, 54_280e18, 54_000e18));
+        m.liquidate(id, 54_000e18);
+        vm.prank(liq);
+        m.liquidate(id, 54_280e18);
         // sale = 59k * 0.92 = 54,280; debt 36k; surplus 18,280 to alice
         assertEq(ve.ownerOf(nft), liq, "liquidator owns nft");
         assertEq(musd.balanceOf(alice) - aliceBefore, 18_280e18, "surplus to borrower");
@@ -240,7 +249,7 @@ contract KeelMarketTest is Test {
         (uint256 id, uint256 nft) = _openVe(1e18, false, 10_000e18);
         vm.prank(liq);
         vm.expectRevert(KeelMarket.StillHealthy.selector);
-        m.liquidate(id, 0);
+        m.liquidate(id, type(uint256).max);
         vm.prank(liq);
         vm.expectRevert(KeelMarket.NotLoanOwner.selector);
         m.close(id);
@@ -295,6 +304,64 @@ contract KeelMarketTest is Test {
         peg.set(0.97e18);
         m.stepPeg();
         assertEq(m.currentRate(), before + 0.01e18, "premium added");
+    }
+
+    // ----- hardening -----
+
+    function test_config_changes_wait_for_the_delay() external {
+        uint256 id = _openBtc(1e18, 40_000e18); // 50% LTV, healthy at 65%
+        m.proposeConfig(_config(3_000, 4_000, 4_000, 5_500));
+        vm.prank(liq);
+        vm.expectRevert(KeelMarket.StillHealthy.selector);
+        m.liquidate(id, 1e18); // the tighter setting is not live yet
+        vm.expectRevert(abi.encodeWithSelector(KeelMarket.TooEarly.selector, block.timestamp + DELAY));
+        m.applyConfig();
+        // The borrower uses the delay to repay.
+        uint256 debt = m.debtOf(id);
+        vm.prank(alice);
+        m.repay(id, debt);
+        vm.warp(block.timestamp + DELAY);
+        m.applyConfig();
+        (uint16 maxLtv, , ) = m.btcRisk();
+        assertEq(maxLtv, 3_000, "applied after the delay");
+    }
+
+    function test_only_the_vault_owner_can_propose_and_cancel() external {
+        vm.prank(alice);
+        vm.expectRevert(KeelMarket.OnlyAdmin.selector);
+        m.proposeConfig(_config(3_000, 4_000, 4_000, 5_500));
+        m.proposeConfig(_config(3_000, 4_000, 4_000, 5_500));
+        vm.prank(alice);
+        vm.expectRevert(KeelMarket.OnlyAdmin.selector);
+        m.cancelConfig();
+        m.cancelConfig();
+        vm.warp(block.timestamp + DELAY);
+        vm.expectRevert(KeelMarket.NothingPending.selector);
+        m.applyConfig();
+    }
+
+    function test_rates_have_a_ceiling() external {
+        KeelMarket.Config memory c = _config(5_000, 6_500, 4_000, 5_500);
+        c.rates.slope2 = 2e18;
+        vm.expectRevert(KeelMarket.RateTooHigh.selector);
+        m.proposeConfig(c);
+    }
+
+    function test_repay_with_no_debt_reverts() external {
+        uint256 id = _openBtc(1e18, 0);
+        vm.prank(alice);
+        vm.expectRevert(KeelMarket.NoDebt.selector);
+        m.repay(id, 1e18);
+        vm.prank(alice);
+        vm.expectRevert(KeelMarket.NoDebt.selector);
+        m.repay(999, 1e18); // a loan that doesn't exist
+    }
+
+    function test_position_at_a_fresh_price() external {
+        uint256 id = _openBtc(1e18, 40_000e18);
+        (, , uint256 hNow, ) = m.position(id);
+        (, , uint256 hLow, ) = m.positionAt(id, 60_000e18);
+        assertTrue(hNow > 1e18 && hLow < 1e18, "health judged at the given price");
     }
 
     receive() external payable {}

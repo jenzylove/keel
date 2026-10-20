@@ -15,7 +15,7 @@ contract KeelStrategyTest is Test {
 
     function setUp() external {
         musd = new MockERC20("Mezo USD", "MUSD");
-        s = new KeelStrategy(IERC20(address(musd)), address(this), address(this), 2_000, 1_000);
+        s = new KeelStrategy(IERC20(address(musd)), address(this), 2_000, 1_000);
         s.setMarket(market);
         musd.mint(address(this), 1_000_000e18);
         musd.approve(address(s), type(uint256).max);
@@ -106,6 +106,27 @@ contract KeelStrategyTest is Test {
         s.claimYield();
         vm.expectRevert(KeelStrategy.OnlyMarket.selector);
         s.draw(borrower, 1);
+    }
+
+    /// @dev The test contract is the vault; Keel's admin is the vault's owner.
+    address public owner = address(this);
+
+    function test_admin_is_the_vault_owner_read_live() external {
+        assertEq(s.admin(), address(this), "admin = vault owner");
+        owner = address(0xD00D);
+        assertEq(s.admin(), address(0xD00D), "follows a change of vault owner");
+        vm.expectRevert(KeelStrategy.OnlyAdmin.selector);
+        s.setParams(1_000, 1_000);
+        vm.prank(address(0xD00D));
+        s.setParams(1_000, 1_000);
+        assertEq(s.maxLentBps(), 1_000, "new owner governs");
+    }
+
+    function test_market_can_only_be_replaced_with_nothing_lent() external {
+        vm.prank(market);
+        s.draw(borrower, 1e18);
+        vm.expectRevert(KeelStrategy.MarketAlreadySet.selector);
+        s.setMarket(address(0xBAD));
     }
 
     function test_params_have_a_ceiling() external {

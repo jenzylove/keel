@@ -36,10 +36,11 @@ contract SmusdMigrationForkTest is Test {
 
     function _migrate() internal returns (uint256 idle) {
         idle = MUSD.balanceOf(IDLE);
-        keel = new KeelStrategy(MUSD, address(SMUSD), address(this), 2_000, 1_000);
+        keel = new KeelStrategy(MUSD, address(SMUSD), 2_000, 1_000);
+        vm.startPrank(SMUSD.owner()); // Mezo's multisig governs Keel too
         keel.setMarket(market);
-        vm.prank(SMUSD.owner());
         SMUSD.setStrategy(address(keel));
+        vm.stopPrank();
     }
 
     function test_one_governance_call_moves_the_idle_savings() external {
@@ -50,6 +51,7 @@ contract SmusdMigrationForkTest is Test {
         assertEq(keel.principal(), idle, "principal recorded");
         assertEq(MUSD.balanceOf(address(keel)), idle, "MUSD arrived");
         assertEq(MUSD.balanceOf(IDLE), 0, "IdleStrategy emptied");
+        assertEq(keel.admin(), SMUSD.owner(), "Keel is governed by the vault owner");
         emit log_named_uint("lendable at 20% cap", keel.lendable() / 1e18);
     }
 
