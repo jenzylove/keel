@@ -6,12 +6,12 @@ Each phase ends with a check that proves it's done. A phase is only done once it
 | # | Phase | When (UTC) | Done when |
 |---|---|---|---|
 | 0 | Spikes | Tue 20 | ✅ sMUSD migration passes on a mainnet fork. ✅ BTC-on-fork limit found. ✅ Pyth staleness found. ✅ veBTC custody, permanent lock, vote and hand-back proven live on testnet |
-| 1 | Core math | Wed 21 | Pure libraries for interest accrual, health, liquidation amounts and the rate curve with its bounded peg step. Unit and fuzz tests pass |
-| 2 | KeelStrategy | Wed 21 | Implements `IVaultStrategy`. Tests: allocate, deallocate up to the liquid buffer at max lending, claimYield minus the reserve, migrate in and out. The mainnet fork test passes with the real vault and the real 7.38M |
-| 3 | KeelMarket (BTC) | Thu 22 | Borrow, repay, add/remove collateral, liquidate with BTC collateral. Unit tests pass. Deployed to testnet, with one real borrow and repay on the explorer |
-| 4 | veBTC collateral | Thu 22 – Fri 23 | Deposit a timed or permanent NFT, vote passthrough, reward claims to the borrower, lock extension, liquidation (including the permanent-unlock path), reset before return. Testnet transactions for each step |
+| 1 | Core math ✅ | Tue 20 | Pure libraries for interest accrual, health, liquidation amounts and the rate curve with its bounded peg step. Unit and fuzz tests pass |
+| 2 | KeelStrategy ✅ | Tue 20 | Implements `IVaultStrategy`. Tests: allocate, deallocate up to the liquid buffer at max lending, claimYield minus the reserve, migrate in and out. The mainnet fork test passes with the real vault and the real 7.38M |
+| 3 | KeelMarket (BTC) ✅ | Tue 20 | Borrow, repay, add/remove collateral, liquidate with BTC collateral. Unit tests pass. Deployed to testnet, with one real borrow and repay on the explorer |
+| 4 | veBTC collateral ✅ (reward forwarding unit-tested; live claim needs testnet gauge rewards) | Tue 20 | Deposit a timed or permanent NFT, vote passthrough, reward claims to the borrower, lock extension, liquidation (including the permanent-unlock path), reset before return. Testnet transactions for each step |
 | 5 | Rates, throttle, keeper | Fri 23 | The Pyth update plus weekly rate step runs on testnet. The throttle pauses new borrows when the pool floor is crossed, shown on testnet. A scheduled keeper is confirmed to run, with a fallback |
-| 6 | Testnet vault | Fri 23 | Our copy of the verified `MUSDSavingsRate` is deployed and `setStrategy(KeelStrategy)` is called. A saver deposits, interest is claimed, the yield index rises, the saver withdraws with yield. All on the explorer |
+| 6 | Testnet vault ✅ | Tue 20 | Our copy of the verified `MUSDSavingsRate` is deployed and `setStrategy(KeelStrategy)` is called. A saver deposits, interest is claimed, the yield index rises, the saver withdraws with yield. All on the explorer |
 | 7 | App | Sat 24 | Front door with live mainnet reads; borrow and save flows; `/demo`, `/proof`, `/data`. Driven in a headless browser, dark and light, with screenshots shown |
 | 8 | Eval + audit | Sat 24 | Answer-key replay with the peg term on and off, misses published. `release-readiness-audit` run, findings fixed or listed under Scope and limits. Git history scanned for secrets |
 | 9 | Gate | Sat 24 | **You review the live product and the audit and approve** |
