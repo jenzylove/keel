@@ -41,10 +41,35 @@ Testnet's BTC price can't be moved, so the admin tightened the BTC loan settings
 | Liquidator repays 55 MUSD and receives **0.000696 BTC** (= 55 × 1.05 ÷ 82,991) | `0xe8033b84608d54eec88de9e4afb7ff87b85761c444e48a01bd3267bbde237f88` |
 | Admin restores BTC risk to 50% / 65% / 5% | `0x2118255bbed2616617adcdf74db9f6294b3172607b18d6a958f182c0c4526ac9` |
 
+## 5. veBTC liquidation (triggered by tightening risk settings)
+
+| Step | Transaction |
+|---|---|
+| Admin sets permanent-veBTC risk to 20% / 30% / 10% bonus | `0x95393889e77fcdb0445603384e2ee0c03f287d46db79c472313939c9c22471d1` |
+| Liquidator buys #393 for its value less 10% (74.71 MUSD): 30 MUSD clears the debt and **44.72 MUSD surplus goes to the borrower**. The NFT moves to the liquidator even though it voted this epoch | `0xa1770693b1bdb7456997aa48b0ef6a4e61dbcedf53f937c8ac27e195fac82582` |
+| Admin restores 40% / 55% / 10% | `0x081f3eee41af421fef95c6330f27e4fb6a9bd1c8eed765cfa78b236e7ebe0e3f` |
+
+## 6. Throttle
+
+Watches the mUSDC side of the testnet mUSDC/MUSD pool (`0x525F…Dc3e`).
+
+| Step | Transaction |
+|---|---|
+| Floor set just above the pool's mUSDC balance, so `borrowingOpen()` is false | `0x8697ad19f777e2184e03a3085ac0626027e3fe7d897de132aedb4cdd812a3d96` |
+| Borrow refused with `BorrowingPaused()` (`0xd6767de2`) | not sent: rejected in simulation |
+| Repay still works while paused | `0x305fa3b9eee26a809ff2ea544b81fdfece564f6751d43f726878a3870782f44e` |
+| Throttle off, then borrowing works again | `0x7f91735ff4dfc66815b72f8161d273be99d6c5a96a061f63c25af94575674988`, `0x94c245109a9bee3f30def1c97fd07059f720c7032781189e3ee50f8347434cdb` |
+
+An earlier run pointed the throttle at the pool's MUSD side by mistake (`0x8a82…358c`), and its repay check failed for a missing approval. That run is superseded by this one.
+
+## 7. Yield reaches a saver
+
+| Step | Transaction |
+|---|---|
+| Vault claims KeelStrategy's yield (`receiveYieldFromStrategy`) | `0x2416a4f79df9c41fa9a1169a15bc3ebe0b4e19cb22743de03928d8b9dead906e` |
+| Saver withdraws 100 sMUSD and receives 100.0000371 MUSD. The extra is borrower interest from the minutes the loans were open | `0x244b706632850dc86fd2fc9f684c7b5e58f9449bafbd52882d5d4d099b9f93d8` |
+
 ## Still to run live
 
-- veBTC loan liquidation (discount sale, surplus to borrower)
 - Reward claim forwarded to the borrower (needs gauge fees or bribes on testnet)
-- Throttle pausing new borrowing
 - Peg step with a fresh Pyth price (needs a Hermes API key)
-- Saver withdrawal with earned yield after interest accrues
