@@ -12,7 +12,7 @@ Each phase ends with a check that proves it's done. A phase is only done once it
 | 4 | veBTC collateral ✅ (reward forwarding unit-tested; live claim needs testnet gauge rewards) | Tue 20 | Deposit a timed or permanent NFT, vote passthrough, reward claims to the borrower, lock extension, liquidation (including the permanent-unlock path), reset before return. Testnet transactions for each step |
 | 5 | Rates, throttle, keeper ✅ (keeper runs; Vercel cron once deployed) | Tue 20 | ✅ Weekly rate step runs live on testnet from a pool time-weighted price. The throttle pauses new borrows when the pool floor is crossed, shown on testnet. A scheduled keeper is confirmed to run, with a fallback |
 | 6 | Testnet vault ✅ | Tue 20 | Our copy of the verified `MUSDSavingsRate` is deployed and `setStrategy(KeelStrategy)` is called. A saver deposits, interest is claimed, the yield index rises, the saver withdraws with yield. All on the explorer |
-| 7 | App (built; deploy pending) | Tue 20 | Front door with live mainnet reads; borrow and save flows; `/demo`, `/proof`, `/data`. Driven in a headless browser, dark and light, with screenshots shown |
+| 7 | App ✅ live at https://keel-psi-seven.vercel.app | Tue 20 | Front door with live mainnet reads; borrow and save flows; `/demo`, `/proof`, `/data`. Driven in a headless browser, dark and light, with screenshots shown |
 | 8 | Eval + audit | Sat 24 | Answer-key replay with the peg term on and off, misses published. `release-readiness-audit` run, findings fixed or listed under Scope and limits. Git history scanned for secrets |
 | 9 | Gate | Sat 24 | **You review the live product and the audit and approve** |
 | 10 | Launch | Sun 25 | README, deck, 2-minute video, launch reel, AKINDO form text, repo public. Submitted before Sun 26 15:00 UTC with a buffer |
@@ -29,5 +29,5 @@ Each phase ends with a check that proves it's done. A phase is only done once it
 | sMUSD needs MUSDSavingsRate source at 0.8.33 | Known | Install solc-js 0.8.33 for the testnet copy |
 | Vote windows (once per epoch, none right after Thursday 00:00 UTC) | Known | Keeper schedules votes inside the window. Tests cover the edges |
 | A borrower's NFT is mid-vote when liquidated | Known | Reset first. If reset isn't allowed this epoch, the liquidator gets the NFT with votes on and resets it next epoch. Documented |
-| Repo creation from this environment | Blocked | You create the empty private `jenzylove/keel`, then it's attached and pushed |
-| Hosting for the live link | Needs decision | Static app plus a small keeper. Host to be picked at phase 7 |
+| Repo creation from this environment | Done | Private `jenzylove/keel` created by you, attached and pushed |
+| Hosting for the live link | Done | Vercel (`app/` root), daily keeper cron in `app/vercel.json` |
