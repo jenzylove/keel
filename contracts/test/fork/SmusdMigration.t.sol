@@ -1,56 +1,104 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-interface IERC20 { function balanceOf(address) external view returns (uint256); function transfer(address,uint256) external returns (bool); function transferFrom(address,address,uint256) external returns (bool); function approve(address,uint256) external returns (bool); }
-interface ISMUSD { function owner() external view returns (address); function strategy() external view returns (address); function setStrategy(address) external; function deposit(uint256) external; function withdraw(uint256) external; function receiveYieldFromStrategy() external; function claimableYield(address) external view returns (uint256); function totalSupply() external view returns (uint256); function balanceOf(address) external view returns (uint256); }
-interface Vm { function prank(address) external; function startPrank(address) external; function stopPrank() external; function createSelectFork(string calldata) external returns (uint256); function deal(address,uint256) external; }
+import {Test} from "../utils/Test.sol";
+import {KeelStrategy} from "../../src/KeelStrategy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// Minimal strategy matching IVaultStrategy: holds principal, can return yield.
-contract SpikeStrategy {
-    IERC20 public immutable token; address public immutable vault; uint256 public principal; uint256 public yieldBuffer;
-    constructor(address t, address v) { token = IERC20(t); vault = v; }
-    modifier onlyVault() { require(msg.sender == vault, "vault"); _; }
-    function allocate(uint256 a) external onlyVault { token.transferFrom(vault, address(this), a); principal += a; }
-    function deallocate(uint256 a) external onlyVault { principal -= a; token.transfer(vault, a); }
-    function claimYield() external returns (uint256 a) { a = yieldBuffer; if (a > 0) { yieldBuffer = 0; token.transfer(vault, a); } }
-    function migrate(address n) external onlyVault returns (uint256 a) { a = principal; principal = 0; token.transfer(n, a); }
-    function onMigrated(uint256 a) external onlyVault { principal += a; }
-    function addYield(uint256 a) external { token.transferFrom(msg.sender, address(this), a); yieldBuffer += a; }
+interface ISMUSD {
+    function owner() external view returns (address);
+    function strategy() external view returns (address);
+    function setStrategy(address) external;
+    function deposit(uint256) external;
+    function withdraw(uint256) external;
+    function receiveYieldFromStrategy() external;
+    function balanceOf(address) external view returns (uint256);
 }
 
-contract MigrateSpike {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    ISMUSD constant S = ISMUSD(0xb4D498029af77680cD1eF828b967f010d06C51CC);
+/// @notice Runs on a fork of Mezo mainnet (`mezo` rpc alias in foundry.toml).
+///         Only MUSD moves, so the fork works. BTC calls revert on forks
+///         because BTC is a native precompile on Mezo.
+contract SmusdMigrationForkTest is Test {
+    ISMUSD constant SMUSD = ISMUSD(0xb4D498029af77680cD1eF828b967f010d06C51CC);
     IERC20 constant MUSD = IERC20(0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186);
     address constant IDLE = 0x0C0944713c185ea3e64F5609ECee3fB3C054a295;
-    address constant SP = 0x73245Eff485aB3AAc1158B3c4d8f4b23797B0e32; // a large MUSD holder to fund the test user
+    // The protocol's Stability Pool holds 14M MUSD; used only to fund test accounts.
+    address constant FUNDER = 0x73245Eff485aB3AAc1158B3c4d8f4b23797B0e32;
 
-    event log_named_uint(string, uint256); event log_named_address(string, address);
+    KeelStrategy keel;
+    address market = address(0x4D4B);
+    address saver = address(0x5A7E);
+    address borrower = address(0xB0B);
 
-    function test_migrate_idle_to_strategy() external {
+    function setUp() external {
         vm.createSelectFork("mezo");
-        address owner = S.owner(); emit log_named_address("sMUSD owner", owner);
-        require(S.strategy() == IDLE, "strategy is not IdleStrategy");
-        uint256 idleBal = MUSD.balanceOf(IDLE); emit log_named_uint("idle MUSD", idleBal / 1e18);
+    }
 
-        SpikeStrategy k = new SpikeStrategy(address(MUSD), address(S));
-        vm.prank(owner); S.setStrategy(address(k));
-        require(S.strategy() == address(k), "not switched");
-        require(MUSD.balanceOf(address(k)) == idleBal && k.principal() == idleBal, "principal not migrated");
-        emit log_named_uint("migrated into strategy", k.principal() / 1e18);
+    function _migrate() internal returns (uint256 idle) {
+        idle = MUSD.balanceOf(IDLE);
+        keel = new KeelStrategy(MUSD, address(SMUSD), address(this), 2_000, 1_000);
+        keel.setMarket(market);
+        vm.prank(SMUSD.owner());
+        SMUSD.setStrategy(address(keel));
+    }
 
-        // A saver deposits, the strategy earns yield, the saver claims it and withdraws.
-        address saver = address(0xBEEF);
-        vm.prank(SP); MUSD.transfer(saver, 1_000e18);
-        vm.startPrank(saver); MUSD.approve(address(S), 1_000e18); S.deposit(1_000e18); vm.stopPrank();
-        vm.prank(SP); MUSD.transfer(address(this), 10_000e18);
-        MUSD.approve(address(k), 10_000e18); k.addYield(10_000e18);
-        S.receiveYieldFromStrategy();
+    function test_one_governance_call_moves_the_idle_savings() external {
+        uint256 idle = _migrate();
+        emit log_named_address("sMUSD owner (Mezo multisig)", SMUSD.owner());
+        emit log_named_uint("MUSD moved out of IdleStrategy", idle / 1e18);
+        assertEq(SMUSD.strategy(), address(keel), "strategy switched");
+        assertEq(keel.principal(), idle, "principal recorded");
+        assertEq(MUSD.balanceOf(address(keel)), idle, "MUSD arrived");
+        assertEq(MUSD.balanceOf(IDLE), 0, "IdleStrategy emptied");
+        emit log_named_uint("lendable at 20% cap", keel.lendable() / 1e18);
+    }
+
+    function test_borrower_interest_reaches_savers() external {
+        _migrate();
+
+        vm.prank(FUNDER);
+        MUSD.transfer(saver, 10_000e18);
+        vm.startPrank(saver);
+        MUSD.approve(address(SMUSD), 10_000e18);
+        SMUSD.deposit(10_000e18);
+        vm.stopPrank();
+
+        // A borrower takes 1M from the strategy and repays it with 50k interest.
+        vm.prank(market);
+        keel.draw(borrower, 1_000_000e18);
+        vm.prank(FUNDER);
+        MUSD.transfer(market, 1_050_000e18);
+        vm.startPrank(market);
+        MUSD.transfer(address(keel), 1_050_000e18);
+        keel.repaid(1_000_000e18, 50_000e18);
+        vm.stopPrank();
+
+        SMUSD.receiveYieldFromStrategy();
+        assertEq(keel.yieldOwed(), 0, "yield handed to the vault");
+        assertEq(keel.reserve(), 5_000e18, "10% kept as reserve");
+
         uint256 before = MUSD.balanceOf(saver);
-        vm.prank(saver); S.withdraw(1_000e18);
+        vm.prank(saver);
+        SMUSD.withdraw(10_000e18);
         uint256 got = MUSD.balanceOf(saver) - before;
-        emit log_named_uint("saver received principal+yield (wei)", got);
-        require(got > 1_000e18, "no yield reached saver");
-        emit log_named_uint("saver yield share (wei)", got - 1_000e18);
+        emit log_named_uint("saver got back (wei)", got);
+        assertTrue(got > 10_000e18, "saver earned borrower interest");
+    }
+
+    function test_withdrawals_stay_open_at_max_lending() external {
+        uint256 idle = _migrate();
+        uint256 cap = keel.lendable();
+        vm.prank(market);
+        keel.draw(borrower, cap);
+
+        vm.prank(FUNDER);
+        MUSD.transfer(saver, 1_000_000e18);
+        vm.startPrank(saver);
+        MUSD.approve(address(SMUSD), 1_000_000e18);
+        SMUSD.deposit(1_000_000e18);
+        SMUSD.withdraw(1_000_000e18);
+        vm.stopPrank();
+        emit log_named_uint("liquid left for other savers", keel.liquid() / 1e18);
+        assertEq(keel.liquid(), idle - cap, "the rest stays liquid");
     }
 }
