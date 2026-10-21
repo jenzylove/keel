@@ -17,6 +17,20 @@ export const forkTests: { name: string; output: string }[] = [
 
 export const testnetGroups: ProofGroup[] = [
   {
+    title: 'Hardened contracts, current',
+    how: "Keel is governed by the savings vault's owner, read live, and config changes wait a fixed delay (600 s on testnet, 48 h proposed for mainnet). The vault moved its savings to these contracts with setStrategy. The groups below ran on earlier deployments.",
+    rows: [
+      { what: 'Vault migrates 1,400 MUSD to the hardened strategy', hash: '0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce' },
+      { what: 'Live-site demo: open 10 MUSD on 0.0004 BTC', hash: '0x753bd80d83f74255607f766252428b5b34835715466009043cd5479612a9caa0' },
+      { what: 'Live-site demo: repay (interest first, to savers)', hash: '0xe901ba2c15577bca8c3a0372cf29428d5b86f6611f47668000b8026511aadb98' },
+      { what: 'Live-site demo: close, BTC returned', hash: '0x8d556dcd4509ba6e38e73738f59b9f26dd95ea17acbc27762dc93421c3989f84' },
+      { what: 'Keeper claims savers’ yield into the vault', hash: '0xd588080de0920cc5cc85fdbdd6a4cc2e3b5a2d972eb18999927898c961e462db' },
+      { what: 'Keeper steps the peg premium, 0 → 1%', hash: '0x5849848539fae0227f7f67da130b4e415a3b86096eea5655363a5c42e7c5ac13' },
+      { what: 'A non-owner proposes a config: reverts', hash: '0xfe851d8a250551c2078f8f195bc011894b482f776c404d4866c4d262cf7343f0' },
+      { what: 'The vault owner proposes a config; applying it early is refused', hash: '0xb873efbe5158298a32f1b884b4da8f8e9782ff99fe4bccf1c49ec6d7a806c072' },
+    ],
+  },
+  {
     title: 'Savings vault → Keel',
     how: "Our own copy of Mezo's verified MUSDSavingsRate contract, which we own, so setStrategy can run on testnet.",
     rows: [

@@ -80,6 +80,25 @@ The market was replaced to drop Pyth. Every open loan was repaid and closed firs
 | A second step straight after is refused (`PegStepTooSoon`) | not sent: rejected in simulation |
 | Demo loans reopened: veBTC #394 (20 MUSD), 0.003 BTC (100 MUSD) | `0xb2d2de9d53659ae2b0e72c7569658f2eb66ad88fcb4d18b8e9b0890ac38877b6`, `0xc8b8513243742ec025a7882bb39a90e233fa4d75ffc8c7ecad34df0504708185` |
 
+## 9. Hardened contracts (current: strategy `0xC1DF…0abda`, market `0xae2c…B9Ee`)
+
+Governance is now the vault's owner, read live. Config changes wait 600 s on testnet (the mainnet proposal is 48 h). The old market's loans were repaid and closed (`0xe6f7…c919`, `0x8bce…0b92`, `0x35f7…7dad`, `0x4fff…f574`), and its reserve was released to savers (`0x498b…3606`). Then:
+
+| Step | Transaction |
+|---|---|
+| Hardened KeelStrategy deployed | `0x1075e03d937af4129102605d1f720a98371cd35911c6f31ac35ddbe4351ee2c3` |
+| Hardened KeelMarket deployed (with config delay) | `0xa7940efb96113ff341f5a24cbf32a4e994d88b9f8ca09e65bf6201db0904872a` |
+| **Vault migrates 1,400 MUSD to the hardened strategy** (`setStrategy`) | `0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce` |
+| Demo run (local server): approve, open 10 MUSD on 0.0004 BTC, repay, close | `0x38d3…b9e2`, `0x1b5a850c715ff9a66639c8fbf6b923739c60ee3959fc2ca20b3f824e08a240ce`, `0x4f105702f7d74abbf5f573a7fa07050d3d5aaa15334f7f70ac0b6c76982d3208`, `0x04aea742653b6fba8b43ad990e6a44f9958d3e6d6a5ee8014ce8f9be3b8d3aee` |
+| Demo run on the **live Vercel site**: open, repay, close | `0x753bd80d83f74255607f766252428b5b34835715466009043cd5479612a9caa0`, `0xe901ba2c15577bca8c3a0372cf29428d5b86f6611f47668000b8026511aadb98`, `0x8d556dcd4509ba6e38e73738f59b9f26dd95ea17acbc27762dc93421c3989f84` |
+| Keeper claims savers' yield into the vault | `0xd588080de0920cc5cc85fdbdd6a4cc2e3b5a2d972eb18999927898c961e462db` |
+| Keeper steps the peg premium (0 → 1%) | `0x5849848539fae0227f7f67da130b4e415a3b86096eea5655363a5c42e7c5ac13` |
+| A non-owner tries to propose a config: reverts (`OnlyAdmin`) | `0xfe851d8a250551c2078f8f195bc011894b482f776c404d4866c4d262cf7343f0` |
+| The vault owner proposes a config | `0xb873efbe5158298a32f1b884b4da8f8e9782ff99fe4bccf1c49ec6d7a806c072` |
+| Applying it before the delay is refused (`TooEarly`, `0x2a35a324`) | not sent: rejected in simulation |
+
+**Why the app changed too.** The first live demo on the hardened contracts failed. Mezo's public testnet RPC balances across nodes that disagree: on 2026-10-21, 5 of 12 receipt requests for a mined transaction came back `null`, and a gas estimate hit a node that hadn't seen the new loan. The app now reads through dRPC first, with Mezo's RPC as fallback. Server wallets sign locally, wait until the previous transaction is visible, and re-broadcast the same signed transaction to both endpoints until it's mined.
+
 ## Still to run live
 
 - Reward claim forwarded to the borrower (needs gauge fees or bribes on testnet)

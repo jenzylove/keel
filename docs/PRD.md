@@ -95,6 +95,13 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
    - The MUSD price is a time-weighted average from a Mezo pool. On mainnet that's the mUSDC/MUSD concentrated-liquidity pool holding Mezo's peg wall (24-hour average). On testnet it's the MUSD/mUSDC basic pool's `quote()` (about 24 hours of observations). Both are free and on chain. If the oracle can't produce a price, the peg term holds its last value.
 6. **Throttle.** New borrowing pauses while a watched pool's dollar-side balance is below a set floor. On mainnet that's the mUSDC/MUSD wall. Repaying, adding collateral and liquidating always stay open.
 7. **Reserve.** A set share of interest (proposed 10%) builds a bad-debt reserve, which lives in the strategy.
+8. **Governance and timelock.**
+   - Keel has no admin of its own. Both contracts are governed by whoever owns the savings vault, read live. On mainnet that's Mezo's multisig, which can already move the whole vault with `setStrategy`. So Keel adds no new party to trust.
+   - Risk, rates, peg settings, the oracle and the minimum loan change only through `proposeConfig` then `applyConfig`, after an immutable delay. That's 48 hours proposed for mainnet, and 600 seconds on testnet so it can be shown. A borrower sees a tighter setting coming and can repay or add collateral first.
+   - The borrowing throttle stays instant, because it can only pause new loans.
+   - The strategy's market can only be replaced while nothing is lent.
+   - The rate curve is capped at 100% a year before the peg premium.
+   - A veBTC liquidation takes a maximum price, so a liquidator is never charged more than they agreed to.
 
 ### Off-chain
 8. **Keeper:**
@@ -155,5 +162,6 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 
 - **Borrower demand on Mezo is small:** about 60 free BTC, plus about 7 veBTC locks of 1–15 BTC.
 - **Savers take the bad-debt risk** beyond the reserve.
+- **Governance can still tighten settings**, but only after the delay, in public, and only the vault's owner can propose.
 - **The peg price comes from a thin pool** (about $58k on the dollar side on mainnet). A day-long average plus small weekly steps limit what moving it could gain, but it could be pushed.
 - **The size of the payoff depends on Mezo choosing to migrate.**
