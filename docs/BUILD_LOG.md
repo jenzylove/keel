@@ -35,3 +35,10 @@
   - The demo has an Origin check, a run lock, a time budget, and recovers stranded loans. Recovery was proven on testnet: loan #8 was stranded on purpose and tidied by the next run.
   - The keeper reports each step separately.
   - Wallet and amount fixes; copy corrected.
+
+## 2026-10-21: Review fixes and a fresh testnet deployment
+- Savers were described as earning nothing; the vault's yield index shows about 3% a year, 65% of it from BTC fees redemptions pay. Copy corrected, and the front door reads the 30-day rate live.
+- A BTC liquidation now stops payment at what the collateral covers (it took 40,000 MUSD for 30,000 of BTC on an underwater loan). The keeper liquidates from its own float instead of only reporting.
+- Optional principal cap on KeelStrategy for a small mainnet deployment.
+- `script/deploy.mjs` replaces the bash deploy (no jq), with gas floors after Mezo testnet's RPC returned a 27,861 gas estimate for setMarket. Mainnet dry run on an anvil fork passes, about 10.2M gas.
+- Fresh testnet stack owned by a new deployer, because the old owner key stayed in the original build session. 1,500 MUSD of savings, keeper float 200 MUSD, live demo ran end to end on it.
