@@ -121,7 +121,7 @@ export default async function Page() {
         <div className="readings">
           <div className="reading">
             <div className="v">{compact(snap.idleSavings)}</div>
-            <div className="l">MUSD in the savings vault&apos;s strategy, earning nothing</div>
+            <div className="l">MUSD of savers&apos; money in the vault&apos;s idle strategy, lent to no one</div>
             <div className="s">
               strategy <a href={addressUrl(snap.savingsStrategy ?? MAINNET.smusd, 'mainnet')}>{snap.savingsStrategy?.slice(0, 10)}…</a>
             </div>

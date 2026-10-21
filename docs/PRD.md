@@ -17,18 +17,19 @@ Every number below was read from Mezo mainnet on 2026-10-20 (block ~12.646M) or 
 | Owed by the protocol bootstrap loan | 14.95M | PCV `debtToPay` |
 | Owed by ordinary MUSD loans | 14.5k across 1 loan (49 loans 120 days ago) | TroveManager `getTroveOwnersCount`, historical reads |
 | MUSD price | about $0.990, below the $0.9925 redemption break-even since early July | CoinGecko, Aerodrome |
-| Savings vault | 7.38M MUSD in `IdleStrategy`, earning nothing | sMUSD `strategy()`, IdleStrategy balance |
+| Savings vault | 7.38M MUSD of principal in `IdleStrategy`, lent to no one | sMUSD `strategy()`, IdleStrategy balance |
+| What savers earn | about 3% a year over the last 30 days, lumpy (0 to 14k MUSD a week); 65% of it (8,653 of 13,410 MUSD) arrived through PCV `distributeBTC()`, i.e. BTC fees that redemptions pay | sMUSD `yieldIndex` and `ProtocolYieldReceived` events, 2026-10-21 |
 | Mezo's redemption sink (SafetyBuffer) | drained, 0.024 BTC left | SafetyBuffer balance |
 | Mezo's mUSDC/MUSD liquidity wall | 5.3M MUSD against 58k mUSDC | CL pool balances |
 | veBTC | 806 BTC; Mezo's FAQ says retail can't borrow against it | veBTC `supply`, docs FAQ |
 
-**The loop.** MUSD trades below $0.9925, so any MUSD loan gets redeemed. With no borrowers, nobody pays interest, so the savings vault sits idle. With nothing earned, there's no reason to hold MUSD, so people sell, and the price stays below $0.9925.
+**The loop.** MUSD trades below $0.9925, so any MUSD loan gets redeemed. The vault's principal is lent to no one, so savers are paid from protocol fees, and most of that is the BTC fee each redemption pays. Savers' income is the loan book being emptied: with one loan left, it is running out. With little earned, there's less reason to hold MUSD, so people sell, and the price stays below $0.9925.
 
 **Who feels it.**
-- **Savers:** 447 sMUSD holders get 0% on 7.38M.
+- **Savers:** 447 sMUSD holders earn about 3% a year on 7.38M, paid mostly by redemptions of the last borrowers. That source is nearly gone.
 - **BTC holders on Mezo:** about 60 BTC sits outside veBTC and the Enclaves. Any MUSD loan they open is redeemed at today's price.
 - **veBTC holders:** their BTC is frozen for up to 28 days, or with no end date for permanent locks. They're told they can't use it as collateral.
-- **Mezo:** its peg defenses (SafetyBuffer, liquidity wall) are spending money, and the savings product has nothing to pay.
+- **Mezo:** its peg defenses (SafetyBuffer, liquidity wall) are spending money, and the savings product is paid mostly by redemptions that are emptying its own loan book.
 
 ## 2. Users and the front door
 
@@ -38,7 +39,7 @@ Every number below was read from Mezo mainnet on 2026-10-20 (block ~12.646M) or 
 - **Mezo governance:** the one party that can plug Keel into the real vault.
 
 **First ten seconds.** The page opens on three live readings from Mezo mainnet:
-- "Savings vault: 7.38M MUSD, earning 0%"
+- "7.38M MUSD of savers' money in the idle strategy, lent to no one", with what savers earned over the last 30 days read live from the vault's yield index
 - "Open MUSD loans: 1"
 - "Dollar side of the liquidity wall: $58k"
 
@@ -142,7 +143,8 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 
 | Claim | Proof |
 |---|---|
-| "7.38M MUSD sits idle in the savings vault" | Live read on the front door, linked to the explorer |
+| "7.38M MUSD of savers' principal is lent to no one" | Live read on the front door, linked to the explorer |
+| "Savers earn about 3% a year, mostly from redemption fees" | Live 30-day read of the vault's `yieldIndex`; the 65% `distributeBTC()` share is from `ProtocolYieldReceived` events (2026-10-21) |
 | "One governance call plugs Keel in" | Fork test output on `/proof`, rerunnable from the repo |
 | "Keel loans can't be redeemed" | Loans live in KeelMarket, not TroveManager. A test shows a mainnet redemption can't touch them |
 | "Savers earn borrower interest" | Testnet: yield index rises after `receiveYieldFromStrategy`, with transaction links |

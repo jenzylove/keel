@@ -46,6 +46,7 @@ const FLOORS: Record<string, bigint> = {
   withdraw: 300_000n,
   receiveYieldFromStrategy: 250_000n,
   stepPeg: 250_000n,
+  liquidate: 600_000n,
 };
 
 export async function waitUntil(check: () => Promise<boolean>, tries = 12, everyMs = 1500): Promise<void> {

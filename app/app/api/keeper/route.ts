@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { createWalletClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { deployed, mezoTestnet, testnet } from '@/lib/chains';
-import { mainnetAbi, marketAbi, strategyAbi, vaultAbi } from '@/lib/abi';
+import { erc20Abi, mainnetAbi, marketAbi, strategyAbi, vaultAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
 
 export const runtime = 'nodejs';
@@ -14,9 +14,12 @@ const STRATEGY = deployed.contracts.keelStrategy as Address;
 const VAULT = deployed.contracts.vault as Address;
 const PEG_INTERVAL = 7n * 24n * 3600n;
 
+const MUSD = deployed.mezo.musd as Address;
+
 /** Daily keeper run (Vercel cron). Claims savers' yield into the vault, steps
- *  the peg premium once its interval has passed, and reports loans that can be
- *  liquidated. It never liquidates itself: that's left to anyone with MUSD. */
+ *  the peg premium once its interval has passed, and liquidates unhealthy
+ *  loans from its own MUSD float, so savers don't depend on an outside
+ *  liquidator turning up. Loans it can't afford are reported. */
 function authorised(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
@@ -65,6 +68,7 @@ export async function GET(req: Request) {
 
   // Judge health at a fresh BTC price, not the one last stored by a
   // transaction. Reads are batched into one multicall.
+  let unhealthy: { id: bigint; debt: bigint; value: bigint }[] = [];
   await attempt(report, 'health', async () => {
     const [feed, next, eta] = await Promise.all([
       testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'priceFeed' }),
@@ -76,11 +80,44 @@ export async function GET(req: Request) {
     const positions = await Promise.all(
       ids.map((id) => testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'positionAt', args: [id, price] })),
     );
+    unhealthy = ids
+      .map((id, i) => ({ id, value: positions[i][0], debt: positions[i][1], health: positions[i][2] }))
+      .filter((p) => p.debt > 0n && p.health < 10n ** 18n);
     return {
       btcPrice: price.toString(),
       pendingConfigEta: eta.toString(),
-      liquidatable: ids.filter((_, i) => positions[i][1] > 0n && positions[i][2] < 10n ** 18n).map(Number),
+      liquidatable: unhealthy.map((p) => Number(p.id)),
     };
+  });
+
+  // Liquidate from the keeper's float. A BTC loan takes at most its debt, and
+  // the market stops the payment at what the collateral covers. A veBTC loan
+  // costs the NFT's value less the bonus, so it needs that much MUSD on hand.
+  await attempt(report, 'liquidations', async () => {
+    const done: unknown[] = [];
+    for (const p of unhealthy) {
+      const [loan, balance] = await Promise.all([
+        testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'loans', args: [p.id] }),
+        testnet.readContract({ address: MUSD, abi: erc20Abi, functionName: 'balanceOf', args: [wallet.account.address] }),
+      ]);
+      const isVe = loan[1] === 2;
+      const need = isVe ? p.value : p.debt;
+      if (balance < need) {
+        done.push({ id: Number(p.id), skipped: 'float too small', need: need.toString(), have: balance.toString() });
+        continue;
+      }
+      const allowance = await testnet.readContract({
+        address: MUSD, abi: erc20Abi, functionName: 'allowance', args: [wallet.account.address, MARKET],
+      });
+      if (allowance < need) {
+        await sendTx(testnet, wallet, { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, need] });
+      }
+      const { hash, receipt } = await sendTx(testnet, wallet, {
+        address: MARKET, abi: marketAbi, functionName: 'liquidate', args: [p.id, need],
+      });
+      done.push({ id: Number(p.id), kind: isVe ? 'veBTC' : 'BTC', hash, status: receipt.status });
+    }
+    return done;
   });
   return Response.json(report);
 }

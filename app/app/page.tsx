@@ -19,11 +19,13 @@ export default async function Home() {
         <section className="first hero">
           <div className="kicker">A strategy for Mezo&apos;s MUSD Savings Vault</div>
           <h1 className="glow">
-            Savers earn nothing. Borrowers get <em>redeemed away.</em>
+            Savers get paid when borrowers get <em>redeemed away.</em>
           </h1>
           <p className="lede">
-            Keel lends the savings vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption system. Savers earn
-            again. Borrowers can&apos;t be redeemed, only liquidated if their collateral falls too far.
+            Most of what Mezo&apos;s savings vault pays comes from fees on redemptions, the same redemptions that emptied the loan
+            book. One loan is left. Keel lends the vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption
+            system, so savers earn from borrowers who stay. Borrowers can&apos;t be redeemed, only liquidated if their collateral
+            falls too far.
           </p>
 
           <div className="actions">
@@ -43,9 +45,10 @@ export default async function Home() {
           <div className="readings">
             <div className="reading">
               <div className="v">{compact(snap.idleSavings)}</div>
-              <div className="l">MUSD sitting in the savings vault&apos;s idle strategy, earning nothing</div>
+              <div className="l">MUSD of savers&apos; money in the vault&apos;s idle strategy, lent to no one</div>
               <div className="s">
-                live · mainnet{snap.block ? ` block ${snap.block.toLocaleString()}` : ''}
+                savers earned {snap.saverRate30d === null ? '—' : pct(snap.saverRate30d)} a year over the last 30 days · live
+                · mainnet{snap.block ? ` block ${snap.block.toLocaleString()}` : ''}
               </div>
             </div>
             <div className="reading">
@@ -88,8 +91,10 @@ export default async function Home() {
               <div className="kicker">The loop</div>
               <h2 style={{ marginTop: 14 }}>Each problem feeds the next.</h2>
               <p style={{ marginTop: 18 }}>
-                No borrowers means no interest, so the savings vault has nothing to pay. With nothing earned, holders sell. With MUSD
-                cheap, any new loan gets redeemed. Mezo&apos;s own sink loan (the SafetyBuffer) has already been drained absorbing it:{' '}
+                The vault&apos;s principal is lent to no one, so savers are paid from protocol fees. Two thirds of the last 30
+                days came from BTC fees, which redemptions pay as they empty borrowers&apos; loans. That income eats its own source:
+                with MUSD cheap, any new loan gets redeemed, and with no loans left there is little to pay savers. Mezo&apos;s own sink
+                loan (the SafetyBuffer) has already been drained absorbing it:{' '}
                 <span className="mono">{snap.safetyBufferBtc === null ? '—' : snap.safetyBufferBtc.toFixed(3)} BTC</span> left.
               </p>
               <p>

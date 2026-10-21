@@ -78,4 +78,5 @@ export const mainnetAbi = parseAbi([
   'function supply() view returns (uint256)',
   'function strategy() view returns (address)',
   'function fetchPrice() view returns (uint256)',
+  'function yieldIndex() view returns (uint256)',
 ]);

@@ -40,7 +40,22 @@ export type MainnetSnapshot = {
   safetyBufferBtc: number | null;
   veBtcLocked: number | null;
   btcPrice: number | null;
+  /** What one sMUSD earned over the last 30 days, as a yearly rate. */
+  saverRate30d: number | null;
 };
+
+/** The vault's yield index is the total MUSD paid per sMUSD, so its change
+ *  over a window is exactly what a saver earned in it. */
+async function saverRate30d(head: bigint | null): Promise<number | null> {
+  if (head === null) return null;
+  const blockNumber = head - BigInt(Math.floor((30 * 86400) / 3.874));
+  const [now, then] = await Promise.all([
+    safe(() => mainnet.readContract({ address: MAINNET.smusd, abi: mainnetAbi, functionName: 'yieldIndex' })),
+    safe(() => mainnet.readContract({ address: MAINNET.smusd, abi: mainnetAbi, functionName: 'yieldIndex', blockNumber })),
+  ]);
+  if (now === null || then === null) return null;
+  return (n(now - then) * 365) / 30;
+}
 
 export async function mainnetSnapshot(): Promise<MainnetSnapshot> {
   const [block, strategy, troves, troveDebt, supply, enclave, bootstrap, wallStable, wallMusd, buffer, ve, price] =
@@ -58,9 +73,12 @@ export async function mainnetSnapshot(): Promise<MainnetSnapshot> {
       safe(() => mainnet.readContract({ address: MAINNET.veBTC, abi: mainnetAbi, functionName: 'supply' })),
       safe(() => mainnet.readContract({ address: MAINNET.priceFeed, abi: mainnetAbi, functionName: 'fetchPrice' })),
     ]);
-  const idle = strategy
-    ? await safe(() => mainnet.readContract({ address: MAINNET.musd, abi: erc20Abi, functionName: 'balanceOf', args: [strategy] }))
-    : null;
+  const [idle, saverRate] = await Promise.all([
+    strategy
+      ? safe(() => mainnet.readContract({ address: MAINNET.musd, abi: erc20Abi, functionName: 'balanceOf', args: [strategy] }))
+      : null,
+    saverRate30d(block),
+  ]);
   return {
     at: new Date().toISOString(),
     block: block === null ? null : Number(block),
@@ -76,6 +94,7 @@ export async function mainnetSnapshot(): Promise<MainnetSnapshot> {
     safetyBufferBtc: buffer === null ? null : n(buffer),
     veBtcLocked: ve === null ? null : n(ve),
     btcPrice: price === null ? null : n(price),
+    saverRate30d: saverRate,
   };
 }
 

@@ -3,7 +3,7 @@ export function Loop() {
   const nodes = [
     { x: 300, y: 50, t: ['MUSD under', '$0.9925'] },
     { x: 530, y: 210, t: ['Loans get', 'redeemed'] },
-    { x: 300, y: 370, t: ['No interest,', 'savings idle'] },
+    { x: 300, y: 370, t: ['Savers paid', 'by redemptions'] },
     { x: 70, y: 210, t: ['No reason', 'to hold MUSD'] },
   ];
   const arc = (a: (typeof nodes)[number], b: (typeof nodes)[number]) => {
@@ -12,7 +12,7 @@ export function Loop() {
     return `M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`;
   };
   return (
-    <svg viewBox="0 0 680 430" style={{ width: '100%', height: 'auto' }} role="img" aria-label="The loop: MUSD under the waterline, loans redeemed, savings idle, no reason to hold MUSD">
+    <svg viewBox="0 0 680 430" style={{ width: '100%', height: 'auto' }} role="img" aria-label="The loop: MUSD under the waterline, loans redeemed, savers paid only by those redemptions, no reason to hold MUSD">
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-2)" />
