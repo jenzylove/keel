@@ -101,6 +101,17 @@ Governance is now the vault's owner, read live. Config changes wait 600 s on tes
 
 **Why the app changed too.** The first live demo on the hardened contracts failed. Mezo's public testnet RPC balances across nodes that disagree: on 2026-10-21, 5 of 12 receipt requests for a mined transaction came back `null`, and a gas estimate hit a node that hadn't seen the new loan. The app now reads through dRPC first, with Mezo's RPC as fallback. Server wallets sign locally, wait until the previous transaction is visible, and re-broadcast the same signed transaction to both endpoints until it's mined.
 
+## 10. Demo recovers a run the host cut off (audit fix)
+
+A demo run that Vercel cuts off mid-loan used to block every later run. Here a demo loan was left open on purpose, and the hardened route was run against live testnet.
+
+| Step | Transaction |
+|---|---|
+| Demo wallet opens loan #8 and stops (simulating a cut-off run) | `0x9327491f7a58edac7a82bb8f9676055b48c05894d009bf4cbf4a81b02e18e26e` |
+| Within 90 s, a new run is refused as in flight (429) | not sent |
+| After 90 s, the next run repays and closes #8 | `0xa2cf9ed1c895f8fafe2703deb15422638541f60159c13e9128ded0bdfbd65fed`, `0x820e278cffb46beea5a04c125c4b717afc66a0d80660cbd90ab6c148502b73d9` |
+| A run that tidied loan #9 then ran a fresh loan #10, all in 51 s | `0x8a5b05892141b9804b0d57f7cf42a53063f257f8fafe9b9339038844f2531c2b`, `0x0c679d9c66bb2a4d3f0b7ef9b5116559984c8cb2bf48c337b2185d0b8fdc7278`, `0xf1fb6627a0a3d19c5131dcd21239a326238233d3be893080192d45fa9c929654`, `0x32965272bce55a6fdfc203450ee751a1ece15106daf45ee5c40a18997a551e91` |
+
 ## Still to run live
 
 - Reward claim forwarded to the borrower (needs gauge fees or bribes on testnet)
