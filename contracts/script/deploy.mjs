@@ -126,7 +126,11 @@ async function waitReceipt(hash) {
 }
 async function send(tx) {
   const gasPrice = await pub.getGasPrice();
-  const gas = ((await pub.estimateGas({ account, ...tx })) * 13n) / 10n;
+  // Mezo's public RPC sometimes returns a stale, far-too-low estimate, so a
+  // call gets at least 300k gas (cheap on Mezo) and a creation at least 3M.
+  const floor = tx.to ? 300_000n : 3_000_000n;
+  const est = ((await pub.estimateGas({ account, ...tx })) * 13n) / 10n;
+  const gas = est > floor ? est : floor;
   const hash = await wallet.sendTransaction({ ...tx, gas, gasPrice, type: 'legacy' });
   return { hash, receipt: await waitReceipt(hash) };
 }

@@ -2,12 +2,12 @@
   "chainId": 31611,
   "explorer": "https://explorer.test.mezo.org",
   "contracts": {
-    "vault": "0x3a5B1c73A0Da60a1b38D553dF022c17d635d3cf9",
-    "vaultImplementation": "0x40429f7c1950151970b30d67b242108ba8504d9b",
-    "idleStrategy": "0xF7604B604593E5FfD8F6Bfb2E7478373b4304BEE",
-    "keelStrategy": "0xC1DF3Cde9d39BDfA8a92AB09a5A7700832f0abda",
-    "keelMarket": "0xae2cDBfc948E165355F4BE1f6a1557725Fc8B9Ee",
-    "pegOracle": "0x5aD83Af3F1e303940E7Dd63C16822968c44Ab4D4"
+    "vault": "0xfe3dc6700968529627b777ff33343017c6adaf7f",
+    "vaultImplementation": "0x52ce3343a3240fb47ad8a41c4d81083b3611f886",
+    "idleStrategy": "0x044cb755a0C7A7A356bdaE58644175b3285b989b",
+    "keelStrategy": "0xfb29823eee00289450c66bb75b1be4f0507625ee",
+    "keelMarket": "0x54251073caa7f40c97d633b1fe3787b47a5dcb51",
+    "pegOracle": "0x8667e21924f8f9953656a4e82a401a040ca32879"
   },
   "mezo": {
     "musd": "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503",
@@ -52,17 +52,18 @@
       "maxStep": "1%",
       "interval": "7 days"
     },
-    "minLoan": "10 MUSD (testnet only; mainnet proposal is 100)"
+    "minLoan": "10 MUSD",
+    "principalCap": "none",
+    "throttle": "off"
   },
   "txs": {
-    "vaultImplementation": "0x0913c924a8968974f5576f7b6ab7c475f8dae7710ff612886cdec94e18dce631",
-    "vaultProxy": "0x832b6fe8f50f5a2106823fafd128baee2407309dd515b0b6b99894c0ff16fe2a",
-    "keelStrategy": "0x1075e03d937af4129102605d1f720a98371cd35911c6f31ac35ddbe4351ee2c3",
-    "keelMarket": "0xa7940efb96113ff341f5a24cbf32a4e994d88b9f8ca09e65bf6201db0904872a",
-    "setMarket": "0xbf6b87140a0fc344c4305c90a2bbf8a608b375fb46ac4d505dc430e80b8611ec",
-    "setStrategy": "0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce",
-    "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186",
-    "pegOracle": "0x48f16ee7d0fcb24c05445a6506d6c8cb466a5771a6dd6a1b821b376bf82fc304"
+    "vaultImplementation": "0x7b08509ac65242161db36845d970d0efd2a97c65e34bcad659c59f6eeeaa8121",
+    "vaultProxy": "0x839eaac3b68b72d870797ddd527c985b20ec1e5a5b8a743ac888535e695ef62d",
+    "pegOracle": "0x181407beb859f6244183a88ce86bd3076e4ff6343162fe5ae31e60430b228803",
+    "keelStrategy": "0x1b60790ccdc707288dee66dd18a10c3659c3b27579f8842e6aae8aaf8b52572f",
+    "keelMarket": "0x48ebd739b0d7234c3c1ad9359d7c8c0ea88fc219107eda289df8c7a1501a7ec0",
+    "setMarket": "0x6419c3a09295449e21af50ee078df8fb4103bdc48d97860514c1ddf0fbce2a44",
+    "setStrategy": "0x8f519e6950380fe3289b1b3c07a4e3c3bf6d50858c1dc04402de5610a212d282"
   },
   "history": [
     {
@@ -94,6 +95,27 @@
         "keelStrategy": "0x8f09EC8c08C0c24245F6EA99a19191868AD8187a",
         "keelMarket": "0x6CD31ea80F9cF3f59A17Aa4Ee91ff711ed7F8579",
         "pegOracle": "0x003fAC6701B5B8b8c951043660990E450b4E97e8"
+      }
+    },
+    {
+      "note": "Replaced on 2026-10-21 by the deployment above.",
+      "contracts": {
+        "vault": "0x3a5B1c73A0Da60a1b38D553dF022c17d635d3cf9",
+        "vaultImplementation": "0x40429f7c1950151970b30d67b242108ba8504d9b",
+        "idleStrategy": "0xF7604B604593E5FfD8F6Bfb2E7478373b4304BEE",
+        "keelStrategy": "0xC1DF3Cde9d39BDfA8a92AB09a5A7700832f0abda",
+        "keelMarket": "0xae2cDBfc948E165355F4BE1f6a1557725Fc8B9Ee",
+        "pegOracle": "0x5aD83Af3F1e303940E7Dd63C16822968c44Ab4D4"
+      },
+      "txs": {
+        "vaultImplementation": "0x0913c924a8968974f5576f7b6ab7c475f8dae7710ff612886cdec94e18dce631",
+        "vaultProxy": "0x832b6fe8f50f5a2106823fafd128baee2407309dd515b0b6b99894c0ff16fe2a",
+        "keelStrategy": "0x1075e03d937af4129102605d1f720a98371cd35911c6f31ac35ddbe4351ee2c3",
+        "keelMarket": "0xa7940efb96113ff341f5a24cbf32a4e994d88b9f8ca09e65bf6201db0904872a",
+        "setMarket": "0xbf6b87140a0fc344c4305c90a2bbf8a608b375fb46ac4d505dc430e80b8611ec",
+        "setStrategy": "0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce",
+        "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186",
+        "pegOracle": "0x48f16ee7d0fcb24c05445a6506d6c8cb466a5771a6dd6a1b821b376bf82fc304"
       }
     }
   ]
