@@ -32,8 +32,25 @@ export const evalRun = {
 
 export const testnetGroups: ProofGroup[] = [
   {
-    title: 'Hardened contracts, current',
-    how: "Keel is governed by the savings vault's owner, read live, and config changes wait a fixed delay (600 s on testnet, 48 h proposed for mainnet). The vault moved its savings to these contracts with setStrategy. The groups below ran on earlier deployments.",
+    title: 'Current deployment (2026-10-21)',
+    how: 'A fresh vault copy and Keel contracts with the review fixes: liquidation payments stop at what the collateral covers, and the keeper liquidates from its own float. The groups below ran on earlier deployments.',
+    rows: [
+      { what: 'Vault copy deployed behind a proxy, owned by the deployer', hash: '0x839eaac3b68b72d870797ddd527c985b20ec1e5a5b8a743ac888535e695ef62d' },
+      { what: 'KeelMarket deployed', hash: '0x48ebd739b0d7234c3c1ad9359d7c8c0ea88fc219107eda289df8c7a1501a7ec0' },
+      { what: 'The vault plugs in KeelStrategy with setStrategy', hash: '0x8f519e6950380fe3289b1b3c07a4e3c3bf6d50858c1dc04402de5610a212d282' },
+      { what: 'A saver deposits 1,500 MUSD, allocated straight into Keel', hash: '0x99b25eaec6de78f73109439a0ceaf3509623b174f41648ba121c382e71c641b7' },
+      { what: 'BTC loan #1: 0.001 BTC, borrow 20 MUSD', hash: '0xf293d362e7f35659a61d842d12b0705d091e9b60f1e4d22009877b1cd07c3ed5' },
+      { what: 'Loan #1 borrows 21 more, to 49% of its collateral', hash: '0x4ba856865dc4cc3fc54c081c80325a2da862adfa217ffd063713ba415eccb645' },
+      { what: 'The vault owner proposes a tighter BTC setting (liquidate at 45%)', hash: '0xc477a8b3bc2f880eb052a4ac934e40b7794252b5ececce25bd8d26302aad9af4' },
+      { what: 'Applied after the 600 s delay: loan #1 health 0.93, open to liquidation', hash: '0xfac142edc56b6fd38f5df43d629dcdc46a753bb4d83f3996076dddd6060cdcda' },
+      { what: 'Live-site demo: open 10 MUSD on 0.0004 BTC', hash: '0x88cdaacf1069255319d70620903d4dc79ef6ea385bc047b1fd65731322d5c79b' },
+      { what: 'Live-site demo: repay (interest first, to savers)', hash: '0x7aa889a18223655d5ac7e34867216d88dcd7ae4eee1160270a141ec4e16d8227' },
+      { what: 'Live-site demo: close, BTC returned', hash: '0xacfec9b61fa8d82112efcaddbd8ba749afc33aef85112862625fb3e8a08cadb0' },
+    ],
+  },
+  {
+    title: 'Hardened contracts, previous deployment',
+    how: "Keel is governed by the savings vault's owner, read live, and config changes wait a fixed delay (600 s on testnet, 48 h proposed for mainnet). The vault moved its savings to these contracts with setStrategy.",
     rows: [
       { what: 'Vault migrates 1,400 MUSD to the hardened strategy', hash: '0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce' },
       { what: 'Live-site demo: open 10 MUSD on 0.0004 BTC', hash: '0x753bd80d83f74255607f766252428b5b34835715466009043cd5479612a9caa0' },
