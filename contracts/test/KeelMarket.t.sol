@@ -111,6 +111,7 @@ contract KeelMarketTest is Test {
         assertEq(strat.yieldOwed() + strat.reserve(), interest, "interest booked");
         assertEq(strat.reserve(), (interest * 1_000) / 10_000, "10% reserve");
         uint256 owed = strat.yieldOwed();
+        vm.warp(block.timestamp + 7 days); // released over the drip
         assertEq(strat.claimYield(), owed, "savers paid the rest");
         vm.prank(alice);
         m.close(id);
@@ -211,6 +212,21 @@ contract KeelMarketTest is Test {
         vm.prank(alice);
         m.vote(id, pools, w);
         assertTrue(voter.voted(nft), "voted through the market");
+    }
+
+    function test_votes_reset_before_the_nft_is_returned() external {
+        (uint256 id, uint256 nft) = _openVe(1e18, false, 0);
+        address[] memory pools = new address[](1);
+        uint256[] memory w = new uint256[](1);
+        pools[0] = address(1);
+        w[0] = 1;
+        vm.roll(block.number + 1);
+        vm.prank(alice);
+        m.vote(id, pools, w);
+        vm.prank(alice);
+        m.close(id);
+        assertTrue(!voter.voted(nft), "votes cleared");
+        assertEq(ve.ownerOf(nft), alice, "returned");
     }
 
     function test_rewards_forwarded_to_borrower() external {

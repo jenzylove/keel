@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Waterline } from '@/components/Waterline';
 import { Loop } from '@/components/Loop';
 import { LoanTable } from '@/components/LoanTable';
-import { keelState, mainnetSnapshot, musdPriceHistory, musdWallTwap } from '@/lib/reads';
+import { keelState, keepLastGoodUnless, mainnetSnapshot, musdPriceHistory, musdWallTwap } from '@/lib/reads';
 import { compact, pct, usd } from '@/lib/fmt';
 import { addressUrl, deployed, MAINNET } from '@/lib/chains';
 
@@ -10,6 +10,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const [snap, history, twap, keel] = await Promise.all([mainnetSnapshot(), musdPriceHistory(180), musdWallTwap(), keelState()]);
+  keepLastGoodUnless(Object.values(snap).every((v) => v !== null) && keel !== null, 'Chain reads');
 
   return (
     <>
@@ -19,7 +20,7 @@ export default async function Home() {
           <h1 style={{ marginTop: 18, maxWidth: '15ch' }}>Savers earn nothing. Borrowers get redeemed away.</h1>
           <p className="lede" style={{ marginTop: 24 }}>
             Keel lends the savings vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption system. Savers earn
-            again. Borrowers can&apos;t be redeemed.
+            again. Borrowers can&apos;t be redeemed, only liquidated if their collateral falls too far.
           </p>
 
           <div className="readings">
@@ -32,7 +33,7 @@ export default async function Home() {
             </div>
             <div className="reading">
               <div className="v">{snap.troves ?? '—'}</div>
-              <div className="l">open MUSD loans left on Mezo (there were 49 four months ago)</div>
+              <div className="l">open MUSD loans left on Mezo (there were 49 in June, from archive reads)</div>
               <div className="s">live · TroveManager</div>
             </div>
             <div className="reading">
@@ -106,7 +107,7 @@ export default async function Home() {
                     <strong>Mezo&apos;s multisig calls <span className="mono">setStrategy(Keel)</span></strong>
                   </td>
                   <td>
-                    The savings vault already supports swappable strategies. Its 7.4M MUSD moves out of{' '}
+                    The savings vault already supports swappable strategies. Its idle MUSD (7.38M on 2026-10-20) moves out of{' '}
                     <span className="mono">IdleStrategy</span> into KeelStrategy. Proven on a mainnet fork with the real balance.
                   </td>
                 </tr>
@@ -115,7 +116,7 @@ export default async function Home() {
                   <td>
                     <strong>At least 80% stays liquid</strong>
                   </td>
-                  <td>The vault pulls from the strategy inside every withdrawal, so most of it never leaves. Savers can always get out.</td>
+                  <td>The vault pulls from the strategy inside every withdrawal, so most of it never leaves. Savers can withdraw while that liquid share lasts; if withdrawals use it up while loans are out, the rest waits for repayments.</td>
                 </tr>
                 <tr>
                   <td className="mono">3</td>
@@ -141,7 +142,7 @@ export default async function Home() {
                   </td>
                   <td>
                     When MUSD trades under $0.995 the borrow rate steps up, 1% a week at most. Repaying becomes worth it and holding
-                    MUSD pays more. New borrowing pauses when the wall&apos;s dollar side runs thin, so Keel never drains Mezo&apos;s defense.
+                    MUSD pays more. New borrowing pauses when the wall&apos;s dollar side runs thin, so Keel doesn&apos;t add to the drain on Mezo&apos;s defense.
                   </td>
                 </tr>
               </tbody>
@@ -208,7 +209,7 @@ export default async function Home() {
                 It doesn&apos;t move Mezo&apos;s real vault. Only Mezo&apos;s multisig (<a href={addressUrl(MAINNET.multisig, 'mainnet')}>0x98D8…7C7a</a>)
                 can.
               </li>
-              <li>Borrower demand on Mezo is small: about 60 free BTC, plus a handful of mid-sized veBTC locks.</li>
+              <li>Borrower demand on Mezo is small: about 60 free BTC, plus a handful of mid-sized veBTC locks (as of 2026-10-20).</li>
               <li>Savers carry bad-debt risk beyond the reserve. That&apos;s why lending is capped at 20%.</li>
               <li>The peg price comes from a thin pool. Day-long averaging and small weekly steps limit what moving it could gain.</li>
             </ul>

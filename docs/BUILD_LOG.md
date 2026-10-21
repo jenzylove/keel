@@ -20,3 +20,18 @@
 - Real MUSD prices drive the peg replay: CoinGecko daily data, every 7th day, 26 weeks.
 - First run: 233/235. Both misses came from the same cause: an underwater liquidation applied the sale to interest first, so uncollected interest was paid out as savers' yield and booked again as bad debt. Fixed in `_settle` (principal first when the loan is about to be written off). Rerun: 235/235. Added a unit test.
 - The testnet market needs a redeploy with the fix. That waits until after Thursday's reward-claim proof.
+
+## 2026-10-21: Release readiness audit
+- Clean clone built and tested. Two independent adversarial reviews (contracts; app and API), with exploit PoCs. Full report: `docs/AUDIT.md`.
+- Contracts:
+  - The strategy accrues the market before any principal or cap change.
+  - Yield is released over 7 days, and dust yield is held back so the vault can't revert.
+  - Interest makes good uncovered losses first, and migration works after a loss.
+  - Cap and reserve changes are timelocked.
+  - Votes are reset before an NFT leaves the market.
+- The reviewer's PoCs are now regression tests (`test/AuditRegression.t.sol`). 65 tests pass, all 6 fork tests pass, and the eval is 235/235.
+- App:
+  - Mainnet reads use Multicall3 and fall back across RPCs; a failed refresh keeps the last good page.
+  - The demo has an Origin check, a run lock, a time budget, and recovers stranded loans. Recovery was proven on testnet: loan #8 was stranded on purpose and tidied by the next run.
+  - The keeper reports each step separately.
+  - Wallet and amount fixes; copy corrected.

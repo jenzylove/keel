@@ -59,9 +59,9 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
 
 ### Contracts
 1. **KeelStrategy**, which implements Mezo's `IVaultStrategy` (`allocate`, `deallocate`, `claimYield`, `migrate`, `onMigrated`).
-   - It holds savers' principal and keeps at least `minLiquidBps` liquid (proposed 80%), so `deallocate` always succeeds.
-   - It lends the rest through KeelMarket, up to `maxLentBps` (proposed 20%).
-   - `claimYield` sends interest, minus the reserve share, to the vault.
+   - It holds savers' principal and lends at most `maxLentBps` of it (proposed 20%) through KeelMarket, so 80% is liquid when lending starts. Withdrawals can use that up while loans are out; the cap then shrinks and the rate rises, and the rest waits for repayments.
+   - `claimYield` sends interest, minus the reserve share, to the vault, released evenly over 7 days so a deposit made just before a repayment earns only its share of the time it stays. Yield too small for the vault's index is held back, because the vault reverts on it inside every deposit and withdrawal.
+   - Any change to principal or the cap brings the market's interest up to date first, so nobody can reprice past interest by moving the cap.
 2. **KeelMarket**, the lending book. The loan asset is MUSD. Collateral types:
    - Native BTC.
    - Timed veBTC (a normal lock with an end date).
@@ -83,12 +83,13 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
    - claim that NFT's fees and bribes to their own wallet;
    - extend the lock.
 
-   Votes are reset before an NFT is liquidated or returned.
+   Votes are reset before an NFT is liquidated or returned, where Mezo allows it. In the epoch it voted, Mezo refuses a reset; the NFT moves anyway and its new owner resets from the next epoch.
 4. **Liquidation.** When a loan passes its threshold, anyone can repay the debt and receive the collateral at the bonus.
    - **BTC:** paid out directly.
    - **Timed veBTC:** the NFT is transferred to the liquidator.
    - **Permanent veBTC:** the NFT is transferred as it is, and the liquidator unlocks it themselves (a further 28-day lock). That's why its bonus is the largest. Transfer works even if the NFT voted this epoch (proven on testnet), whereas unlocking would have to wait for the next epoch.
-   - If a loan's debt ever exceeds its collateral value, the shortfall is taken from the reserve first, and the event is recorded.
+   - If a loan's debt ever exceeds its collateral value, the sale repays principal first (interest that was never collected isn't paid out as yield), and the shortfall is taken from the reserve first.
+   - A shortfall beyond the reserve is recorded as `uncovered`. New interest makes it good before anything goes to the reserve or savers, and anyone may cover it with `coverLoss`. Until then, the vault pays withdrawals 1:1, so the loss sits with the last savers out; migration still works and moves what is there.
 5. **Rates.** The yearly rate is base + utilization slope + a peg term.
    - The peg term rises as MUSD falls below $0.995, up to a cap.
    - It moves in bounded weekly steps, so a short price push can't swing it.
@@ -98,7 +99,8 @@ Below them, one sentence: "Keel lends idle savings to BTC holders, outside redem
 8. **Governance and timelock.**
    - Keel has no admin of its own. Both contracts are governed by whoever owns the savings vault, read live. On mainnet that's Mezo's multisig, which can already move the whole vault with `setStrategy`. So Keel adds no new party to trust.
    - Risk, rates, peg settings, the oracle and the minimum loan change only through `proposeConfig` then `applyConfig`, after an immutable delay. That's 48 hours proposed for mainnet, and 600 seconds on testnet so it can be shown. A borrower sees a tighter setting coming and can repay or add collateral first.
-   - The borrowing throttle stays instant, because it can only pause new loans.
+   - The strategy's lending cap and reserve share wait the same delay (`proposeParams`, `applyParams`), since the cap moves the rate.
+   - The borrowing throttle stays instant, because it can only pause new loans. It reads a spot pool balance, so it is a brake, not a guarantee: one transaction can push the balance up for a moment.
    - The strategy's market can only be replaced while nothing is lent.
    - The rate curve is capped at 100% a year before the peg premium.
    - A veBTC liquidation takes a maximum price, so a liquidator is never charged more than they agreed to.
@@ -144,7 +146,7 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 | "One governance call plugs Keel in" | Fork test output on `/proof`, rerunnable from the repo |
 | "Keel loans can't be redeemed" | Loans live in KeelMarket, not TroveManager. A test shows a mainnet redemption can't touch them |
 | "Savers earn borrower interest" | Testnet: yield index rises after `receiveYieldFromStrategy`, with transaction links |
-| "Savers can always withdraw" | Test: withdrawing the whole liquid buffer succeeds even at max lending |
+| "Savers can withdraw the liquid share" | Test: withdrawing the whole liquid buffer succeeds even at max lending. Beyond it, savers wait for repayments |
 | "veBTC works as collateral" | Testnet transactions: deposit NFT, borrow, vote, repay, return |
 | "Liquidation works, including permanent veBTC" | Testnet liquidation transaction(s), plus tests |
 | Any APR shown | Computed live from on-chain rate state, never typed in |
@@ -161,7 +163,8 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 ## 7. Honest limits
 
 - **Borrower demand on Mezo is small:** about 60 free BTC, plus about 7 veBTC locks of 1–15 BTC.
-- **Savers take the bad-debt risk** beyond the reserve.
+- **Savers take the bad-debt risk** beyond the reserve, and the vault (not Keel) decides who bears it: it pays 1:1, so the last savers out carry an uncovered loss.
+- **veBTC liquidations need capital.** A liquidator pays the NFT's value less the bonus for BTC that stays locked for weeks, so large NFTs may find no buyer quickly.
 - **Governance can still tighten settings**, but only after the delay, in public, and only the vault's owner can propose.
 - **The peg price comes from a thin pool** (about $58k on the dollar side on mainnet). A day-long average plus small weekly steps limit what moving it could gain, but it could be pushed.
 - **The size of the payoff depends on Mezo choosing to migrate.**

@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   description:
     "A drop-in strategy for Mezo's MUSD Savings Vault that lends its idle MUSD to BTC and veBTC holders, outside redemptions.",
   icons: { icon: '/favicon.svg' },
+  metadataBase: new URL('https://keel-psi-seven.vercel.app'),
+  openGraph: {
+    title: 'Keel',
+    description: "Idle MUSD savings, lent to BTC and veBTC holders outside Mezo's redemptions.",
+    url: '/',
+    siteName: 'Keel',
+    type: 'website',
+  },
+  twitter: { card: 'summary', title: 'Keel', description: "Idle MUSD savings, lent outside Mezo's redemptions." },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

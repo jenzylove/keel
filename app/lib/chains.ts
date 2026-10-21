@@ -18,9 +18,21 @@ export const mezoTestnet = defineChain({
   testnet: true,
 });
 
+/** Mainnet reads try each public RPC in turn. dRPC's free tier drops some
+ *  calls from shared hosts, which once left the live page with blanks. Reads
+ *  are batched into Multicall3 (deployed on both chains), so a page costs a
+ *  few requests, not dozens. */
+const MAINNET_RPCS = [
+  process.env.MEZO_MAINNET_RPC,
+  'https://mezo.drpc.org',
+  'https://rpc-http.mezo.boar.network',
+  'https://mainnet.mezo.public.validationcloud.io',
+].filter((u): u is string => Boolean(u));
+
 export const mainnet = createPublicClient({
   chain: mezoMainnet,
-  transport: http(process.env.MEZO_MAINNET_RPC || 'https://mezo.drpc.org', { timeout: 20_000, retryCount: 2 }),
+  batch: { multicall: true },
+  transport: fallback(MAINNET_RPCS.map((u) => http(u, { timeout: 12_000, retryCount: 2 }))),
 });
 
 /** Testnet reads go to dRPC first. Mezo's own public testnet RPC balances
@@ -30,6 +42,7 @@ export const TESTNET_RPCS = ['https://mezo-testnet.drpc.org', 'https://rpc.test.
 
 export const testnet = createPublicClient({
   chain: mezoTestnet,
+  batch: { multicall: true },
   transport: fallback(TESTNET_RPCS.map((u) => http(u, { timeout: 20_000, retryCount: 1 }))),
 });
 

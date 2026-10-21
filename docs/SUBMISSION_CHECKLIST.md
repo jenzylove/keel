@@ -30,5 +30,5 @@ Tick an item only from the live app or a real transaction, never from intent.
 - [x] `/proof` and `/data` read live
 - [x] Eval published with peg term on and off (docs/eval/RESULTS.md, /proof)
 - [ ] Testnet market redeployed with the shortfall fix
-- [ ] Release readiness audit done; Scope and limits written
+- [x] Release readiness audit done; Scope and limits written (docs/AUDIT.md)
 - [x] Git history secret scan clean

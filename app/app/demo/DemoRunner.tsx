@@ -23,14 +23,21 @@ export function DemoRunner() {
       const reader = r.body.getReader();
       const dec = new TextDecoder();
       let buf = '';
+      let ended = false;
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
         buf += dec.decode(value, { stream: true });
         const lines = buf.split('\n');
         buf = lines.pop() ?? '';
-        for (const line of lines) if (line.trim()) setEvents((e) => mergeEvent(e, JSON.parse(line)));
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const ev = JSON.parse(line) as Ev;
+          if (ev.state === 'done' || ev.state === 'error') ended = true;
+          setEvents((e) => mergeEvent(e, ev));
+        }
       }
+      if (!ended) throw new Error('The run was cut off before it finished. The steps above link to the explorer, and the next run tidies up any loan left open.');
     } catch (e) {
       setError((e as Error).message);
     } finally {

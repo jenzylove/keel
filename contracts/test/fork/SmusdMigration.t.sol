@@ -5,6 +5,15 @@ import {Test} from "../utils/Test.sol";
 import {KeelStrategy} from "../../src/KeelStrategy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @dev Stands in for KeelMarket, which the strategy asks to accrue.
+contract StubMarket {
+    function accrue() external {}
+
+    function configDelay() external pure returns (uint256) {
+        return 0;
+    }
+}
+
 interface ISMUSD {
     function owner() external view returns (address);
     function strategy() external view returns (address);
@@ -26,12 +35,13 @@ contract SmusdMigrationForkTest is Test {
     address constant FUNDER = 0x73245Eff485aB3AAc1158B3c4d8f4b23797B0e32;
 
     KeelStrategy keel;
-    address market = address(0x4D4B);
+    address market;
     address saver = address(0x5A7E);
     address borrower = address(0xB0B);
 
     function setUp() external {
         vm.createSelectFork("mezo");
+        market = address(new StubMarket());
     }
 
     function _migrate() internal returns (uint256 idle) {
@@ -75,6 +85,7 @@ contract SmusdMigrationForkTest is Test {
         keel.repaid(1_000_000e18, 50_000e18);
         vm.stopPrank();
 
+        vm.warp(block.timestamp + 7 days); // interest is released over a week
         SMUSD.receiveYieldFromStrategy();
         assertEq(keel.yieldOwed(), 0, "yield handed to the vault");
         assertEq(keel.reserve(), 5_000e18, "10% kept as reserve");

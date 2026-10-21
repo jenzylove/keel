@@ -15,6 +15,16 @@ async function safe<T>(f: () => Promise<T>): Promise<T | null> {
   }
 }
 
+/** Pages are cached and refreshed in the background. If a refresh can't read
+ *  the chain, throwing makes Next keep serving the last good page instead of
+ *  caching blanks. At build time there is no last page, so it renders what it
+ *  has. */
+export function keepLastGoodUnless(ok: boolean, what: string): void {
+  if (!ok && process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error(`${what} unavailable; serving the last good page`);
+  }
+}
+
 export type MainnetSnapshot = {
   at: string;
   block: number | null;

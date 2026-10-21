@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { mainnetSnapshot, musdPriceHistory, musdWallTwap, troveHistory } from '@/lib/reads';
+import { keepLastGoodUnless, mainnetSnapshot, musdPriceHistory, musdWallTwap, troveHistory } from '@/lib/reads';
 import { Waterline } from '@/components/Waterline';
 import { compact, usd } from '@/lib/fmt';
 import { addressUrl, MAINNET } from '@/lib/chains';
@@ -9,11 +9,12 @@ export const revalidate = 300;
 
 export default async function Page() {
   const [snap, hist, prices, twap] = await Promise.all([mainnetSnapshot(), troveHistory(), musdPriceHistory(180), musdWallTwap()]);
+  keepLastGoodUnless(Object.values(snap).every((v) => v !== null) && hist !== null, 'Chain reads');
   const supply = snap.musdSupply;
   const parts =
     supply && snap.enclaveDebt !== null && snap.bootstrapDebt !== null && snap.troveDebt !== null
       ? [
-          { k: 'Owed by 2 institutional Enclaves (0% interest)', v: snap.enclaveDebt, c: 'var(--btc)' },
+          { k: 'Owed by institutional Enclaves (2 positions, 0% interest on 2026-10-20)', v: snap.enclaveDebt, c: 'var(--btc)' },
           { k: 'Owed by the protocol bootstrap loan', v: snap.bootstrapDebt, c: 'var(--sea)' },
           { k: 'Owed by ordinary MUSD loans', v: snap.troveDebt, c: 'var(--danger)' },
         ]
@@ -26,7 +27,7 @@ export default async function Page() {
         <div className="kicker">Read live from Mezo mainnet{snap.block ? ` · block ${snap.block.toLocaleString()}` : ''}</div>
         <h1 style={{ marginTop: 18, maxWidth: '18ch', fontSize: 'clamp(36px, 5vw, 64px)' }}>Where MUSD stands today.</h1>
         <p className="lede" style={{ marginTop: 20 }}>
-          Every number on this page is read from Mezo mainnet when the page renders. The scripts behind them are in{' '}
+          The chain figures here are read from Mezo mainnet when the page renders; the price history is CoinGecko&apos;s. The scripts behind them are in{' '}
           <span className="mono">scripts/data/</span> in the repo.
         </p>
       </section>

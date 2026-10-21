@@ -18,6 +18,16 @@ type Line = { text: string; hash?: Hash; ok?: boolean };
 type MyLoan = { id: bigint; kind: number; btc: bigint; nftId: bigint; debt: bigint; limit: bigint; health: bigint };
 type Nft = { id: bigint; amount: bigint; permanent: boolean };
 
+/** Reads a typed amount, refusing anything but a plain decimal with at most
+ *  18 places, so a typo can't become a negative or truncated amount. */
+const amount = (s: string, what: string, allowZero = false): bigint => {
+  const t = s.trim();
+  if (!/^\d*\.?\d{0,18}$/.test(t) || t === '' || t === '.') throw new Error(`Enter ${what} as a number, like 0.5`);
+  const v = parseUnits(t, 18);
+  if (v === 0n && !allowZero) throw new Error(`Enter ${what} above zero`);
+  return v;
+};
+
 const fmt = (v: bigint, d = 18, digits = 4) => Number(formatUnits(v, d)).toLocaleString('en-US', { maximumFractionDigits: digits });
 
 export function UseKeel() {
@@ -114,32 +124,59 @@ export function UseKeel() {
     if (!nftPick && nfts.length) setNftPick(String(nfts[0].id));
   }, [nfts, nftPick]);
 
-  const btcValue = price && btcIn ? (Number(btcIn) * Number(formatUnits(price, 18))).toFixed(2) : '—';
+  const btcValue = price && Number(btcIn) > 0 ? (Number(btcIn) * Number(formatUnits(price, 18))).toFixed(2) : '—';
+
+  // Follow the wallet: a new account reloads its loans; a new network reloads
+  // the page, so nothing is sent on the wrong chain.
+  useEffect(() => {
+    const eth = window.ethereum;
+    if (!eth?.on || !wallet) return;
+    const onAccounts = (a: unknown) => {
+      const next = (a as Address[])[0];
+      if (!next) {
+        setWallet(null);
+        setAccount(null);
+        return;
+      }
+      connect().then((c) => {
+        setWallet(c.wallet);
+        setAccount(c.account);
+        refresh(c.account).catch(() => {});
+      }, () => {});
+    };
+    const onChain = () => window.location.reload();
+    eth.on('accountsChanged', onAccounts);
+    eth.on('chainChanged', onChain);
+    return () => {
+      eth.removeListener?.('accountsChanged', onAccounts);
+      eth.removeListener?.('chainChanged', onChain);
+    };
+  }, [wallet, refresh]);
 
   const openBtc = () =>
     run(async () => {
-      const coll = parseUnits(btcIn, 18);
+      const coll = amount(btcIn, 'the BTC to lock');
       await send('Approve BTC', { ...base, address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, coll] });
-      await send('Open BTC loan', { ...base, address: MARKET, abi: marketAbi, functionName: 'openWithBtc', args: [coll, parseUnits(borrowIn || '0', 18)] });
+      await send('Open BTC loan', { ...base, address: MARKET, abi: marketAbi, functionName: 'openWithBtc', args: [coll, amount(borrowIn || '0', 'the MUSD to borrow', true)] });
     });
 
   const openVe = () =>
     run(async () => {
       const id = BigInt(nftPick);
       await send(`Approve veBTC #${id}`, { ...base, address: VE, abi: veAbi, functionName: 'approve', args: [MARKET, id] });
-      await send(`Open loan on veBTC #${id}`, { ...base, address: MARKET, abi: marketAbi, functionName: 'openWithVeBTC', args: [id, parseUnits(veBorrow || '0', 18)] });
+      await send(`Open loan on veBTC #${id}`, { ...base, address: MARKET, abi: marketAbi, functionName: 'openWithVeBTC', args: [id, amount(veBorrow || '0', 'the MUSD to borrow', true)] });
     });
 
   const deposit = () =>
     run(async () => {
-      const amt = parseUnits(saveIn, 18);
+      const amt = amount(saveIn, 'the amount');
       await send('Approve MUSD', { ...base, address: MUSD, abi: erc20Abi, functionName: 'approve', args: [VAULT, amt] });
       await send('Deposit into savings vault', { ...base, address: VAULT, abi: vaultAbi, functionName: 'deposit', args: [amt] });
     });
 
   const withdraw = () =>
     run(async () => {
-      await send('Withdraw from savings vault', { ...base, address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [parseUnits(saveIn, 18)] });
+      await send('Withdraw from savings vault', { ...base, address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [amount(saveIn, 'the amount')] });
     });
 
   const repayAndClose = (l: MyLoan) =>

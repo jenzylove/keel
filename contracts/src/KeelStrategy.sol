@@ -9,13 +9,25 @@ interface IOwnable {
     function owner() external view returns (address);
 }
 
+interface IKeelMarket {
+    function accrue() external;
+    function configDelay() external view returns (uint256);
+}
+
 /// @title KeelStrategy
 /// @notice A strategy for Mezo's MUSD Savings Rate vault. It holds savers'
 ///         principal, lets KeelMarket borrow a capped share of it, and sends
 ///         the interest borrowers pay back to the vault as yield.
-/// @dev The vault calls `deallocate` inside a saver's withdrawal, so at least
-///      `1 - maxLentBps` of principal always stays liquid here. Principal can
-///      only be migrated away once nothing is lent out.
+/// @dev The vault calls `deallocate` inside a saver's withdrawal. While the
+///      vault is whole, at least `1 - maxLentBps` of principal is liquid when
+///      lending starts; withdrawals can still use that up while loans are out,
+///      and then savers wait for repayments. Principal can only be migrated
+///      away once nothing is lent out.
+///
+///      Interest is released to the vault over `DRIP` rather than in one lump
+///      at repayment, so a deposit made just before a large repayment earns
+///      only its share of the time it stays. Any change to principal or the
+///      cap brings the market's interest up to date first.
 ///
 ///      Keel adds no new party to trust: its admin is whoever owns the vault,
 ///      read live. On mainnet that is the Mezo multisig, which can already move
@@ -26,6 +38,8 @@ contract KeelStrategy is IVaultStrategy {
     uint256 internal constant BPS = 10_000;
     /// @notice Hard ceiling on the lent share, whatever the admin sets.
     uint256 public constant MAX_LENT_CEILING_BPS = 5_000;
+    /// @notice Interest is released to savers evenly over this period.
+    uint256 public constant DRIP = 7 days;
 
     IERC20 public immutable musd;
     address public immutable vault;
@@ -38,13 +52,25 @@ contract KeelStrategy is IVaultStrategy {
     uint256 public lent;
     /// @notice Interest set aside to cover bad debt.
     uint256 public reserve;
-    /// @notice Interest owed to the vault, paid on the next `claimYield`.
+    /// @notice Interest owed to the vault, released over `DRIP`.
     uint256 public yieldOwed;
-    /// @notice Total principal ever written off as bad debt.
+    /// @notice Total principal ever written off beyond the reserve.
     uint256 public badDebt;
+    /// @notice Part of `badDebt` not yet made good. New interest covers it
+    ///         before anything goes to the reserve or to savers.
+    uint256 public uncovered;
+    /// @notice Unreleased interest as of `dripAt`.
+    uint256 public dripLeft;
+    uint256 public dripAt;
 
     uint256 public maxLentBps;
     uint256 public reserveBps;
+
+    /// @notice Proposed parameters and when they may be applied. They wait
+    ///         the market's config delay, because the cap moves the rate.
+    uint256 public pendingMaxLentBps;
+    uint256 public pendingReserveBps;
+    uint256 public paramsEta;
 
     event MarketSet(address market);
     event ParamsSet(uint256 maxLentBps, uint256 reserveBps);
@@ -53,6 +79,10 @@ contract KeelStrategy is IVaultStrategy {
     event WrittenOff(uint256 amount, uint256 fromReserve);
     event ReserveReleased(uint256 amount);
     event YieldSent(uint256 amount);
+    event LossCovered(address from, uint256 amount);
+    event ParamsProposed(uint256 maxLentBps, uint256 reserveBps, uint256 eta);
+    event ParamsCancelled();
+    event Swept(address to, uint256 amount);
 
     error OnlyVault();
     error OnlyMarket();
@@ -62,6 +92,9 @@ contract KeelStrategy is IVaultStrategy {
     error LendCapExceeded(uint256 wanted, uint256 available);
     error LoansOutstanding(uint256 lent);
     error BadParams();
+    error NothingPending();
+    error TooEarly(uint256 eta);
+    error StillActive();
 
     modifier onlyVault() {
         if (msg.sender != vault) revert OnlyVault();
@@ -100,6 +133,7 @@ contract KeelStrategy is IVaultStrategy {
 
     /// @inheritdoc IVaultStrategy
     function allocate(uint256 amount) external onlyVault {
+        _accrueMarket();
         emit Allocate(amount);
         principal += amount;
         musd.safeTransferFrom(vault, address(this), amount);
@@ -107,6 +141,7 @@ contract KeelStrategy is IVaultStrategy {
 
     /// @inheritdoc IVaultStrategy
     function deallocate(uint256 amount) external onlyVault {
+        _accrueMarket();
         uint256 l = liquid();
         if (amount > l) revert InsufficientLiquidity(amount, l);
         emit Deallocate(amount);
@@ -115,13 +150,18 @@ contract KeelStrategy is IVaultStrategy {
     }
 
     /// @inheritdoc IVaultStrategy
+    /// @dev The vault reverts on yield too small to move its index, and it
+    ///      claims inside every deposit and withdrawal, so such an amount is
+    ///      held back until it has grown.
     function claimYield() external onlyVault returns (uint256 amount) {
-        amount = yieldOwed;
-        if (amount > 0) {
-            yieldOwed = 0;
-            emit YieldSent(amount);
-            musd.safeTransfer(vault, amount);
-        }
+        amount = yieldOwed - unreleased();
+        if (amount == 0) return 0;
+        try IERC20(vault).totalSupply() returns (uint256 supply) {
+            if (amount * 1e18 < supply) return 0;
+        } catch {}
+        yieldOwed -= amount;
+        emit YieldSent(amount);
+        musd.safeTransfer(vault, amount);
     }
 
     /// @inheritdoc IVaultStrategy
@@ -129,14 +169,19 @@ contract KeelStrategy is IVaultStrategy {
         address newStrategy
     ) external onlyVault returns (uint256 amount) {
         if (lent != 0) revert LoansOutstanding(lent);
-        amount = principal;
+        // After a loss beyond the reserve, only what is here can move. The
+        // shortfall then sits with the vault rather than blocking migration.
+        uint256 l = liquid();
+        amount = principal < l ? principal : l;
         principal = 0;
+        uncovered = 0;
         emit Migrated(newStrategy, amount);
         if (amount > 0) musd.safeTransfer(newStrategy, amount);
     }
 
     /// @inheritdoc IVaultStrategy
     function onMigrated(uint256 amount) external onlyVault {
+        _accrueMarket();
         principal += amount;
     }
 
@@ -165,9 +210,16 @@ contract KeelStrategy is IVaultStrategy {
         uint256 interestPart
     ) external onlyMarket {
         lent -= principalPart;
-        uint256 toReserve = (interestPart * reserveBps) / BPS;
+        // Interest first makes good any earlier loss to savers' principal.
+        uint256 cover = interestPart < uncovered ? interestPart : uncovered;
+        if (cover > 0) {
+            uncovered -= cover;
+            emit LossCovered(msg.sender, cover);
+        }
+        uint256 rest = interestPart - cover;
+        uint256 toReserve = (rest * reserveBps) / BPS;
         reserve += toReserve;
-        yieldOwed += interestPart - toReserve;
+        _addYield(rest - toReserve);
         emit Repaid(principalPart, interestPart, toReserve);
     }
 
@@ -181,6 +233,7 @@ contract KeelStrategy is IVaultStrategy {
         // liquid balance covers the hole without any transfer.
         reserve -= fromReserve;
         badDebt += amount - fromReserve;
+        uncovered += amount - fromReserve;
         emit WrittenOff(amount, fromReserve);
     }
 
@@ -193,6 +246,13 @@ contract KeelStrategy is IVaultStrategy {
         uint256 bal = musd.balanceOf(address(this));
         uint256 held = yieldOwed + reserve;
         return bal > held ? bal - held : 0;
+    }
+
+    /// @notice Interest booked but not yet released to the vault.
+    function unreleased() public view returns (uint256) {
+        uint256 elapsed = block.timestamp - dripAt;
+        if (elapsed >= DRIP) return 0;
+        return (dripLeft * (DRIP - elapsed)) / DRIP;
     }
 
     /// @notice Most principal that may be lent at once.
@@ -211,18 +271,69 @@ contract KeelStrategy is IVaultStrategy {
         emit MarketSet(_market);
     }
 
-    function setParams(
-        uint256 _maxLentBps,
-        uint256 _reserveBps
-    ) external onlyAdmin {
-        _setParams(_maxLentBps, _reserveBps);
+    /// @notice Proposes a new cap and reserve share. Lowering the cap raises
+    ///         the rate, so this waits the market's config delay like any
+    ///         other rate change.
+    function proposeParams(uint256 _maxLentBps, uint256 _reserveBps) external onlyAdmin {
+        if (_maxLentBps > MAX_LENT_CEILING_BPS || _reserveBps > BPS) revert BadParams();
+        uint256 delay = market == address(0) ? 0 : IKeelMarket(market).configDelay();
+        pendingMaxLentBps = _maxLentBps;
+        pendingReserveBps = _reserveBps;
+        paramsEta = block.timestamp + delay;
+        emit ParamsProposed(_maxLentBps, _reserveBps, paramsEta);
+    }
+
+    /// @notice Anyone may apply proposed parameters once the delay has passed.
+    function applyParams() external {
+        if (paramsEta == 0) revert NothingPending();
+        if (block.timestamp < paramsEta) revert TooEarly(paramsEta);
+        paramsEta = 0;
+        _accrueMarket();
+        _setParams(pendingMaxLentBps, pendingReserveBps);
+    }
+
+    function cancelParams() external onlyAdmin {
+        paramsEta = 0;
+        emit ParamsCancelled();
     }
 
     /// @notice Pays part of the reserve out to savers as yield.
     function releaseReserve(uint256 amount) external onlyAdmin {
         reserve -= amount;
-        yieldOwed += amount;
+        _addYield(amount);
         emit ReserveReleased(amount);
+    }
+
+    /// @notice Anyone may make good an uncovered loss with their own MUSD.
+    function coverLoss(uint256 amount) external {
+        if (amount > uncovered) amount = uncovered;
+        uncovered -= amount;
+        emit LossCovered(msg.sender, amount);
+        musd.safeTransferFrom(msg.sender, address(this), amount);
+    }
+
+    /// @notice After migration, sends what is left (the reserve and yield not
+    ///         yet released) to governance, to pass on to savers. The vault
+    ///         stops claiming from a strategy it has moved away from.
+    function sweep() external onlyAdmin {
+        if (principal != 0 || lent != 0) revert StillActive();
+        uint256 bal = musd.balanceOf(address(this));
+        reserve = 0;
+        yieldOwed = 0;
+        dripLeft = 0;
+        emit Swept(msg.sender, bal);
+        musd.safeTransfer(msg.sender, bal);
+    }
+
+    function _addYield(uint256 amount) private {
+        if (amount == 0) return;
+        dripLeft = unreleased() + amount;
+        dripAt = block.timestamp;
+        yieldOwed += amount;
+    }
+
+    function _accrueMarket() private {
+        if (market != address(0)) IKeelMarket(market).accrue();
     }
 
     function _setParams(uint256 _maxLentBps, uint256 _reserveBps) private {

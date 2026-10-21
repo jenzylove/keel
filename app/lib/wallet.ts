@@ -3,7 +3,11 @@
 import { createWalletClient, custom, type Address, type WalletClient } from 'viem';
 import { mezoTestnet } from './chains';
 
-type Eip1193 = { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> };
+type Eip1193 = {
+  request: (a: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on?: (event: string, f: (arg: unknown) => void) => void;
+  removeListener?: (event: string, f: (arg: unknown) => void) => void;
+};
 
 declare global {
   interface Window {
@@ -17,7 +21,10 @@ export async function connect(): Promise<{ wallet: WalletClient; account: Addres
   const hex = `0x${mezoTestnet.id.toString(16)}`;
   try {
     await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] });
-  } catch {
+  } catch (e) {
+    // 4902: the wallet doesn't know Mezo testnet yet. Anything else, such as
+    // the user declining (4001), is passed on rather than retried.
+    if ((e as { code?: number }).code !== 4902) throw e;
     await window.ethereum.request({
       method: 'wallet_addEthereumChain',
       params: [

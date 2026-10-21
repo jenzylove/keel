@@ -27,6 +27,9 @@ type Opts = {
   nonce?: number;
   /** Resolves true once the state this call depends on is visible. */
   ready?: () => Promise<boolean>;
+  /** Give up re-broadcasting after this time (ms since epoch), so a server
+   *  run ends with a clear error before its host's time limit. */
+  deadline?: number;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -102,7 +105,7 @@ export async function sendTx(
   // can't lose it.
   const endpoints = TESTNET_RPCS.map((u) => createPublicClient({ chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }));
   let lastBroadcastError = '';
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 20 && (!opts.deadline || Date.now() < opts.deadline); i++) {
     for (const ep of endpoints) {
       try {
         await ep.sendRawTransaction({ serializedTransaction: raw });

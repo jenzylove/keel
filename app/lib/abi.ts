@@ -24,6 +24,8 @@ export const strategyAbi = parseAbi([
   'function reserve() view returns (uint256)',
   'function yieldOwed() view returns (uint256)',
   'function badDebt() view returns (uint256)',
+  'function uncovered() view returns (uint256)',
+  'function unreleased() view returns (uint256)',
   'function maxLentBps() view returns (uint256)',
   'function admin() view returns (address)',
   'function reserveBps() view returns (uint256)',

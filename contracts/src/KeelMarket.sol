@@ -268,6 +268,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         if (loan.kind == Kind.Btc && loan.btc > 0) {
             btc.safeTransfer(loan.owner, loan.btc);
         } else if (loan.kind == Kind.Ve) {
+            _tryReset(loan.nftId);
             ve.transferFrom(address(this), loan.owner, loan.nftId);
         }
         emit LoanClosed(id);
@@ -391,8 +392,9 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
             if (loan.scaled != 0) lost = _writeOff(id);
             if (surplus > 0) musd.safeTransferFrom(msg.sender, owner, surplus);
             delete loans[id];
-            // Works even if the NFT voted this epoch; the new owner can reset
-            // its votes from the next epoch.
+            // Transfer works even if the NFT voted this epoch, when Mezo
+            // refuses a reset; the new owner can reset from the next epoch.
+            _tryReset(nftId);
             ve.transferFrom(address(this), msg.sender, nftId);
             emit Liquidated(id, msg.sender, sale, 0, nftId, surplus, lost);
         }
@@ -521,6 +523,17 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     // ---------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------
+
+    /// @notice Brings interest up to date. The strategy calls this before
+    ///         principal or the cap changes, since both move the rate.
+    function accrue() external nonReentrant {
+        _accrue();
+    }
+
+    /// @dev Clears the NFT's votes before it leaves, where Mezo allows it.
+    function _tryReset(uint256 nftId) internal {
+        try voter.reset(nftId) {} catch {}
+    }
 
     function _accrue() internal {
         uint256 elapsed = block.timestamp - lastAccrual;
