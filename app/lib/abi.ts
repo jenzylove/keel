@@ -25,6 +25,7 @@ export const strategyAbi = parseAbi([
   'function yieldOwed() view returns (uint256)',
   'function badDebt() view returns (uint256)',
   'function maxLentBps() view returns (uint256)',
+  'function admin() view returns (address)',
   'function reserveBps() view returns (uint256)',
 ]);
 
@@ -41,6 +42,11 @@ export const marketAbi = parseAbi([
   'function debtOf(uint256) view returns (uint256)',
   'function loans(uint256) view returns (address owner, uint8 kind, uint64 depositBlock, uint256 btc, uint256 nftId, uint256 principal, uint256 scaled)',
   'function position(uint256) view returns (uint256 collateralValue, uint256 debt, uint256 healthWad, uint256 borrowLimit)',
+  'function positionAt(uint256, uint256) view returns (uint256 collateralValue, uint256 debt, uint256 healthWad, uint256 borrowLimit)',
+  'function admin() view returns (address)',
+  'function configDelay() view returns (uint256)',
+  'function pendingEta() view returns (uint256)',
+  'function priceFeed() view returns (address)',
   'function btcRisk() view returns (uint16 maxLtvBps, uint16 liqLtvBps, uint16 bonusBps)',
   'function veTimedRisk() view returns (uint16 maxLtvBps, uint16 liqLtvBps, uint16 bonusBps)',
   'function vePermanentRisk() view returns (uint16 maxLtvBps, uint16 liqLtvBps, uint16 bonusBps)',

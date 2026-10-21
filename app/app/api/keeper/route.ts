@@ -2,7 +2,8 @@ import { createWalletClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { deployed, mezoTestnet, testnet } from '@/lib/chains';
 import { marketAbi, strategyAbi, vaultAbi } from '@/lib/abi';
-import { writeWithHeadroom } from '@/lib/send';
+import { sendTx } from '@/lib/send';
+import { mainnetAbi } from '@/lib/abi';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -29,9 +30,8 @@ export async function GET(req: Request) {
 
   const owed = await testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'yieldOwed' });
   if (owed > 0n) {
-    const hash = await writeWithHeadroom(testnet, wallet, { address: VAULT, abi: vaultAbi, functionName: 'receiveYieldFromStrategy' });
-    const r = await testnet.waitForTransactionReceipt({ hash });
-    report.yield = { owed: owed.toString(), hash, status: r.status };
+    const { hash, receipt } = await sendTx(testnet, wallet, { address: VAULT, abi: vaultAbi, functionName: 'receiveYieldFromStrategy' });
+    report.yield = { owed: owed.toString(), hash, status: receipt.status };
   } else {
     report.yield = 'nothing owed';
   }
@@ -39,19 +39,23 @@ export async function GET(req: Request) {
   const last = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'lastPegStep' });
   const block = await testnet.getBlock();
   if (block.timestamp >= last + PEG_INTERVAL) {
-    const hash = await writeWithHeadroom(testnet, wallet, { address: MARKET, abi: marketAbi, functionName: 'stepPeg' });
-    const r = await testnet.waitForTransactionReceipt({ hash });
-    report.peg = { hash, status: r.status, premium: (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'pegPremium' })).toString() };
+    const { hash, receipt } = await sendTx(testnet, wallet, { address: MARKET, abi: marketAbi, functionName: 'stepPeg' });
+    report.peg = { hash, status: receipt.status, premium: (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'pegPremium' })).toString() };
   } else {
     report.peg = { nextAt: new Date(Number(last + PEG_INTERVAL) * 1000).toISOString() };
   }
 
+  // Judge health at a fresh BTC price, not the one last stored by a transaction.
+  const feed = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'priceFeed' });
+  const price = await testnet.readContract({ address: feed, abi: mainnetAbi, functionName: 'fetchPrice' });
   const next = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'nextLoanId' });
   const unhealthy: number[] = [];
   for (let id = 1n; id < next; id++) {
-    const pos = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] });
+    const pos = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'positionAt', args: [id, price] });
     if (pos[1] > 0n && pos[2] < 10n ** 18n) unhealthy.push(Number(id));
   }
+  report.btcPrice = price.toString();
+  report.pendingConfigEta = (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'pendingEta' })).toString();
   report.liquidatable = unhealthy;
   return Response.json(report);
 }

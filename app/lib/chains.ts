@@ -1,4 +1,4 @@
-import { createPublicClient, defineChain, http } from 'viem';
+import { createPublicClient, defineChain, fallback, http } from 'viem';
 import deployment from './testnet.json';
 
 export const mezoMainnet = defineChain({
@@ -13,7 +13,7 @@ export const mezoTestnet = defineChain({
   id: 31611,
   name: 'Mezo Testnet',
   nativeCurrency: { name: 'Bitcoin', symbol: 'BTC', decimals: 18 },
-  rpcUrls: { default: { http: ['https://rpc.test.mezo.org'] } },
+  rpcUrls: { default: { http: ['https://mezo-testnet.drpc.org', 'https://rpc.test.mezo.org'] } },
   blockExplorers: { default: { name: 'Mezo Testnet Explorer', url: 'https://explorer.test.mezo.org' } },
   testnet: true,
 });
@@ -23,9 +23,14 @@ export const mainnet = createPublicClient({
   transport: http(process.env.MEZO_MAINNET_RPC || 'https://mezo.drpc.org', { timeout: 20_000, retryCount: 2 }),
 });
 
+/** Testnet reads go to dRPC first. Mezo's own public testnet RPC balances
+ *  across nodes that disagree: measured on 2026-10-21, 5 of 12 receipt
+ *  requests for a mined transaction came back null. It stays as a fallback. */
+export const TESTNET_RPCS = ['https://mezo-testnet.drpc.org', 'https://rpc.test.mezo.org'];
+
 export const testnet = createPublicClient({
   chain: mezoTestnet,
-  transport: http(process.env.MEZO_TESTNET_RPC || 'https://rpc.test.mezo.org', { timeout: 20_000, retryCount: 2 }),
+  transport: fallback(TESTNET_RPCS.map((u) => http(u, { timeout: 20_000, retryCount: 1 }))),
 });
 
 export const deployed = deployment;

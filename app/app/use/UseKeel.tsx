@@ -5,7 +5,7 @@ import { formatUnits, parseUnits, type Address, type Hash, type WalletClient } f
 import { connect } from '@/lib/wallet';
 import { deployed, testnet, txUrl } from '@/lib/chains';
 import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
-import { writeWithHeadroom } from '@/lib/send';
+import { sendTx } from '@/lib/send';
 
 const MARKET = deployed.contracts.keelMarket as Address;
 const VAULT = deployed.contracts.vault as Address;
@@ -77,13 +77,13 @@ export function UseKeel() {
     }
   };
 
-  /** Sends one transaction, waits for it, and logs the result. */
-  const send = async (label: string, req: Parameters<WalletClient['writeContract']>[0]) => {
+  /** Sends one transaction, waits for it, and logs the result. `ready` waits
+   *  until the state the call depends on is visible on the RPC. */
+  const send = async (label: string, req: Parameters<typeof sendTx>[2], ready?: () => Promise<boolean>) => {
     if (!wallet) throw new Error('connect first');
-    const hash = await writeWithHeadroom(testnet, wallet, req as Parameters<typeof writeWithHeadroom>[2]);
-    say({ text: `${label}: sent`, hash });
-    const r = await testnet.waitForTransactionReceipt({ hash });
-    const ok = r.status === 'success';
+    say({ text: `${label}: confirm in your wallet` });
+    const { hash, receipt } = await sendTx(testnet, wallet, req, { ready });
+    const ok = receipt.status === 'success';
     say({ text: `${label}: ${ok ? 'confirmed' : 'reverted'}`, hash, ok });
     if (!ok) throw new Error(`${label} reverted`);
   };
@@ -147,7 +147,9 @@ export function UseKeel() {
       const pay = l.debt + l.debt / 1000n + 1n; // a little headroom for interest accrued while signing
       await send('Approve MUSD', { ...base, address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, pay] });
       await send(`Repay loan #${l.id}`, { ...base, address: MARKET, abi: marketAbi, functionName: 'repay', args: [l.id, pay] });
-      await send(`Close loan #${l.id}`, { ...base, address: MARKET, abi: marketAbi, functionName: 'close', args: [l.id] });
+      await send(`Close loan #${l.id}`, { ...base, address: MARKET, abi: marketAbi, functionName: 'close', args: [l.id] }, async () =>
+        (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'debtOf', args: [l.id] })) === 0n,
+      );
     });
 
   if (!account) {

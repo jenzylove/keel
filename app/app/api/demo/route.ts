@@ -1,8 +1,8 @@
-import { createWalletClient, http, parseUnits, type Address, type Hash } from 'viem';
+import { createWalletClient, http, parseUnits, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { deployed, mezoTestnet, testnet } from '@/lib/chains';
 import { erc20Abi, marketAbi } from '@/lib/abi';
-import { writeWithHeadroom } from '@/lib/send';
+import { sendTx } from '@/lib/send';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -36,30 +36,44 @@ export async function POST() {
   const stream = new ReadableStream({
     async start(ctrl) {
       const emit = (o: object) => ctrl.enqueue(enc.encode(JSON.stringify(o) + '\n'));
-      const step = async (label: string, hash: Hash) => {
-        emit({ label, hash, state: 'sent' });
-        const r = await testnet.waitForTransactionReceipt({ hash, timeout: 40_000 });
-        emit({ label, hash, state: r.status === 'success' ? 'confirmed' : 'reverted', block: Number(r.blockNumber) });
-        if (r.status !== 'success') throw new Error(`${label} reverted`);
-        return r;
+      // The demo wallet numbers its own transactions so a lagging RPC node
+      // can't hand back a nonce that's already used.
+      let nonce = await testnet.getTransactionCount({ address: account.address, blockTag: 'latest' });
+      const step = async (label: string, req: Parameters<typeof sendTx>[2], ready?: () => Promise<boolean>) => {
+        emit({ label, state: 'sending' });
+        const { hash, receipt } = await sendTx(testnet, wallet, req, { nonce: nonce++, ready });
+        const ok = receipt.status === 'success';
+        emit({ label, hash, state: ok ? 'confirmed' : 'reverted', block: Number(receipt.blockNumber) });
+        if (!ok) throw new Error(`${label} reverted`);
+        return receipt;
       };
       try {
         emit({ label: 'Demo wallet', address: account.address, state: 'info' });
         const allowance = await testnet.readContract({ address: MUSD, abi: erc20Abi, functionName: 'allowance', args: [account.address, MARKET] });
         if (allowance < parseUnits('20', 18)) {
-          await step('Approve MUSD for repayment', await writeWithHeadroom(testnet, wallet, { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, parseUnits('1000', 18)] }));
+          await step('Approve MUSD for repayment', { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, parseUnits('1000', 18)] });
         }
-        await step('Approve 0.0004 BTC as collateral', await writeWithHeadroom(testnet, wallet, { address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, COLLATERAL] }));
-        const opened = await step(
-          'Lock 0.0004 BTC and borrow 10 MUSD from idle savings',
-          await writeWithHeadroom(testnet, wallet, { address: MARKET, abi: marketAbi, functionName: 'openWithBtc', args: [COLLATERAL, BORROW] }),
-        );
+        await step('Approve 0.0004 BTC as collateral', { address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, COLLATERAL] });
+        const opened = await step('Lock 0.0004 BTC and borrow 10 MUSD from idle savings', {
+          address: MARKET,
+          abi: marketAbi,
+          functionName: 'openWithBtc',
+          args: [COLLATERAL, BORROW],
+        });
         const log = opened.logs.find((l) => l.address.toLowerCase() === MARKET.toLowerCase() && l.topics.length === 3);
-        const id = log ? BigInt(log.topics[1]!) : (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'nextLoanId' })) - 1n;
-        const pos = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] });
-        emit({ label: `Loan #${id}`, state: 'info', debt: Number(pos[1]) / 1e18, collateralValue: Number(pos[0]) / 1e18, health: Number(pos[2]) / 1e18 });
-        await step(`Repay loan #${id} (interest first, to savers)`, await writeWithHeadroom(testnet, wallet, { address: MARKET, abi: marketAbi, functionName: 'repay', args: [id, BORROW + parseUnits('0.01', 18)] }));
-        await step(`Close loan #${id}, BTC returned`, await writeWithHeadroom(testnet, wallet, { address: MARKET, abi: marketAbi, functionName: 'close', args: [id] }));
+        if (!log) throw new Error('Loan opened but its id was not in the receipt');
+        const id = BigInt(log.topics[1]!);
+        const debtOf = () => testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'debtOf', args: [id] });
+        await step(
+          `Repay loan #${id} (interest first, to savers)`,
+          { address: MARKET, abi: marketAbi, functionName: 'repay', args: [id, BORROW + parseUnits('0.01', 18)] },
+          async () => (await debtOf()) > 0n,
+        );
+        await step(
+          `Close loan #${id}, BTC returned`,
+          { address: MARKET, abi: marketAbi, functionName: 'close', args: [id] },
+          async () => (await debtOf()) === 0n,
+        );
         emit({ state: 'done' });
       } catch (e) {
         emit({ state: 'error', error: (e as Error).message.split('\n')[0] });

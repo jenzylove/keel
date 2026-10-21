@@ -53,7 +53,7 @@ export function DemoRunner() {
             {events.map((e, i) => (
               <tr key={i}>
                 <td style={{ width: 24 }}>
-                  <span className={`dot ${e.state === 'sent' ? 'warn' : e.state === 'reverted' || e.state === 'error' ? 'bad' : ''}`} />
+                  <span className={`dot ${e.state === 'sending' || e.state === 'sent' ? 'warn' : e.state === 'reverted' || e.state === 'error' ? 'bad' : ''}`} />
                 </td>
                 <td>
                   {e.label ?? (e.state === 'done' ? 'Done: the loan opened, paid interest to savers, and closed.' : e.error)}
@@ -68,7 +68,7 @@ export function DemoRunner() {
                 <td className="num">
                   {e.hash ? (
                     <a href={txUrl(e.hash)} target="_blank" rel="noreferrer" className="mono">
-                      {e.state === 'sent' ? 'pending ' : e.block ? `block ${e.block} ` : ''}
+                      {e.block ? `block ${e.block} ` : ''}
                       {e.hash.slice(0, 10)}…
                     </a>
                   ) : null}
@@ -83,10 +83,10 @@ export function DemoRunner() {
   );
 }
 
-/** A confirmation replaces the 'sent' line for the same transaction. */
+/** A confirmation replaces the 'sending' line for the same step. */
 function mergeEvent(list: Ev[], ev: Ev): Ev[] {
-  if (ev.hash) {
-    const i = list.findIndex((e) => e.hash === ev.hash);
+  if (ev.label && ev.state !== 'sending') {
+    const i = list.findIndex((e) => e.label === ev.label && e.state === 'sending');
     if (i >= 0) return list.map((e, j) => (j === i ? ev : e));
   }
   return [...list, ev];
