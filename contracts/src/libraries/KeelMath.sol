@@ -109,6 +109,15 @@ library KeelMath {
     }
 
     /// @notice Utilisation in WAD: borrowed out of what may be lent.
+    /// @notice Most MUSD a liquidator pays for `collateral` BTC at the bonus.
+    function coverFor(
+        uint256 collateral,
+        uint256 price,
+        uint256 bonusBps
+    ) internal pure returns (uint256) {
+        return (collateral * price * BPS) / ((BPS + bonusBps) * WAD);
+    }
+
     function utilisation(
         uint256 borrowed,
         uint256 lendable

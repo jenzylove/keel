@@ -368,7 +368,16 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
 
         if (loan.kind == Kind.Btc) {
             uint256 pay = maxRepay > debt ? debt : maxRepay;
-            uint256 seized = KeelMath.seizeFor(pay, price, r.bonusBps, loan.btc);
+            // Past what the collateral covers at the bonus, the liquidator
+            // would pay for BTC that isn't there, so the payment stops there.
+            uint256 cover = KeelMath.coverFor(loan.btc, price, r.bonusBps);
+            uint256 seized;
+            if (pay >= cover) {
+                pay = cover;
+                seized = loan.btc;
+            } else {
+                seized = KeelMath.seizeFor(pay, price, r.bonusBps, loan.btc);
+            }
             // Taking all the BTC without clearing the debt means the rest is
             // written off, so the payment can't count as interest.
             bool shortfall = seized == loan.btc && pay < debt;

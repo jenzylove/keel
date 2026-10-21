@@ -167,7 +167,24 @@ contract KeelMarketTest is Test {
         vm.prank(liq);
         m.liquidate(id, 28_572e18);
         assertEq(strat.yieldOwed() + strat.reserve(), 0, "no yield from uncollected interest");
-        assertEq(strat.badDebt(), 40_000e18 - 28_572e18, "loss is unrecovered principal");
+        // The payment stops at what 1 BTC covers at a 5% bonus: 30,000 / 1.05.
+        uint256 price = 30_000e18;
+        uint256 cover = (price * 10_000) / 10_500;
+        assertEq(strat.badDebt(), 40_000e18 - cover, "loss is unrecovered principal");
+    }
+
+    function test_liquidator_never_pays_more_than_the_collateral_covers() external {
+        uint256 id = _openBtc(1e18, 40_000e18);
+        feed.set(30_000e18); // 1 BTC now worth 30k against about 40k of debt
+        uint256 before = musd.balanceOf(liq);
+        vm.prank(liq);
+        m.liquidate(id, type(uint256).max);
+        uint256 paid = before - musd.balanceOf(liq);
+        assertEq(btc.balanceOf(liq), 1e18, "all collateral taken");
+        uint256 price = 30_000e18;
+        assertEq(paid, (price * 10_000) / 10_500, "paid only what the BTC covers at the bonus");
+        (, , , , , uint256 principal, uint256 scaled) = m.loans(id);
+        assertEq(principal + scaled, 0, "the rest is written off");
     }
 
     // ----- veBTC loans -----

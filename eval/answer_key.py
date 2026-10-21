@@ -15,7 +15,7 @@ Rules used (PRD section 3):
 Money is exact fractions here; the contracts use 18-decimal integers, so a
 match within 1e-12 MUSD per loan is counted as exact.
 """
-import json, re, subprocess, sys
+import json, os, re, subprocess, sys
 from fractions import Fraction as F
 from pathlib import Path
 
@@ -91,9 +91,11 @@ def lifecycle():
     return k
 
 def chain_logs():
-    out = subprocess.run(
-        ["forge", "test", "--use", "/home/user/.tools/bin/solc", "--match-path", "test/eval/*", "-vv"],
-        cwd=ROOT / "contracts", capture_output=True, text=True).stdout
+    # forge picks solc 0.8.28 itself; set SOLC to point it at a local binary.
+    cmd = ["forge", "test", "--match-path", "test/eval/*", "-vv"]
+    if os.environ.get("SOLC"):
+        cmd[2:2] = ["--use", os.environ["SOLC"]]
+    out = subprocess.run(cmd, cwd=ROOT / "contracts", capture_output=True, text=True).stdout
     return {m[1]: F(int(m[2]), 10**18) for m in re.finditer(r"^\s+([\w.]+): (\d+)$", out, re.M)}
 
 def main():
