@@ -96,6 +96,8 @@ Governance is now the vault's owner, read live. Config changes wait 600 s on tes
 | A non-owner tries to propose a config: reverts (`OnlyAdmin`) | `0xfe851d8a250551c2078f8f195bc011894b482f776c404d4866c4d262cf7343f0` |
 | The vault owner proposes a config | `0xb873efbe5158298a32f1b884b4da8f8e9782ff99fe4bccf1c49ec6d7a806c072` |
 | Applying it before the delay is refused (`TooEarly`, `0x2a35a324`) | not sent: rejected in simulation |
+| After the 600 s delay, anyone applies it (here the keeper wallet) | `0x9ba40cd425cdd15b875f27bc569c165c7f3fc187c6118de215c0d77a0b616181` |
+| veBTC #395 → loan 6 (10 MUSD), votes through Keel, and a 1 MUSD bribe is posted on that gauge. The claim is forwarded after the epoch flips (Thu 00:00 UTC) | `0x17b8a12ec9646a74c70fc158f906a539f8addfe02d11b69e367d65cc22ae2e23`, `0xf4b70e2ec433a68f36d6c39edd43656658dce5b749e1407992a5c428f5acae1e`, `0xf07a09d3c705d7d00b8e2596cd6cd224ef79e8ea1357c931056cb4c51f784b67` |
 
 **Why the app changed too.** The first live demo on the hardened contracts failed. Mezo's public testnet RPC balances across nodes that disagree: on 2026-10-21, 5 of 12 receipt requests for a mined transaction came back `null`, and a gas estimate hit a node that hadn't seen the new loan. The app now reads through dRPC first, with Mezo's RPC as fallback. Server wallets sign locally, wait until the previous transaction is visible, and re-broadcast the same signed transaction to both endpoints until it's mined.
 

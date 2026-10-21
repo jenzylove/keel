@@ -23,7 +23,7 @@ Tick an item only from the live app or a real transaction, never from intent.
 - [ ] Testnet: reward claim forwarded to the borrower (bribe posted; claimable after the epoch flips Thu 00:00 UTC)
 - [x] Testnet: permanent veBTC liquidation path
 - [x] Rate step from the pool time-weighted price (Pyth dropped), refused when too soon
-- [ ] Config timelock: propose, refused early, applied after the delay
+- [x] Config timelock: propose, refused early, applied after the delay
 - [x] Throttle pauses new borrows below the pool floor
 - [x] Withdraw of the full liquid buffer succeeds at max lending
 - [x] `/demo` runs a real testnet borrow and repay with no sign-up

@@ -28,6 +28,7 @@ export const testnetGroups: ProofGroup[] = [
       { what: 'Keeper steps the peg premium, 0 → 1%', hash: '0x5849848539fae0227f7f67da130b4e415a3b86096eea5655363a5c42e7c5ac13' },
       { what: 'A non-owner proposes a config: reverts', hash: '0xfe851d8a250551c2078f8f195bc011894b482f776c404d4866c4d262cf7343f0' },
       { what: 'The vault owner proposes a config; applying it early is refused', hash: '0xb873efbe5158298a32f1b884b4da8f8e9782ff99fe4bccf1c49ec6d7a806c072' },
+      { what: 'After the delay, anyone applies it', hash: '0x9ba40cd425cdd15b875f27bc569c165c7f3fc187c6118de215c0d77a0b616181' },
     ],
   },
   {
