@@ -170,3 +170,21 @@ Nothing is cut. If something is cut at a checkpoint, it will be listed here with
 - **Governance can still tighten settings**, but only after the delay, in public, and only the vault's owner can propose.
 - **The peg price comes from a thin pool** (about $58k on the dollar side on mainnet). A day-long average plus small weekly steps limit what moving it could gain, but it could be pushed.
 - **The size of the payoff depends on Mezo choosing to migrate.**
+
+## 8. Questions the Mezo team will ask
+
+**Doesn't lending idle MUSD push the price further below $1?**
+Partly, yes. A borrower who sells their MUSD adds sell pressure, and the dollar side of Mezo's mUSDC/MUSD wall is thin (about $58k against 5.3M MUSD on 2026-10-20). Four things bound it:
+- **The cap.** At most 20% of the vault can be out: 1.476M of 7.38M, about 5% of the 29.48M supply.
+- **The throttle.** New borrowing pauses while the wall's dollar side is below a floor governance sets, so Keel stops before it drains that side.
+- **The peg premium.** Below $0.995 the rate steps up to 4 points, which pays borrowers to buy MUSD back and repay while it's cheap.
+- **Repayment.** Every loan is repaid in MUSD, so over its life a loan is neutral. While loans are open, it is a real cost, which is why the cap and the floor stay in governance's hands.
+
+**Savers never agreed to lend. Why should their principal carry credit risk?**
+- At least 80% stays liquid, and withdrawals draw on it first.
+- 10% of interest builds a reserve that takes losses first. A sale below the debt pays principal before interest, and later interest makes good any loss before savers are paid.
+- The risk buys real income. Today's ~3% comes mostly from redemption fees that run out as the last loans are redeemed, while Keel's income comes from borrowers who stay.
+- If governance would rather savers choose, Keel runs as its own opt-in vault with the same contracts. That needs no change to Mezo's vault.
+
+**Doesn't this depend on Mezo choosing to plug it in?**
+For the full 7.38M, yes. It's one call, `setStrategy`, by the multisig that already controls the vault, and the mainnet fork test runs that exact call on real state. Nothing else in Mezo changes, and it can be reversed the same way once nothing is lent.
