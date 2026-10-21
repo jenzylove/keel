@@ -14,3 +14,9 @@
 | 2026-10-20 | deploy | Live on Vercel: https://keel-psi-seven.vercel.app (commit b5dec12). |
 | 2026-10-21 | harden-1 | Hardened contracts live on testnet: governance = vault owner, 600 s config timelock, NoDebt, liquidation price cap, positionAt. Vault migrated its 1,400 MUSD to the new strategy (setStrategy 0x37259e12…). App sending rebuilt after the live demo failed: Mezo's public testnet RPC returned null for a mined receipt on 5 of 12 requests and a stale gas estimate once. Reads now go to dRPC first (Mezo RPC as fallback); server wallets sign locally, wait until the previous transaction is visible, and re-broadcast to both endpoints until mined; gas floors per function. Demo ran 3 times back to back and the keeper ran, all confirmed. |
 | 2026-10-21 | harden-2 | Live Vercel demo ran twice end to end on the hardened contracts; keeper claimed yield and stepped the peg; timelock proposal live (non-owner reverted, early apply refused). Proof docs and /proof updated; PRD documents governance = vault owner and the config delay. |
+
+## 2026-10-21: Eval
+- Added `contracts/test/eval/KeelEval.t.sol` (5 scenarios that log every number) and `eval/answer_key.py` (works the numbers out from the PRD's rules with exact fractions, then compares).
+- Real MUSD prices drive the peg replay: CoinGecko daily data, every 7th day, 26 weeks.
+- First run: 233/235. Both misses came from the same cause: an underwater liquidation applied the sale to interest first, so uncollected interest was paid out as savers' yield and booked again as bad debt. Fixed in `_settle` (principal first when the loan is about to be written off). Rerun: 235/235. Added a unit test.
+- The testnet market needs a redeploy with the fix. That waits until after Thursday's reward-claim proof.

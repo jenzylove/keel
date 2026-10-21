@@ -1,0 +1,533 @@
+{
+  "checks": 235,
+  "misses": [],
+  "series": {
+    "pegOn": [
+      {
+        "week": 1,
+        "price": 1.0038,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 2,
+        "price": 1.0074,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 3,
+        "price": 1.0058,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 4,
+        "price": 1.005,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 5,
+        "price": 1.0028,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 6,
+        "price": 1.0041,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 7,
+        "price": 1.0039,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 8,
+        "price": 1.0036,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 9,
+        "price": 0.9978,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 10,
+        "price": 0.9889,
+        "premium": 0.01,
+        "rate": 0.06,
+        "saverRate": 0.0054
+      },
+      {
+        "week": 11,
+        "price": 0.9923,
+        "premium": 0.0108,
+        "rate": 0.0608,
+        "saverRate": 0.005472
+      },
+      {
+        "week": 12,
+        "price": 0.9944,
+        "premium": 0.0024,
+        "rate": 0.0524,
+        "saverRate": 0.004716
+      },
+      {
+        "week": 13,
+        "price": 0.9905,
+        "premium": 0.0124,
+        "rate": 0.0624,
+        "saverRate": 0.005616
+      },
+      {
+        "week": 14,
+        "price": 0.9919,
+        "premium": 0.0124,
+        "rate": 0.0624,
+        "saverRate": 0.005616
+      },
+      {
+        "week": 15,
+        "price": 0.9915,
+        "premium": 0.014,
+        "rate": 0.064,
+        "saverRate": 0.00576
+      },
+      {
+        "week": 16,
+        "price": 0.9906,
+        "premium": 0.0176,
+        "rate": 0.0676,
+        "saverRate": 0.006084
+      },
+      {
+        "week": 17,
+        "price": 0.9912,
+        "premium": 0.0152,
+        "rate": 0.0652,
+        "saverRate": 0.005868
+      },
+      {
+        "week": 18,
+        "price": 0.9905,
+        "premium": 0.018,
+        "rate": 0.068,
+        "saverRate": 0.00612
+      },
+      {
+        "week": 19,
+        "price": 0.9906,
+        "premium": 0.0176,
+        "rate": 0.0676,
+        "saverRate": 0.006084
+      },
+      {
+        "week": 20,
+        "price": 0.9895,
+        "premium": 0.022,
+        "rate": 0.072,
+        "saverRate": 0.00648
+      },
+      {
+        "week": 21,
+        "price": 0.9896,
+        "premium": 0.0216,
+        "rate": 0.0716,
+        "saverRate": 0.006444
+      },
+      {
+        "week": 22,
+        "price": 0.9905,
+        "premium": 0.018,
+        "rate": 0.068,
+        "saverRate": 0.00612
+      },
+      {
+        "week": 23,
+        "price": 0.9896,
+        "premium": 0.0216,
+        "rate": 0.0716,
+        "saverRate": 0.006444
+      },
+      {
+        "week": 24,
+        "price": 0.9909,
+        "premium": 0.0164,
+        "rate": 0.0664,
+        "saverRate": 0.005976
+      },
+      {
+        "week": 25,
+        "price": 0.9891,
+        "premium": 0.0236,
+        "rate": 0.0736,
+        "saverRate": 0.006624
+      },
+      {
+        "week": 26,
+        "price": 0.9882,
+        "premium": 0.0272,
+        "rate": 0.0772,
+        "saverRate": 0.006948
+      }
+    ],
+    "pegOnEnd": {
+      "paid": 103022.54313059997,
+      "reserve": 302.2543130599968,
+      "yieldOwed": 2720.2888175399708
+    },
+    "pegOff": [
+      {
+        "week": 1,
+        "price": 1.0038,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 2,
+        "price": 1.0074,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 3,
+        "price": 1.0058,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 4,
+        "price": 1.005,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 5,
+        "price": 1.0028,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 6,
+        "price": 1.0041,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 7,
+        "price": 1.0039,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 8,
+        "price": 1.0036,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 9,
+        "price": 0.9978,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 10,
+        "price": 0.9889,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 11,
+        "price": 0.9923,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 12,
+        "price": 0.9944,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 13,
+        "price": 0.9905,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 14,
+        "price": 0.9919,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 15,
+        "price": 0.9915,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 16,
+        "price": 0.9906,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 17,
+        "price": 0.9912,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 18,
+        "price": 0.9905,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 19,
+        "price": 0.9906,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 20,
+        "price": 0.9895,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 21,
+        "price": 0.9896,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 22,
+        "price": 0.9905,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 23,
+        "price": 0.9896,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 24,
+        "price": 0.9909,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 25,
+        "price": 0.9891,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      },
+      {
+        "week": 26,
+        "price": 0.9882,
+        "premium": 0.0,
+        "rate": 0.05,
+        "saverRate": 0.0045
+      }
+    ],
+    "pegOffEnd": {
+      "paid": 102523.26485421779,
+      "reserve": 252.3264854217797,
+      "yieldOwed": 2270.938368796017
+    }
+  },
+  "lifecycle": [
+    {
+      "key": "btc.year.debt",
+      "chain": "41520.0",
+      "key_value": "41520.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "btc.p60k.health",
+      "chain": "0.9393063583815029",
+      "key_value": "0.9393063583815029",
+      "diff": 1.7341040462427745e-19,
+      "ok": true
+    },
+    {
+      "key": "btc.p55k.health",
+      "chain": "0.8610308285163777",
+      "key_value": "0.8610308285163777",
+      "diff": 3.25626204238921e-19,
+      "ok": true
+    },
+    {
+      "key": "btc.liq.seized",
+      "chain": "0.38181818181818183",
+      "key_value": "0.38181818181818183",
+      "diff": 1.8181818181818183e-19,
+      "ok": true
+    },
+    {
+      "key": "btc.liq.debtAfter",
+      "chain": "21520.0",
+      "key_value": "21520.0",
+      "diff": 1e-18,
+      "ok": true
+    },
+    {
+      "key": "btc.liq.reserve",
+      "chain": "152.0",
+      "key_value": "152.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "btc.liq.yieldOwed",
+      "chain": "1368.0",
+      "key_value": "1368.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "btc.liq.lent",
+      "chain": "21520.0",
+      "key_value": "21520.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veSurplus.debt",
+      "chain": "30088.76712328767",
+      "key_value": "30088.76712328767",
+      "diff": 2.8767123287671233e-15,
+      "ok": true
+    },
+    {
+      "key": "veSurplus.liqPaid",
+      "chain": "45000.0",
+      "key_value": "45000.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veSurplus.surplus",
+      "chain": "14911.232876712329",
+      "key_value": "14911.232876712329",
+      "diff": 2.8767123287671233e-15,
+      "ok": true
+    },
+    {
+      "key": "veSurplus.badDebt",
+      "chain": "0.0",
+      "key_value": "0.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veSurplus.lent",
+      "chain": "0.0",
+      "key_value": "0.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.btcPaid",
+      "chain": "105600.0",
+      "key_value": "105600.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.reserveBefore",
+      "chain": "560.0",
+      "key_value": "560.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.debt",
+      "chain": "31680.0",
+      "key_value": "31680.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.liqPaid",
+      "chain": "27000.0",
+      "key_value": "27000.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.reserveAfter",
+      "chain": "0.0",
+      "key_value": "0.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.badDebt",
+      "chain": "2440.0",
+      "key_value": "2440.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.yieldOwed",
+      "chain": "5040.0",
+      "key_value": "5040.0",
+      "diff": 0.0,
+      "ok": true
+    },
+    {
+      "key": "veUnder.lent",
+      "chain": "0.0",
+      "key_value": "0.0",
+      "diff": 0.0,
+      "ok": true
+    }
+  ]
+}

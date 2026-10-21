@@ -237,7 +237,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         uint256 left = debt - paid;
         if (left != 0 && left < minLoan) revert BelowMinLoan(left, minLoan);
         musd.safeTransferFrom(msg.sender, address(strategy), paid);
-        _settle(id, paid, debt);
+        _settle(id, paid, debt, false);
     }
 
     function addBtc(uint256 id, uint256 amount) external nonReentrant {
@@ -368,9 +368,12 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         if (loan.kind == Kind.Btc) {
             uint256 pay = maxRepay > debt ? debt : maxRepay;
             uint256 seized = KeelMath.seizeFor(pay, price, r.bonusBps, loan.btc);
+            // Taking all the BTC without clearing the debt means the rest is
+            // written off, so the payment can't count as interest.
+            bool shortfall = seized == loan.btc && pay < debt;
             loan.btc -= seized;
             musd.safeTransferFrom(msg.sender, address(strategy), pay);
-            _settle(id, pay, debt);
+            _settle(id, pay, debt, shortfall);
             uint256 lost;
             if (loan.btc == 0 && loan.scaled != 0) lost = _writeOff(id);
             btc.safeTransfer(msg.sender, seized);
@@ -383,7 +386,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
             uint256 toDebt = sale > debt ? debt : sale;
             uint256 surplus = sale - toDebt;
             musd.safeTransferFrom(msg.sender, address(strategy), toDebt);
-            _settle(id, toDebt, debt);
+            _settle(id, toDebt, debt, sale < debt);
             uint256 lost;
             if (loan.scaled != 0) lost = _writeOff(id);
             if (surplus > 0) musd.safeTransferFrom(msg.sender, owner, surplus);
@@ -549,13 +552,22 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     }
 
     /// @dev Applies `paid` MUSD (already sent to the strategy) to a loan whose
-    ///      debt was `debt`. Interest is paid before principal.
-    function _settle(uint256 id, uint256 paid, uint256 debt) internal {
+    ///      debt was `debt`. Interest is paid before principal, unless the loan
+    ///      is about to be written off: then principal comes first, so savers
+    ///      aren't paid yield on interest that was never collected.
+    function _settle(uint256 id, uint256 paid, uint256 debt, bool principalFirst) internal {
         if (paid == 0) return;
         Loan storage loan = loans[id];
-        uint256 interest = debt > loan.principal ? debt - loan.principal : 0;
-        uint256 interestPart = paid > interest ? interest : paid;
-        uint256 principalPart = paid - interestPart;
+        uint256 interestPart;
+        uint256 principalPart;
+        if (principalFirst) {
+            principalPart = paid > loan.principal ? loan.principal : paid;
+            interestPart = paid - principalPart;
+        } else {
+            uint256 interest = debt > loan.principal ? debt - loan.principal : 0;
+            interestPart = paid > interest ? interest : paid;
+            principalPart = paid - interestPart;
+        }
         if (paid == debt) {
             loan.scaled = 0;
         } else {

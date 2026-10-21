@@ -28,6 +28,7 @@ Tick an item only from the live app or a real transaction, never from intent.
 - [x] Withdraw of the full liquid buffer succeeds at max lending
 - [x] `/demo` runs a real testnet borrow and repay with no sign-up
 - [x] `/proof` and `/data` read live
-- [ ] Eval published with peg term on and off
+- [x] Eval published with peg term on and off (docs/eval/RESULTS.md, /proof)
+- [ ] Testnet market redeployed with the shortfall fix
 - [ ] Release readiness audit done; Scope and limits written
 - [x] Git history secret scan clean

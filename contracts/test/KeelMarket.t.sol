@@ -159,6 +159,16 @@ contract KeelMarketTest is Test {
         assertEq(strat.lent(), 0, "nothing left lent");
     }
 
+    function test_shortfall_pays_principal_before_interest() external {
+        uint256 id = _openBtc(1e18, 40_000e18);
+        vm.warp(block.timestamp + 365 days); // interest owed, never collected
+        feed.set(30_000e18);
+        vm.prank(liq);
+        m.liquidate(id, 28_572e18);
+        assertEq(strat.yieldOwed() + strat.reserve(), 0, "no yield from uncollected interest");
+        assertEq(strat.badDebt(), 40_000e18 - 28_572e18, "loss is unrecovered principal");
+    }
+
     // ----- veBTC loans -----
 
     function _openVe(uint256 amount, bool permanent, uint256 borrowAmt) internal returns (uint256 id, uint256 nft) {

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { forkTests, notYet, testnetGroups } from '@/lib/proof';
+import { evalRun, forkTests, notYet, testnetGroups } from '@/lib/proof';
 import { addressUrl, deployed, txUrl } from '@/lib/chains';
 
 export const metadata: Metadata = { title: 'Proof — Keel' };
@@ -40,6 +40,26 @@ export default function Page() {
                       {t.output}
                     </pre>
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div className="split">
+          <div>
+            <div className="kicker">Eval · answer key</div>
+            <h2 style={{ marginTop: 14 }}>The numbers, checked independently.</h2>
+            <p style={{ marginTop: 16 }}>{evalRun.headline}</p>
+          </div>
+          <table className="ledger">
+            <tbody>
+              {evalRun.rows.map((r) => (
+                <tr key={r.what}>
+                  <td>{r.what}</td>
+                  <td className="num">{r.result}</td>
                 </tr>
               ))}
             </tbody>

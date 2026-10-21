@@ -15,6 +15,21 @@ export const forkTests: { name: string; output: string }[] = [
   { name: 'Peg oracle reads MUSD on mainnet', output: '24h average of the mUSDC/MUSD wall: $0.991043 · basic pool: $0.989539' },
 ];
 
+/** From docs/eval/RESULTS.md; rerun with `python3 eval/answer_key.py`. */
+export const evalRun = {
+  headline: '235 checks against an answer key computed separately. The first run missed 2; they exposed a real bug, now fixed, and the rerun matches all 235 to the wei.',
+  rows: [
+    { what: 'Real MUSD price, 26 weeks: savers receive (peg term on / off)', result: '2,720.29 / 2,270.94 MUSD' },
+    { what: 'Borrow rate by October (on / off)', result: '7.72% / 5.00%' },
+    { what: 'BTC loan: a year of interest, health, liquidation with 5% bonus', result: 'exact' },
+    { what: 'Permanent veBTC sold at 10% off, surplus to the borrower', result: 'exact' },
+    {
+      what: 'veBTC sold below its debt. First run: uncollected interest was paid out as yield and booked again as loss. Fixed: principal first when a loan is written off',
+      result: 'missed → fixed',
+    },
+  ],
+};
+
 export const testnetGroups: ProofGroup[] = [
   {
     title: 'Hardened contracts, current',
