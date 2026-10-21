@@ -23,7 +23,7 @@ export default async function Home() {
           </h1>
           <p className="lede">
             Most of what Mezo&apos;s savings vault pays comes from fees on redemptions, the same redemptions that emptied the loan
-            book. One loan is left. Keel lends the vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption
+            book. {snap.troves === null ? 'Almost none are left.' : snap.troves === 1 ? 'One loan is left.' : `${snap.troves} loans are left.`} Keel lends the vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption
             system, so savers earn from borrowers who stay. Borrowers can&apos;t be redeemed, only liquidated if their collateral
             falls too far.
           </p>

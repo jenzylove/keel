@@ -24,8 +24,8 @@
 ## The problem, read from Mezo mainnet
 
 - **MUSD has traded under $0.9925 since July.** Redeeming 1 MUSD pays $1 of BTC minus 0.75%, so below that price anyone can buy MUSD cheap and redeem it against the weakest loan.
-- **That emptied the loan book.** There were 49 MUSD loans in June. There is 1 now.
-- **Savers are paid by that same process.** The vault's 7.38M MUSD of principal is lent to no one. Savers earned about 3% a year over the last 30 days, and 65% of it arrived as BTC fees that redemptions pay. With one loan left, that income is running out.
+- **That emptied the loan book.** There were 49 MUSD loans in June and 1 on 2026-10-20.
+- **Savers are paid by that same process.** The vault's 7.38M MUSD of principal is lent to no one. Savers earned about 3% a year over the last 30 days, and 65% of it arrived as BTC fees that redemptions pay. With almost no loans left, that income is running out.
 - **Locked Bitcoin can't be borrowed against.** 806 BTC sits in veBTC, and Mezo's own FAQ says it can't be used as collateral.
 
 ## What Keel does

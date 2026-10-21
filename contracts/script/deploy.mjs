@@ -83,8 +83,10 @@ const NETWORKS = {
     // A small, unaudited deployment: at most 2,000 MUSD of savings, so at most
     // 400 MUSD lent.
     principalCap: 2000n * WAD,
-    // New borrowing pauses while the wall holds less than 30,000 mUSDC.
-    throttle: { pool: '0xCC372B7E15535aB225fe17c1075831D38ef7aC1a', token: '0x04671C72Aab5AC02A03c1098314b1BB6B560c197', floor: 30_000n * 10n ** 6n },
+    // New borrowing pauses while the wall holds less than 2,000 mUSDC. The
+    // wall's dollar side fell from about 58k to 7.7k on 2026-10-21, so the floor
+    // sits well under it; governance can raise it as the wall refills.
+    throttle: { pool: '0xCC372B7E15535aB225fe17c1075831D38ef7aC1a', token: '0x04671C72Aab5AC02A03c1098314b1BB6B560c197', floor: 2_000n * 10n ** 6n },
   },
 };
 
