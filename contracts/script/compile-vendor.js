@@ -10,7 +10,7 @@ const sources = {};
   for (const f of fs.readdirSync(dir)) {
     const p = path.join(dir, f);
     if (fs.statSync(p).isDirectory()) walk(p);
-    else if (p.endsWith('.sol')) sources[path.relative(root, p)] = { content: fs.readFileSync(p, 'utf8') };
+    else if (p.endsWith('.sol')) sources[path.relative(root, p).split(path.sep).join('/')] = { content: fs.readFileSync(p, 'utf8') };
   }
 })(root);
 const input = {
