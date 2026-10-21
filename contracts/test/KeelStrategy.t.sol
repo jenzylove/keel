@@ -44,6 +44,22 @@ contract KeelStrategyTest is Test {
         assertEq(s.lendable(), 200_000e18, "20% lendable");
     }
 
+    function test_principal_cap_stops_new_deposits_only() external {
+        vm.prank(address(0xBAD));
+        vm.expectRevert(KeelStrategy.OnlyAdmin.selector);
+        s.setPrincipalCap(1);
+
+        s.setPrincipalCap(1_000_500e18);
+        musd.mint(address(this), 1_000e18);
+        s.allocate(500e18); // up to the cap is fine
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.PrincipalCapReached.selector, 1_000_501e18, 1_000_500e18));
+        s.allocate(1e18);
+        s.deallocate(100e18); // withdrawals are never capped
+        s.setPrincipalCap(0); // 0 lifts the limit
+        s.allocate(500e18);
+        assertEq(s.principal(), 1_000_900e18, "principal");
+    }
+
     function test_draw_respects_cap() external {
         vm.prank(market);
         s.draw(borrower, 200_000e18);

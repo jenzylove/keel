@@ -65,6 +65,9 @@ contract KeelStrategy is IVaultStrategy {
 
     uint256 public maxLentBps;
     uint256 public reserveBps;
+    /// @notice Most principal the strategy accepts (0 = no limit). A small,
+    ///         unaudited deployment keeps what savers can put at risk small.
+    uint256 public principalCap;
 
     /// @notice Proposed parameters and when they may be applied. They wait
     ///         the market's config delay, because the cap moves the rate.
@@ -83,6 +86,7 @@ contract KeelStrategy is IVaultStrategy {
     event ParamsProposed(uint256 maxLentBps, uint256 reserveBps, uint256 eta);
     event ParamsCancelled();
     event Swept(address to, uint256 amount);
+    event PrincipalCapSet(uint256 cap);
 
     error OnlyVault();
     error OnlyMarket();
@@ -95,6 +99,7 @@ contract KeelStrategy is IVaultStrategy {
     error NothingPending();
     error TooEarly(uint256 eta);
     error StillActive();
+    error PrincipalCapReached(uint256 principal, uint256 cap);
 
     modifier onlyVault() {
         if (msg.sender != vault) revert OnlyVault();
@@ -136,6 +141,7 @@ contract KeelStrategy is IVaultStrategy {
         _accrueMarket();
         emit Allocate(amount);
         principal += amount;
+        _checkCap();
         musd.safeTransferFrom(vault, address(this), amount);
     }
 
@@ -183,6 +189,7 @@ contract KeelStrategy is IVaultStrategy {
     function onMigrated(uint256 amount) external onlyVault {
         _accrueMarket();
         principal += amount;
+        _checkCap();
     }
 
     // ---------------------------------------------------------------------
@@ -292,6 +299,13 @@ contract KeelStrategy is IVaultStrategy {
         _setParams(pendingMaxLentBps, pendingReserveBps);
     }
 
+    /// @notice Limits new deposits. Instant, because it can only stop money
+    ///         coming in; it never moves the rate or touches open loans.
+    function setPrincipalCap(uint256 cap) external onlyAdmin {
+        principalCap = cap;
+        emit PrincipalCapSet(cap);
+    }
+
     function cancelParams() external onlyAdmin {
         paramsEta = 0;
         emit ParamsCancelled();
@@ -330,6 +344,12 @@ contract KeelStrategy is IVaultStrategy {
         dripLeft = unreleased() + amount;
         dripAt = block.timestamp;
         yieldOwed += amount;
+    }
+
+    function _checkCap() private view {
+        if (principalCap != 0 && principal > principalCap) {
+            revert PrincipalCapReached(principal, principalCap);
+        }
     }
 
     function _accrueMarket() private {
