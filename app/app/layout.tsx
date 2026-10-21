@@ -28,10 +28,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600&display=swap"
         />
         <script
-          // Apply a saved theme before paint; fall back to the system setting.
+          // Apply a saved theme before paint. Dark is the default.
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('keel-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`,
           }}

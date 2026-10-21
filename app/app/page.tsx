@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Waterline } from '@/components/Waterline';
+import { Candles } from '@/components/Candles';
+import { DemoRunner } from './demo/DemoRunner';
 import { Loop } from '@/components/Loop';
 import { LoanTable } from '@/components/LoanTable';
 import { keelState, keepLastGoodUnless, mainnetSnapshot, musdPriceHistory, musdWallTwap } from '@/lib/reads';
@@ -15,13 +16,29 @@ export default async function Home() {
   return (
     <>
       <div className="wrap">
-        <section className="first">
+        <section className="first hero">
           <div className="kicker">A strategy for Mezo&apos;s MUSD Savings Vault</div>
-          <h1 style={{ marginTop: 18, maxWidth: '15ch' }}>Savers earn nothing. Borrowers get redeemed away.</h1>
-          <p className="lede" style={{ marginTop: 24 }}>
+          <h1 className="glow">
+            Savers earn nothing. Borrowers get <em>redeemed away.</em>
+          </h1>
+          <p className="lede">
             Keel lends the savings vault&apos;s idle MUSD to people holding BTC or veBTC, outside the redemption system. Savers earn
             again. Borrowers can&apos;t be redeemed, only liquidated if their collateral falls too far.
           </p>
+
+          <div className="actions">
+            <Link className="btn" href="/use">
+              Borrow on testnet
+            </Link>
+            <Link className="btn ghost" href="#live">
+              Run a real loan, no wallet
+            </Link>
+            <Link className="btn ghost" href="/proof">
+              See the proof
+            </Link>
+          </div>
+
+          <Candles history={history} now={twap} />
 
           <div className="readings">
             <div className="reading">
@@ -43,24 +60,13 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="actions">
-            <Link className="btn" href="/use">
-              Borrow on testnet →
-            </Link>
-            <Link className="btn ghost" href="/demo">
-              Run the demo, no wallet
-            </Link>
-            <Link className="btn ghost" href="/proof">
-              See the proof
-            </Link>
-          </div>
         </section>
 
         <section>
           <div className="split">
             <div>
               <div className="kicker">Why it&apos;s happening</div>
-              <h2 style={{ marginTop: 14 }}>MUSD has been under the waterline since July.</h2>
+              <h2 style={{ marginTop: 14 }}>MUSD has been under the line since July.</h2>
             </div>
             <div>
               <p style={{ marginTop: 0 }}>
@@ -68,13 +74,12 @@ export default async function Home() {
                 cheap and redeem it against the least-collateralised loan. Borrowers lose their BTC. That&apos;s what emptied the
                 loan book.
               </p>
-              <p className="mono muted" style={{ fontSize: 14 }}>
-                Today: {twap ? `$${twap.toFixed(4)}` : '—'} (24-hour average of Mezo&apos;s own mUSDC/MUSD pool, the price Keel&apos;s
-                mainnet oracle reads). Line: daily price, last 180 days, CoinGecko.
+              <p className="mono muted" style={{ fontSize: 13 }}>
+                Today: {twap ? `$${twap.toFixed(4)}` : '—'}, the 24-hour average of Mezo&apos;s own mUSDC/MUSD pool, which is the price
+                Keel&apos;s mainnet oracle reads. Candles above: CoinGecko daily closes, last 180 days.
               </p>
             </div>
           </div>
-          <Waterline history={history} now={twap} />
         </section>
 
         <section>
@@ -98,61 +103,60 @@ export default async function Home() {
         <section>
           <div className="kicker">How it works</div>
           <h2 style={{ marginTop: 14, maxWidth: '22ch' }}>One governance call plugs it in.</h2>
-          <div className="scroll" style={{ marginTop: 32 }}>
-            <table className="ledger">
-              <tbody>
-                <tr>
-                  <td className="mono" style={{ width: 48 }}>1</td>
-                  <td style={{ width: '32%' }}>
-                    <strong>Mezo&apos;s multisig calls <span className="mono">setStrategy(Keel)</span></strong>
-                  </td>
-                  <td>
-                    The savings vault already supports swappable strategies. Its idle MUSD (7.38M on 2026-10-20) moves out of{' '}
-                    <span className="mono">IdleStrategy</span> into KeelStrategy. Proven on a mainnet fork with the real balance.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="mono">2</td>
-                  <td>
-                    <strong>At least 80% stays liquid</strong>
-                  </td>
-                  <td>The vault pulls from the strategy inside every withdrawal, so most of it never leaves. Savers can withdraw while that liquid share lasts; if withdrawals use it up while loans are out, the rest waits for repayments.</td>
-                </tr>
-                <tr>
-                  <td className="mono">3</td>
-                  <td>
-                    <strong>Up to 20% is lent against BTC or veBTC</strong>
-                  </td>
-                  <td>
-                    Loans live in KeelMarket, not Mezo&apos;s TroveManager, so redemptions can&apos;t reach them. veBTC holders keep voting
-                    and keep their rewards. Mezo&apos;s FAQ says locked BTC can&apos;t be used as collateral. Here it can.
-                  </td>
-                </tr>
-                <tr>
-                  <td className="mono">4</td>
-                  <td>
-                    <strong>Interest goes to savers, 10% to a reserve</strong>
-                  </td>
-                  <td>The reserve absorbs bad debt first. Liquidation sells collateral at a discount and returns any surplus to the borrower.</td>
-                </tr>
-                <tr>
-                  <td className="mono">5</td>
-                  <td>
-                    <strong>The rate leans against the peg</strong>
-                  </td>
-                  <td>
-                    When MUSD trades under $0.995 the borrow rate steps up, 1% a week at most. Repaying becomes worth it and holding
-                    MUSD pays more. New borrowing pauses when the wall&apos;s dollar side runs thin, so Keel doesn&apos;t add to the drain on Mezo&apos;s defense.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <ol className="steps">
+            <li>
+              <strong>
+                Mezo&apos;s multisig calls <span className="mono">setStrategy(Keel)</span>
+              </strong>
+              <p>
+                The savings vault already supports swappable strategies. Its idle MUSD (7.38M on 2026-10-20) moves out of{' '}
+                <span className="mono">IdleStrategy</span> into KeelStrategy. Proven on a mainnet fork with the real balance.
+              </p>
+            </li>
+            <li>
+              <strong>At least 80% stays liquid</strong>
+              <p>
+                The vault pulls from the strategy inside every withdrawal, so most of it never leaves. Savers can withdraw while that
+                liquid share lasts; if withdrawals use it up while loans are out, the rest waits for repayments.
+              </p>
+            </li>
+            <li>
+              <strong>Up to 20% is lent against BTC or veBTC</strong>
+              <p>
+                Loans live in KeelMarket, not Mezo&apos;s TroveManager, so redemptions can&apos;t reach them. veBTC holders keep voting
+                and keep their rewards. Mezo&apos;s FAQ says locked BTC can&apos;t be used as collateral. Here it can.
+              </p>
+            </li>
+            <li>
+              <strong>Interest goes to savers, 10% to a reserve</strong>
+              <p>
+                It&apos;s released over a week, so nobody can jump in just before a repayment. The reserve absorbs bad debt first.
+                Liquidation sells collateral at a discount and returns any surplus to the borrower.
+              </p>
+            </li>
+            <li>
+              <strong>The rate leans against the peg</strong>
+              <p>
+                When MUSD trades under $0.995 the borrow rate steps up, 1% a week at most. Repaying becomes worth it and holding MUSD
+                pays more. New borrowing pauses when the wall&apos;s dollar side runs thin, so Keel doesn&apos;t add to the drain on
+                Mezo&apos;s defense.
+              </p>
+            </li>
+          </ol>
         </section>
 
-        <section>
-          <div className="kicker">Running now</div>
-          <h2 style={{ marginTop: 14 }}>Keel on Mezo testnet.</h2>
+        <section id="live">
+          <div className="kicker">Running now · Mezo testnet</div>
+          <h2 className="glow" style={{ marginTop: 14, maxWidth: '18ch' }}>
+            Run a real loan. <em>No wallet.</em>
+          </h2>
+          <p className="lede" style={{ marginTop: 18 }}>
+            Keel&apos;s demo wallet locks BTC, borrows MUSD from the vault&apos;s idle savings, repays with interest that goes to savers,
+            and gets its BTC back. Every step is a real transaction you can open.
+          </p>
+          <div className="terminal">
+            <DemoRunner />
+          </div>
           {keel ? (
             <>
               <div className="readings">
