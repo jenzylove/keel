@@ -273,13 +273,13 @@ export function KeelApp({ market }: { market: Market | null }) {
                   </option>
                 ))}
               </select>
-              <span className="hint">You keep voting with it and keep its rewards. Keel holds it until you repay.</span>
+              <span className="hint">It keeps its voting power and rewards, claimed through Keel&apos;s contract. Keel holds it until you repay.</span>
             </div>
           ) : (
             <p className="hint" style={{ marginTop: 20 }}>
               {account
                 ? 'This wallet holds no veBTC lock on Mezo testnet. Lock BTC in the Mezo testnet app to get one, or borrow against Bitcoin instead.'
-                : 'Connect a wallet to pick one of your veBTC locks. You keep voting with it and keep its rewards while it backs your loan.'}
+                : 'Connect a wallet to pick one of your veBTC locks. It keeps its voting power and rewards while it backs your loan.'}
             </p>
           )}
 

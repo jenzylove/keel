@@ -35,7 +35,7 @@ export default async function Home() {
         <KeelApp market={market} />
         <ul className="points">
             <li>Your BTC stays yours. Only a price fall can liquidate it, and any surplus comes back to you.</li>
-            <li>veBTC keeps voting and earning while it backs your loan.</li>
+            <li>A veBTC lock keeps its voting power and rewards while it backs your loan, claimed through Keel&apos;s contract.</li>
             <li>Savers earn from borrowers who stay, not from loans being redeemed away.</li>
         </ul>
       </section>
