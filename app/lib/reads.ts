@@ -157,6 +157,9 @@ export type KeelState = {
   lastPegStep: number;
   btcPrice: number;
   borrowingOpen: boolean;
+  minLoan: number;
+  /** Max borrow and liquidation line per collateral, in basis points. */
+  risk: { btc: [number, number]; veTimed: [number, number]; vePermanent: [number, number] };
   loans: KeelLoan[];
 };
 
@@ -176,6 +179,12 @@ export async function keelState(): Promise<KeelState | null> {
         rm('currentRate'), rm('saverRate'), rm('pegPremium'), rm('lastMusdPrice'), rm('lastPegStep'), rm('lastBtcPrice'), rm('nextLoanId'),
         testnet.readContract({ address: M, abi: marketAbi, functionName: 'borrowingOpen' }),
       ]);
+    const [rb, rt, rp, min] = await Promise.all([
+      testnet.readContract({ address: M, abi: marketAbi, functionName: 'btcRisk' }),
+      testnet.readContract({ address: M, abi: marketAbi, functionName: 'veTimedRisk' }),
+      testnet.readContract({ address: M, abi: marketAbi, functionName: 'vePermanentRisk' }),
+      testnet.readContract({ address: M, abi: marketAbi, functionName: 'minLoan' }),
+    ]);
     const ids = Array.from({ length: Number(next) - 1 }, (_, i) => BigInt(i + 1));
     const loans = (
       await Promise.all(
@@ -210,7 +219,10 @@ export async function keelState(): Promise<KeelState | null> {
     return {
       principal: n(principal), lent: n(lent), liquid: n(liquid), lendable: n(lendable), reserve: n(reserve),
       yieldOwed: n(yieldOwed), badDebt: n(badDebt), rate: n(rate), saverRate: n(saverRate), pegPremium: n(peg),
-      lastMusdPrice: n(musdP), lastPegStep: Number(pegAt), btcPrice: n(btcP), borrowingOpen: open, loans,
+      lastMusdPrice: n(musdP), lastPegStep: Number(pegAt), btcPrice: n(btcP), borrowingOpen: open,
+      minLoan: n(min),
+      risk: { btc: [rb[0], rb[1]], veTimed: [rt[0], rt[1]], vePermanent: [rp[0], rp[1]] },
+      loans,
     };
   });
 }

@@ -1,5 +1,7 @@
 /** Every claim on /proof, with the transaction or test that proves it. Kept in
  *  step with docs/proof/testnet-runs.md. */
+import loopRun from './loop-run.json';
+
 export type ProofRow = { what: string; hash?: string; note?: string };
 export type ProofGroup = { title: string; how: string; rows: ProofRow[] };
 
@@ -43,6 +45,8 @@ export const testnetGroups: ProofGroup[] = [
       { what: 'Loan #1 borrows 21 more, to 49% of its collateral', hash: '0x4ba856865dc4cc3fc54c081c80325a2da862adfa217ffd063713ba415eccb645' },
       { what: 'The vault owner proposes a tighter BTC setting (liquidate at 45%)', hash: '0xc477a8b3bc2f880eb052a4ac934e40b7794252b5ececce25bd8d26302aad9af4' },
       { what: 'Applied after the 600 s delay: loan #1 health 0.93, open to liquidation', hash: '0xfac142edc56b6fd38f5df43d629dcdc46a753bb4d83f3996076dddd6060cdcda' },
+      { what: 'The keeper liquidates loan #1 from its own MUSD float, on its daily run', hash: '0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42' },
+      { what: 'The vault owner puts the BTC setting back to 50% / 65% after the delay', hash: '0xb50d29ff0cd386fed6932a64018b843dd34bef9095e8e92ff601536f32440168' },
       { what: 'Live-site demo: open 10 MUSD on 0.0004 BTC', hash: '0x88cdaacf1069255319d70620903d4dc79ef6ea385bc047b1fd65731322d5c79b' },
       { what: 'Live-site demo: repay (interest first, to savers)', hash: '0x7aa889a18223655d5ac7e34867216d88dcd7ae4eee1160270a141ec4e16d8227' },
       { what: 'Live-site demo: close, BTC returned', hash: '0xacfec9b61fa8d82112efcaddbd8ba749afc33aef85112862625fb3e8a08cadb0' },
@@ -118,3 +122,17 @@ export const notYet = [
   'Forwarding a gauge reward to a borrower is unit-tested, but testnet gauges have no fees or bribes to claim yet.',
   "The mainnet peg oracle (the wall pool's average) is proven on a mainnet fork. On testnet the same mechanism reads a test pool.",
 ];
+
+type LoopStep = { key: string; what: string; hash: string };
+type LoopSnap = { strategy: { principal: string; lent: string } };
+const lr = loopRun as unknown as { steps: LoopStep[]; before?: LoopSnap; afterOpen?: LoopSnap; after?: LoopSnap };
+const closed = Boolean(lr.after);
+
+/** The loop with both sides played by fresh wallets, every step a real transaction. */
+export const loopGroup: ProofGroup = {
+  title: closed ? 'The loop, both sides, run end to end' : 'The loop, both sides, running now',
+  how: closed
+    ? 'Fresh wallets played two savers and three borrowers, one of them borrowing against a veBTC lock it created. Savers deposited, borrowers borrowed outside the redemption system, repaid with interest, and got their collateral back; the vault pulled the released interest and savers claimed it and withdrew.'
+    : `Fresh wallets play two savers and three borrowers, one of them borrowing against a veBTC lock it created. Savers deposited 120 MUSD, and ${lr.afterOpen?.strategy.lent.split('.')[0] ?? 'some'} MUSD is lent across three loans redemptions can't reach. The loans are left open so interest builds; the repay, release and withdraw steps are added here when they run.`,
+  rows: lr.steps.filter((s) => !s.key.startsWith('fund')).map((s) => ({ what: s.what.replace(/^(saver|borrower)(\d)/, (_, r, n) => `${r === 'saver' ? 'Saver' : 'Borrower'} ${n}`), hash: s.hash })),
+};

@@ -227,3 +227,39 @@ section.first { border-top: 0; padding-top: 32px; }
   .hero .actions .btn { width: 100%; justify-content: space-between; }
   .hero .actions .btn.ghost { justify-content: center; }
 }
+
+/* Home is the app: copy on the left, the panel on the right. */
+.app-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); grid-template-areas: 'head app' 'pts app'; grid-template-rows: auto 1fr; column-gap: clamp(32px, 5vw, 72px); align-items: start; padding-top: clamp(32px, 6vw, 72px); }
+.app-head { grid-area: head; }
+.app-hero .app { grid-area: app; }
+.app-hero .points { grid-area: pts; }
+.app-hero h1 { font-size: clamp(40px, 5.2vw, 72px); line-height: 1.02; margin: 18px 0 0; }
+.app-hero h1 em { font-style: normal; color: var(--sea); }
+.app-hero .lede { margin: 22px 0 0; }
+.points { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; max-width: 46ch; }
+.points li { color: var(--ink-2); padding-left: 22px; position: relative; }
+.points li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 8px; height: 8px; border-radius: 50%; background: var(--sea); box-shadow: 0 0 10px var(--sea-glow); }
+.app { background: var(--paper-2); border: 1px solid var(--rule-2); border-radius: 24px; padding: 22px; box-shadow: 0 0 80px rgba(69, 224, 138, 0.08); }
+.app-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--paper); border: 1px solid var(--rule); }
+.app-tabs button { flex: 1; font: 600 15px var(--sans); background: none; border: 0; padding: 11px 12px; color: var(--ink-2); cursor: pointer; border-radius: 999px; }
+.app-tabs button[aria-selected='true'] { color: #04130a; background: var(--sea); box-shadow: 0 0 20px var(--sea-glow); }
+.app-body { padding: 4px 2px 2px; }
+.seg { display: inline-flex; gap: 4px; margin-top: 20px; padding: 3px; border: 1px solid var(--rule-2); border-radius: 999px; }
+.seg button { font: 500 13px var(--sans); background: none; border: 0; padding: 7px 14px; color: var(--ink-2); cursor: pointer; border-radius: 999px; }
+.seg button[aria-checked='true'] { color: var(--ink); background: var(--rule-2); }
+.unit { position: relative; }
+.unit span { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font: 500 14px var(--mono); color: var(--muted); pointer-events: none; }
+.unit input { padding-right: 74px; }
+.quote { margin: 20px 0 0; display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.quote div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.quote dt { color: var(--ink-2); font-size: 14px; }
+.quote dd { margin: 0; font: 500 14px var(--mono); color: var(--ink); text-align: right; }
+.quote dd.ok { color: var(--sea); font-family: var(--sans); }
+.quote dd.warn, .hint.warn { color: var(--btc); }
+.btn.small { padding: 6px 14px; font-size: 14px; }
+.app-foot { margin-top: 18px; border-top: 1px solid var(--rule); padding-top: 14px; }
+.linkish { background: none; border: 0; padding: 0; color: var(--sea); font: 500 14px var(--sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.strip { margin-top: clamp(48px, 7vw, 88px); }
+.mezo-line { margin-top: 40px; padding: 22px 0; border-top: 1px solid var(--rule); color: var(--ink-2); }
+.mezo-line p { margin: 0; max-width: 80ch; }
+@media (max-width: 900px) { .app-hero { grid-template-columns: 1fr; grid-template-areas: 'head' 'app' 'pts'; row-gap: 28px; } }

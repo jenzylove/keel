@@ -1,0 +1,237 @@
+{
+  "network": "Mezo testnet (31611)",
+  "contracts": {
+    "vault": "0xfe3dc6700968529627b777ff33343017c6adaf7f",
+    "vaultImplementation": "0x52ce3343a3240fb47ad8a41c4d81083b3611f886",
+    "idleStrategy": "0x044cb755a0C7A7A356bdaE58644175b3285b989b",
+    "keelStrategy": "0xfb29823eee00289450c66bb75b1be4f0507625ee",
+    "keelMarket": "0x54251073caa7f40c97d633b1fe3787b47a5dcb51",
+    "pegOracle": "0x8667e21924f8f9953656a4e82a401a040ca32879"
+  },
+  "actors": {
+    "saver1": "0x8306adc4e1Ffb0649010084547bCcD9c0c47717b",
+    "saver2": "0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E",
+    "borrower1": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+    "borrower2": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+    "borrower3": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe"
+  },
+  "steps": [
+    {
+      "key": "fund-saver1-btc",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Fund saver1 with gas BTC",
+      "hash": "0x40327d0f0763b6faec15325d0f97658b2a4d18ae03369d48480da7fa24cf51a7",
+      "block": 16345575
+    },
+    {
+      "key": "fund-saver1-musd",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Send saver1 60 MUSD",
+      "hash": "0x0e0bcec1583365cc78c0c970821251791fabf058c8f6584b1efea51e1e7ae087",
+      "block": 16345576
+    },
+    {
+      "key": "fund-saver2-btc",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Fund saver2 with gas BTC",
+      "hash": "0xf070858835c85ff3c3870ba8c45292c5fe5db814aea69b85230b6b34793ad5cf",
+      "block": 16345578
+    },
+    {
+      "key": "fund-saver2-musd",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Send saver2 60 MUSD",
+      "hash": "0x04cfb8e8e03953ac850f3d71fe27dfc4af240c128e45aaf0bcf85bf7de2b02ca",
+      "block": 16345580
+    },
+    {
+      "key": "fund-borrower1",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Fund borrower1 with 0.0016 BTC",
+      "hash": "0x4751a057438a0f12125659448c5a77a3e8bd414113e33b5aa65352c6bd9d8225",
+      "block": 16345582
+    },
+    {
+      "key": "fund-borrower2",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Fund borrower2 with 0.0014 BTC",
+      "hash": "0x7301f1f78957e4e31efdf5409c2f1b0589e70f9f76659a33c6120bd1962bc110",
+      "block": 16345584
+    },
+    {
+      "key": "fund-borrower3",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Fund borrower3 with 0.0016 BTC",
+      "hash": "0x7e0d99b7ecc64ddb454292ed8de044144a0ec5b80da681d6face52ac1a12c506",
+      "block": 16345586
+    },
+    {
+      "key": "saver1-approve",
+      "who": "saver1",
+      "address": "0x8306adc4e1Ffb0649010084547bCcD9c0c47717b",
+      "what": "saver1 approves the vault",
+      "hash": "0xb0c77ebf5541ded9da6b34f84c86a38d48aa1695bdbbf4c461a71c28eefc8ce4",
+      "block": 16345587
+    },
+    {
+      "key": "saver1-deposit",
+      "who": "saver1",
+      "address": "0x8306adc4e1Ffb0649010084547bCcD9c0c47717b",
+      "what": "saver1 deposits 60 MUSD (allocated into Keel)",
+      "hash": "0x1947e5f916fd3caf05e1a5f8ad605c8f3410052ff56bb97cd5d221b05287530b",
+      "block": 16345589
+    },
+    {
+      "key": "saver2-approve",
+      "who": "saver2",
+      "address": "0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E",
+      "what": "saver2 approves the vault",
+      "hash": "0x87648453ce54e521b138c05bfaf13fdd7864e47c1116256e30adb9d0041903be",
+      "block": 16345591
+    },
+    {
+      "key": "saver2-deposit",
+      "who": "saver2",
+      "address": "0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E",
+      "what": "saver2 deposits 60 MUSD (allocated into Keel)",
+      "hash": "0x358b91ac879b3dc67fb79de35fa75b4b0f0bcec1a9d540f095eeb8e1bb268f59",
+      "block": 16345592
+    },
+    {
+      "key": "borrower1-approve",
+      "who": "borrower1",
+      "address": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+      "what": "borrower1 approves 0.0012 BTC",
+      "hash": "0xeaebd7b4455bc02ab781d474ee6a5e194305079fd6a9e92c6fb432c17dc8f8bd",
+      "block": 16345593
+    },
+    {
+      "key": "borrower1-open",
+      "who": "borrower1",
+      "address": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+      "what": "borrower1 locks 0.0012 BTC, borrows 30 MUSD",
+      "hash": "0xb6c391c48317e131ae86b7d609b0c10bb15d3634b5d7eec2248df2cbf4540f60",
+      "block": 16345594
+    },
+    {
+      "key": "borrower2-approve",
+      "who": "borrower2",
+      "address": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+      "what": "borrower2 approves 0.001 BTC",
+      "hash": "0xd0899d4fac84018bed1b4b7b2ccad01b6b1c517de33654c26b29903234582885",
+      "block": 16345596
+    },
+    {
+      "key": "borrower2-open",
+      "who": "borrower2",
+      "address": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+      "what": "borrower2 locks 0.001 BTC, borrows 25 MUSD",
+      "hash": "0x9d451009491e11839484a0ffc006f60ec9e3de5fc5514e3c193698eaa2a098a8",
+      "block": 16345598
+    },
+    {
+      "key": "borrower3-ve-approve",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 approves BTC for a veBTC lock",
+      "hash": "0x3465c39f9bf80c893cdce3948509d700258a6539c950803b9fb518d6657b02bd",
+      "block": 16345600
+    },
+    {
+      "key": "borrower3-ve-lock",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 locks 0.0012 BTC as veBTC for 21 days",
+      "hash": "0x5102d84d1170755feb493715da1c814bbf16a91d358e5a4847f9a957b0d13498",
+      "block": 16345601
+    },
+    {
+      "key": "borrower3-ve-approve-market",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 approves veBTC #407 to Keel",
+      "hash": "0x1521a17a6f9351580923862aaa0a3f2735ed43e4e26c146da514b9844cc5f1fd",
+      "block": 16345607
+    },
+    {
+      "key": "borrower3-open",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 deposits veBTC #407, borrows 20 MUSD",
+      "hash": "0xed4e410f8911266733d173082e1d6f5feac0bb6ff49ae091625ffba9c9d7a61a",
+      "block": 16345608
+    }
+  ],
+  "loans": {
+    "borrower1": {
+      "kind": "BTC",
+      "id": 6,
+      "openTx": "0xb6c391c48317e131ae86b7d609b0c10bb15d3634b5d7eec2248df2cbf4540f60"
+    },
+    "borrower2": {
+      "kind": "BTC",
+      "id": 7,
+      "openTx": "0x9d451009491e11839484a0ffc006f60ec9e3de5fc5514e3c193698eaa2a098a8"
+    },
+    "borrower3": {
+      "kind": "veBTC",
+      "nftId": 407,
+      "lockTx": "0x5102d84d1170755feb493715da1c814bbf16a91d358e5a4847f9a957b0d13498",
+      "id": 8,
+      "openTx": "0xed4e410f8911266733d173082e1d6f5feac0bb6ff49ae091625ffba9c9d7a61a"
+    }
+  },
+  "before": {
+    "at": "2026-10-24T19:35:09.525Z",
+    "strategy": {
+      "principal": "1500",
+      "lent": "0.000001123184809442",
+      "yieldOwed": "0.001655164068175052",
+      "reserve": "0.000257451831439214",
+      "unreleased": "0.001475106350402471"
+    },
+    "vaultYieldIndex": "441268276518",
+    "savers": {
+      "saver1": {
+        "sMUSD": "0",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      },
+      "saver2": {
+        "sMUSD": "0",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      }
+    }
+  },
+  "afterOpen": {
+    "at": "2026-10-24T19:37:35.631Z",
+    "strategy": {
+      "principal": "1620",
+      "lent": "75.000001123184809442",
+      "yieldOwed": "0.001474799862659715",
+      "reserve": "0.000257451831439214",
+      "unreleased": "0.00147452019259445"
+    },
+    "vaultYieldIndex": "561509999628",
+    "savers": {
+      "saver1": {
+        "sMUSD": "60",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      },
+      "saver2": {
+        "sMUSD": "60",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      }
+    }
+  }
+}

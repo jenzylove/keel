@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { evalRun, forkTests, notYet, testnetGroups } from '@/lib/proof';
+import { evalRun, forkTests, loopGroup, notYet, testnetGroups } from '@/lib/proof';
 import { addressUrl, deployed, txUrl } from '@/lib/chains';
 
 export const metadata: Metadata = { title: 'Proof — Keel' };
@@ -67,7 +67,7 @@ export default function Page() {
         </div>
       </section>
 
-      {testnetGroups.map((g) => (
+      {[loopGroup, ...testnetGroups].map((g) => (
         <section key={g.title}>
           <div className="split">
             <div>

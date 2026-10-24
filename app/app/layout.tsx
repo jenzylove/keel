@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { KeelMark } from '@/components/KeelMark';
+import { addressUrl, deployed } from '@/lib/chains';
 
 export const metadata: Metadata = {
   title: 'Keel — idle MUSD savings, lent outside redemptions',
@@ -45,8 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Keel
             </Link>
             <nav className="nav">
-              <Link href="/use">Borrow &amp; save</Link>
-              <Link href="/demo">Demo</Link>
+              <Link href="/why">Why Keel</Link>
               <Link href="/proof">Proof</Link>
               <Link href="/data">Mezo data</Link>
               <a href="https://github.com/jenzylove/keel">Code</a>
@@ -59,6 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="footer">
             <span>Keel · built for the Mezo Buildathon · live product on Mezo testnet, readings from Mezo mainnet</span>
             <span className="mono">MIT</span>
+            <span style={{ flexBasis: '100%' }}>
+              <Link href="/proof">Proof</Link> · <Link href="/why">Why Keel</Link> · <Link href="/data">Mezo data</Link> ·{' '}
+              <a href="https://github.com/jenzylove/keel">Code</a> · <a href={addressUrl(deployed.contracts.vault)}>Savings vault</a> ·{' '}
+              <a href={addressUrl(deployed.contracts.keelStrategy)}>KeelStrategy</a> ·{' '}
+              <a href={addressUrl(deployed.contracts.keelMarket)}>KeelMarket</a>
+            </span>
           </footer>
         </div>
       </body>
