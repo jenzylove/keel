@@ -125,6 +125,16 @@ export async function sendTx(
 }
 
 async function waitReceipt(pub: PublicClient, hash: Hash): Promise<TransactionReceipt> {
-  // A node that hasn't seen the transaction yet answers "not found", so keep asking.
-  return pub.waitForTransactionReceipt({ hash, timeout: 120_000, pollingInterval: 1500, retryCount: 60, retryDelay: 2000 });
+  // Mezo's testnet nodes can answer "not found" for a mined transaction for a
+  // while, so ask every endpoint in turn instead of trusting one answer.
+  const endpoints = [pub, ...TESTNET_RPCS.map((u) => createPublicClient({ chain: pub.chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }))];
+  const until = Date.now() + 180_000;
+  while (Date.now() < until) {
+    for (const ep of endpoints) {
+      const r = await ep.getTransactionReceipt({ hash }).catch(() => null);
+      if (r) return r;
+    }
+    await sleep(2000);
+  }
+  throw new Error(`Transaction ${hash} was sent but no network node has shown it yet. Check it on the explorer before trying again.`);
 }
