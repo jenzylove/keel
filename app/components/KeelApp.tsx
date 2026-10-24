@@ -190,6 +190,7 @@ export function KeelApp({ market }: { market: Market | null }) {
       const debt = amount(borrowIn || '0', 'the MUSD to borrow', true);
       if (coll === 'btc') {
         const c = amount(btcIn, 'the BTC to lock');
+        if (bal && c >= bal.btc) throw new Error(`This wallet has ${fmt(bal.btc, 18, 5)} test BTC, and a little is needed for fees. Lock less.`);
         await send(w, a, 'Approve BTC', { address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, c] });
         await send(w, a, 'Lock BTC and borrow', { address: MARKET, abi: marketAbi, functionName: 'openWithBtc', args: [c, debt] });
       } else {
@@ -204,18 +205,22 @@ export function KeelApp({ market }: { market: Market | null }) {
   const deposit = () =>
     act(async (w, a) => {
       const amt = amount(saveIn, 'the amount');
+      if (bal && amt > bal.musd) throw new Error(`This wallet has ${fmt(bal.musd, 18, 2)} MUSD. Deposit that much or less.`);
       await send(w, a, 'Approve MUSD', { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [VAULT, amt] });
       await send(w, a, 'Deposit into savings', { address: VAULT, abi: vaultAbi, functionName: 'deposit', args: [amt] });
     });
 
   const withdraw = () =>
     act(async (w, a) => {
-      await send(w, a, 'Withdraw from savings', { address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [amount(saveIn, 'the amount')] });
+      const amt = amount(saveIn, 'the amount');
+      if (bal && amt > bal.smusd) throw new Error(`You have ${fmt(bal.smusd, 18, 2)} sMUSD saved. Withdraw that much or less.`);
+      await send(w, a, 'Withdraw from savings', { address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [amt] });
     });
 
   const repayAndClose = (l: MyLoan) =>
     act(async (w, a) => {
       const pay = l.debt + l.debt / 1000n + 1n; // headroom for interest accrued while signing
+      if (bal && pay > bal.musd) throw new Error(`Repaying takes about ${fmt(pay, 18, 4)} MUSD and this wallet has ${fmt(bal.musd, 18, 4)}.`);
       await send(w, a, 'Approve MUSD', { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, pay] });
       await send(w, a, `Repay loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'repay', args: [l.id, pay] });
       await send(w, a, `Close loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'close', args: [l.id] }, async () =>
