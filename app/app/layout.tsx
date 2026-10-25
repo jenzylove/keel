@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { KeelMark } from '@/components/KeelMark';
 import { addressUrl, deployed } from '@/lib/chains';
 import { ConnectButton, WalletProvider } from '@/components/WalletProvider';
+import { BarShade } from '@/components/BarShade';
 
 export const metadata: Metadata = {
   title: 'Keel: borrow against your Bitcoin, never redeemed',
@@ -24,24 +24,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
-        />
-        <script
-          // Apply a saved theme before paint. Dark is the default.
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('keel-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`,
-          }}
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
         />
       </head>
       <body>
         <WalletProvider>
-        <div className="wrap">
+        <BarShade />
+        <div className="bar-shell">
           <header className="bar">
             <Link href="/" className="mark" aria-label="Keel home">
               <KeelMark />
@@ -53,7 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/proof">Proof</Link>
               <Link href="/data">Mezo data</Link>
               <a href="https://github.com/jenzylove/keel">Code</a>
-              <ThemeToggle />
             </nav>
             <div className="bar-right">
               <span className="net">Mezo testnet</span>
@@ -96,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
             </div>
-            <div className="foot-word" aria-hidden="true">KEEL</div>
+            <div className="foot-word" aria-hidden="true">Keel</div>
             <div className="foot-bottom">
               <span>Built for the Mezo Buildathon · live on Mezo testnet, readings from Mezo mainnet</span>
               <span>MIT</span>
