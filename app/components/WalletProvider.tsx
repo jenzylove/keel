@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Address, WalletClient } from 'viem';
-import { connect as connectWallet } from '@/lib/wallet';
+import { connect as connectWallet, friendlyError } from '@/lib/wallet';
 
 type WalletState = {
   wallet: WalletClient | null;
@@ -31,7 +31,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setAccount(c.account);
       return c;
     } catch (e) {
-      setError((e as Error).message.split('\n')[0]);
+      setError(friendlyError(e));
       return null;
     } finally {
       setConnecting(false);

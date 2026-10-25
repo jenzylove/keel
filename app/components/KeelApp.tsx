@@ -6,6 +6,7 @@ import { useWallet } from '@/components/WalletProvider';
 import { deployed, testnet, txUrl } from '@/lib/chains';
 import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
+import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
 
 const MARKET = deployed.contracts.keelMarket as Address;
@@ -128,7 +129,7 @@ export function KeelApp({ market }: { market: Market | null }) {
     try {
       await f(w, a);
     } catch (e) {
-      say({ text: (e as Error).message.split('\n')[0], ok: false });
+      say({ text: friendlyError(e), ok: false });
     } finally {
       setBusy(false);
       await refresh(a).catch(() => {});
