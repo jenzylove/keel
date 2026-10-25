@@ -23,7 +23,8 @@ export async function connect(): Promise<{ wallet: WalletClient; account: Addres
     chainId: hex,
     chainName: mezoTestnet.name,
     nativeCurrency: mezoTestnet.nativeCurrency,
-    rpcUrls: mezoTestnet.rpcUrls.default.http,
+    // Mezo's own RPC first: wallets use the first one, and dRPC drops some calls.
+    rpcUrls: ['https://rpc.test.mezo.org', 'https://mezo-testnet.drpc.org'],
     blockExplorerUrls: [mezoTestnet.blockExplorers.default.url],
   };
   try {
@@ -55,6 +56,8 @@ export function friendlyError(e: unknown): string {
   const msg = (w?.message ?? String(e)).split('\n')[0];
   if (w?.code === 4001 || /user (rejected|denied)|rejected the request|cancel/i.test(msg)) return 'You cancelled in your wallet. Nothing was sent.';
   if (unknownChain(e)) return 'Your wallet could not switch to Mezo testnet. Add it in your wallet (chain 31611, RPC rpc.test.mezo.org) and try again.';
+  if (/does not exist|is not available|method not found/i.test(msg))
+    return 'Your wallet’s Mezo testnet connection dropped the request. In your wallet’s network settings, set the Mezo Testnet RPC to https://rpc.test.mezo.org and try again.';
   if (/insufficient funds|exceeds balance/i.test(msg)) return 'This wallet needs testnet BTC to pay gas. Get some free at faucet.test.mezo.org.';
   if (/No browser wallet/i.test(msg)) return msg;
   return msg.length > 160 ? `${msg.slice(0, 157)}…` : msg;

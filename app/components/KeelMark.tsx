@@ -1,10 +1,9 @@
-/** A hull cross-section with its keel below the waterline. */
+/** A solid hull with its red keel fin below: the part that keeps it upright. */
 export function KeelMark() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M2 9h20" stroke="var(--sea)" strokeWidth="1.6" />
-      <path d="M4 9c1 4.5 4.2 7 8 7s7-2.5 8-7" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 16v6" stroke="var(--btc)" strokeWidth="2.4" strokeLinecap="round" />
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M3 9h26c-1.2 6.6-6.6 10.6-13 10.6S4.2 15.6 3 9z" fill="currentColor" />
+      <path d="M13.6 19.2h4.8L16 30z" fill="#ff2e2e" />
     </svg>
   );
 }

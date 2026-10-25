@@ -10,6 +10,9 @@ import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
 
 const MARKET = deployed.contracts.keelMarket as Address;
+const FAUCET = 'https://faucet.test.mezo.org';
+/** Below this a wallet can't lock anything useful and still pay fees. */
+const FAUCET_BELOW = 1_000_000_000_000_000n; // 0.001 BTC
 const VAULT = deployed.contracts.vault as Address;
 const MUSD = deployed.mezo.musd as Address;
 const BTC = deployed.mezo.btc as Address;
@@ -219,6 +222,33 @@ export function KeelApp({ market }: { market: Market | null }) {
           </button>
         ))}
       </div>
+
+      {account && bal && bal.btc < FAUCET_BELOW && (
+        <div className="faucet">
+          <div>
+            <strong>This wallet has no test BTC yet</strong>
+            <span>Keel runs on Mezo testnet, so the BTC is free. Grab some from Mezo&apos;s faucet, then come back.</span>
+          </div>
+          <div className="faucet-actions">
+            <a className="btn small" href={FAUCET} target="_blank" rel="noreferrer">
+              Get test BTC ↗
+            </a>
+            <button className="linkish" onClick={() => refresh(account).catch(() => {})}>
+              I have it, refresh
+            </button>
+          </div>
+        </div>
+      )}
+      {account && bal && bal.btc >= FAUCET_BELOW && (
+        <div className="wallet-strip">
+          <span>
+            <b>{fmt(bal.btc, 18, 5)}</b> test BTC · <b>{fmt(bal.musd, 18, 2)}</b> MUSD
+          </span>
+          <a href={FAUCET} target="_blank" rel="noreferrer">
+            Need more test BTC? ↗
+          </a>
+        </div>
+      )}
 
       {tab === 'borrow' && (
         <div className="app-body">

@@ -89,7 +89,14 @@ export async function sendTx(
 
   // A browser wallet signs and broadcasts itself; just wait patiently.
   if (typeof account === 'string' || account.type !== 'local') {
-    const hash = await wallet.writeContract({ ...req, account, chain, gas } as Parameters<WalletClient['writeContract']>[0]);
+    // Fill in nonce and gas price from Keel's own reads, so the wallet doesn't
+    // depend on whichever Mezo RPC it saved (some drop eth_getTransactionCount).
+    const addr = typeof account === 'string' ? account : account.address;
+    const [nonce, gasPrice] = await Promise.all([
+      pub.getTransactionCount({ address: addr, blockTag: 'pending' }).catch(() => undefined),
+      pub.getGasPrice().catch(() => undefined),
+    ]);
+    const hash = await wallet.writeContract({ ...req, account, chain, gas, nonce, gasPrice, type: gasPrice ? 'legacy' : undefined } as Parameters<WalletClient['writeContract']>[0]);
     return { hash, receipt: await waitReceipt(pub, hash) };
   }
 
