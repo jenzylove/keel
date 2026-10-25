@@ -49,4 +49,4 @@ Keel fixes all three with one mechanism: savers' idle MUSD is lent to Bitcoin ho
 2. **Wave 2 (by Nov 15):** veBTC rewards pay a loan's interest automatically, and the keeper liquidates from its own float on mainnet.
 3. **After the buildathon:** an external audit, then a governance proposal to move the savings vault's idle MUSD into Keel with `setStrategy`.
 
-**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Proof](https://keel-psi-seven.vercel.app/proof)
+**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Deck](https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK) · [Proof](https://keel-psi-seven.vercel.app/proof)
