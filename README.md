@@ -11,6 +11,8 @@
 
 <p align="center">
   <a href="https://keel-psi-seven.vercel.app"><img alt="Live" src="https://img.shields.io/badge/live-keel--psi--seven.vercel.app-e5141b?style=flat-square" /></a>
+  <a href="https://youtu.be/iSvGuXuLK7A"><img alt="Demo video" src="https://img.shields.io/badge/demo-2%20min%20video-e5141b?style=flat-square&logo=youtube&logoColor=white" /></a>
+  <a href="https://github.com/jenzylove/keel/actions/workflows/verify.yml"><img alt="verify" src="https://github.com/jenzylove/keel/actions/workflows/verify.yml/badge.svg" /></a>
   <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
   <img alt="Mezo testnet" src="https://img.shields.io/badge/Mezo-testnet%2031611-111111?style=flat-square" />
   <img alt="Tests" src="https://img.shields.io/badge/tests-67%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
@@ -20,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/media/hero.png" width="900" alt="Keel landing page: Borrow against Bitcoin. Never redeemed." />
+  <img src="docs/media/hero.png" width="100%" alt="Keel landing page: Borrow against Bitcoin. Never redeemed." />
 </p>
 
 ## The problem, read from Mezo mainnet
@@ -40,10 +42,26 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 4. **The rate leans against the peg.** Below $0.995 it steps up, at most 1 point a week, read from a 24 hour average of Mezo's own mUSDC/MUSD pool. New borrowing pauses when that pool's dollar side runs thin.
 5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust.
 
+## How it works
+
+```mermaid
+flowchart LR
+    S["Savers<br/>deposit MUSD"] --> V["Mezo savings vault<br/>(sMUSD)"]
+    V -- "setStrategy(keel)<br/>one call by the vault owner" --> K["KeelStrategy<br/>80% stays liquid"]
+    K -- "up to 20% lent" --> M["KeelMarket<br/>outside Mezo's TroveManager"]
+    B["Borrowers<br/>lock BTC or veBTC"] --> M
+    M -- "interest, released over a week" --> K
+    K -- "yield" --> V
+    M -. "unhealthy loan" .-> X["Keeper<br/>liquidates from its own float"]
+```
+
+Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMarket, so no redemption can take it; the only way it closes early is a normal liquidation if BTC falls far enough, and any surplus goes back to the borrower.
+
 ## Start here
 
 | | |
 |---|---|
+| **Demo video** | [youtu.be/iSvGuXuLK7A](https://youtu.be/iSvGuXuLK7A): two minutes, one borrower's journey on the live site, real testnet transactions |
 | **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo testnet, with Mezo mainnet readings |
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
 | **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |

@@ -34,6 +34,6 @@ MUSD is the asset lent and the yield savers earn; MEZO isn't used.
 - Live: https://keel-psi-seven.vercel.app (app: /app)
 - Repo: https://github.com/jenzylove/keel
 - Deck: https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK (share it from its Share menu first)
-- Video: [video link]
+- Video: https://youtu.be/iSvGuXuLK7A
 
 **Team:** [name, role, X or LinkedIn]
