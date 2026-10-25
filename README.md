@@ -43,8 +43,8 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 | | |
 |---|---|
 | **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo testnet, with Mezo mainnet readings |
-| **Use it** | the [home page](https://keel-psi-seven.vercel.app): Borrow, Save and Loans, quote before any wallet |
-| **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on the home page, or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
+| **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
+| **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
 | **Why Keel** | [/why](https://keel-psi-seven.vercel.app/why): the problem in Mezo's own numbers |
 | **Proof** | [/proof](https://keel-psi-seven.vercel.app/proof) and [docs/proof/testnet-runs.md](docs/proof/testnet-runs.md): every claim linked to a transaction |
 | **Mezo's numbers** | [/data](https://keel-psi-seven.vercel.app/data): the loop, read live from mainnet and archive state |
@@ -56,7 +56,7 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 
 No keys needed.
 
-1. Open the [site](https://keel-psi-seven.vercel.app) and read the live quote in the Borrow tab.
+1. Open the [app](https://keel-psi-seven.vercel.app/app) and read the live quote in the Borrow tab.
 2. Press "No wallet? Watch our demo wallet run a real loan" and open any transaction link.
 3. Open [/proof](https://keel-psi-seven.vercel.app/proof) and look at "The loop, both sides".
 4. Open [/why](https://keel-psi-seven.vercel.app/why) for the problem in Mezo's numbers.
@@ -76,7 +76,7 @@ No keys needed.
 
 ## The front door
 
-The home page is the app. One panel, three tabs:
+The app lives at /app, with Connect wallet in the top bar on every page. One panel, three tabs:
 
 - **Borrow** shows a live quote before any wallet: the most you can borrow, the rate, your health after borrowing, and that redemptions can't take the loan. A wallet is asked for only when you press the action. Collateral is Bitcoin or a veBTC lock.
 - **Save** takes MUSD and shows the live saver rate.

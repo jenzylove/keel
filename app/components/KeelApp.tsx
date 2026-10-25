@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatUnits, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
-import { connect } from '@/lib/wallet';
+import { useWallet } from '@/components/WalletProvider';
 import { deployed, testnet, txUrl } from '@/lib/chains';
 import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
@@ -46,8 +46,7 @@ const money = (v: number, digits = 2) => (Number.isFinite(v) ? v.toLocaleString(
 const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 export function KeelApp({ market }: { market: Market | null }) {
-  const [wallet, setWallet] = useState<WalletClient | null>(null);
-  const [account, setAccount] = useState<Address | null>(null);
+  const { wallet, account, connect, error: walletError } = useWallet();
   const [tab, setTab] = useState<Tab>('borrow');
   const [coll, setColl] = useState<Coll>('btc');
   const [log, setLog] = useState<Line[]>([]);
@@ -96,48 +95,24 @@ export function KeelApp({ market }: { market: Market | null }) {
   }, []);
 
   const doConnect = async (): Promise<{ w: WalletClient; a: Address } | null> => {
-    try {
-      const c = await connect();
-      setWallet(c.wallet);
-      setAccount(c.account);
-      await refresh(c.account);
-      return { w: c.wallet, a: c.account };
-    } catch (e) {
-      say({ text: (e as Error).message, ok: false });
-      return null;
-    }
+    const c = await connect();
+    if (!c) return null;
+    return { w: c.wallet, a: c.account };
   };
+
+  // Load positions whenever a wallet connects or changes account.
+  useEffect(() => {
+    if (account) refresh(account).catch(() => {});
+    else {
+      setBal(null);
+      setLoans([]);
+      setNfts([]);
+    }
+  }, [account, refresh]);
 
   useEffect(() => {
     if (!nftPick && nfts.length) setNftPick(String(nfts[0].id));
   }, [nfts, nftPick]);
-
-  // Follow the wallet: a new account reloads its positions; a new network
-  // reloads the page, so nothing is sent on the wrong chain.
-  useEffect(() => {
-    const eth = window.ethereum;
-    if (!eth?.on || !wallet) return;
-    const onAccounts = (a: unknown) => {
-      const next = (a as Address[])[0];
-      if (!next) {
-        setWallet(null);
-        setAccount(null);
-        return;
-      }
-      connect().then((c) => {
-        setWallet(c.wallet);
-        setAccount(c.account);
-        refresh(c.account).catch(() => {});
-      }, () => {});
-    };
-    const onChain = () => window.location.reload();
-    eth.on('accountsChanged', onAccounts);
-    eth.on('chainChanged', onChain);
-    return () => {
-      eth.removeListener?.('accountsChanged', onAccounts);
-      eth.removeListener?.('chainChanged', onChain);
-    };
-  }, [wallet, refresh]);
 
   /** Connects if needed, then runs the transactions and refreshes positions. */
   const act = async (f: (w: WalletClient, a: Address) => Promise<void>) => {
@@ -415,6 +390,7 @@ export function KeelApp({ market }: { market: Market | null }) {
         </div>
       )}
 
+      {walletError && !account && <p className="hint warn">{walletError}</p>}
       {log.length > 0 && (
         <div className="log">
           {log.map((l, i) => (

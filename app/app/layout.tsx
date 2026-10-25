@@ -4,9 +4,10 @@ import './globals.css';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { KeelMark } from '@/components/KeelMark';
 import { addressUrl, deployed } from '@/lib/chains';
+import { ConnectButton, WalletProvider } from '@/components/WalletProvider';
 
 export const metadata: Metadata = {
-  title: 'Keel — idle MUSD savings, lent outside redemptions',
+  title: 'Keel: borrow against your Bitcoin, never redeemed',
   description:
     "A drop-in strategy for Mezo's MUSD Savings Vault that lends its idle MUSD to BTC and veBTC holders, outside redemptions.",
   icons: { icon: '/favicon.svg' },
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
         />
         <script
           // Apply a saved theme before paint. Dark is the default.
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <WalletProvider>
         <div className="wrap">
           <header className="bar">
             <Link href="/" className="mark" aria-label="Keel home">
@@ -46,12 +48,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Keel
             </Link>
             <nav className="nav">
+              <Link href="/app">App</Link>
               <Link href="/why">Why Keel</Link>
               <Link href="/proof">Proof</Link>
               <Link href="/data">Mezo data</Link>
               <a href="https://github.com/jenzylove/keel">Code</a>
               <ThemeToggle />
             </nav>
+            <div className="bar-right">
+              <span className="net">Mezo testnet</span>
+              <ConnectButton />
+            </div>
           </header>
         </div>
         <main>{children}</main>
@@ -67,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </span>
           </footer>
         </div>
+        </WalletProvider>
       </body>
     </html>
   );
