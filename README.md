@@ -84,7 +84,7 @@ The app lives at /app, with Connect wallet in the top bar on every page. One pan
 
 A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay and close end to end with a test wallet, and each step was confirmed in the app.
 
-**The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Three loans totalling 75 MUSD are open, one of them against a veBTC lock (#407) the borrower created. It is listed step by step on /proof, in "The loop, both sides". The repay and withdraw half runs later and is added to /proof when it does. Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
+**The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Borrowers took 75 MUSD across three loans, one of them against a veBTC lock (#407) the borrower created, repaid with interest about four hours later and got their collateral back. Each saver withdrew 60.0000015 MUSD for their 60; the rest of the interest keeps releasing over the week by design. All 36 steps are on /proof, in "The loop, both sides". Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
 
 **The keeper** is a daily Vercel cron. It claims savers' yield, steps the peg premium, and liquidated an unhealthy loan from its own MUSD float on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
 
