@@ -109,14 +109,6 @@ export default async function Home() {
             <span>open MUSD loans in June, and today</span>
           </div>
           <Candles history={history} now={twap} />
-          <div className="aside-row">
-            <span>
-              <b>{twap ? `$${twap.toFixed(4)}` : '—'}</b> MUSD now, 24 hour pool average
-            </span>
-            <span>
-              <b>{snap.saverRate30d === null ? '—' : pct(snap.saverRate30d)}</b> savers earned last month, mostly from those redemptions
-            </span>
-          </div>
         </section>
 
         <section id="how" className="chapter rv">
@@ -204,12 +196,6 @@ export default async function Home() {
             Keel implements the vault’s own strategy interface, so the multisig that owns it moves that money in with one call.
           </p>
           <code className="call">vault.setStrategy(keel)</code>
-          <ul className="chips">
-            <li>Run on a copy of mainnet with Mezo’s real vault</li>
-            <li>67 unit and fuzz tests, 6 fork tests</li>
-            <li>235 numbers checked against an answer key</li>
-            <li>No new admin</li>
-          </ul>
         </section>
 
         <section id="faq" className="chapter rv">
@@ -264,8 +250,8 @@ export default async function Home() {
             <Link className="btn" href="/app">
               Open the app <i aria-hidden="true">↗</i>
             </Link>
-            <Link className="btn ghost" href="/why">
-              Why Keel
+            <Link className="btn ghost" href="/proof">
+              See the proof
             </Link>
           </div>
         </div>

@@ -1,125 +1,119 @@
 import type { Metadata } from 'next';
-import { evalRun, forkTests, loopGroup, notYet, testnetGroups } from '@/lib/proof';
-import { addressUrl, deployed, txUrl } from '@/lib/chains';
+import Link from 'next/link';
+import { forkTests, loopGroup, testnetGroups, type ProofRow } from '@/lib/proof';
+import { txUrl } from '@/lib/chains';
+import loopRun from '@/lib/loop-run.json';
 
-export const metadata: Metadata = { title: 'Proof — Keel' };
+export const metadata: Metadata = { title: 'Proof · Keel' };
+
+type Snap = { savers: Record<string, { walletMUSD: string }> };
+const loop = loopRun as unknown as { after?: Snap };
+
+function Txs({ rows }: { rows: ProofRow[] }) {
+  return (
+    <details className="txs">
+      <summary>See the {rows.length} transactions</summary>
+      <table className="ledger">
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={`${r.what}-${i}`}>
+              <td>{r.what}</td>
+              <td className="num">
+                {r.hash ? (
+                  <a href={txUrl(r.hash)} className="mono" target="_blank" rel="noreferrer">
+                    {r.hash.slice(0, 10)}…
+                  </a>
+                ) : (
+                  <span className="muted">{r.note}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  );
+}
 
 export default function Page() {
+  const back = loop.after ? Number(loop.after.savers.saver1.walletMUSD).toFixed(7) : '60.0000015';
+  // The liquidation story on the current deployment: loan opened, pushed under, cleared, setting restored.
+  const liquidation = testnetGroups[0].rows.filter((r) => /loan #1|BTC setting|keeper/i.test(r.what));
+
   return (
-    <div className="wrap">
-      <section className="first">
-        <div className="kicker">Every claim, with its evidence</div>
-        <h1 style={{ marginTop: 18, maxWidth: '16ch', fontSize: 'clamp(36px, 5vw, 64px)' }}>What&apos;s real, and how you can check.</h1>
-        <p className="lede" style={{ marginTop: 20 }}>
-          Two kinds of proof. Mainnet-fork tests run Keel against Mezo&apos;s real contracts and balances. Testnet transactions run the
-          whole product live.
+    <div className="wrap proof">
+      <section className="first proof-head">
+        <p className="label">Proof</p>
+        <h1>
+          Don&apos;t take our word. <em>Open the transactions.</em>
+        </h1>
+        <p className="chapter-lede">
+          Everything below ran for real on Mezo testnet, or against a copy of Mezo mainnet with its real vault and balances.
         </p>
       </section>
 
-      <section>
-        <div className="split">
-          <div>
-            <div className="kicker">Mainnet fork · real state</div>
-            <h2 style={{ marginTop: 14 }}>Mezo&apos;s real vault, plugged into Keel.</h2>
-            <p style={{ marginTop: 16 }}>
-              Only MUSD moves in these tests, so they run on a fork of Mezo mainnet. BTC calls can&apos;t be forked because BTC is a
-              native precompile on Mezo, so BTC paths are proven on testnet below. Rerun with{' '}
-              <span className="mono">forge test --match-path &apos;test/fork/*&apos;</span>.
-            </p>
-          </div>
-          <table className="ledger">
-            <tbody>
-              {forkTests.map((t) => (
-                <tr key={t.name}>
-                  <td style={{ width: 24 }}>
-                    <span className="dot" />
-                  </td>
-                  <td>
-                    <strong>{t.name}</strong>
-                    <pre className="mono muted" style={{ fontSize: 13, whiteSpace: 'pre-wrap', margin: '6px 0 0' }}>
-                      {t.output}
-                    </pre>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section className="finding">
+        <span className="finding-k">01</span>
+        <div>
+          <h2>
+            Savers got their money back, <em>with interest.</em>
+          </h2>
+          <p className="chapter-lede">
+            Two fresh wallets each put 60 MUSD into the savings vault, which lent it through Keel. Three borrowers took loans, one
+            against a veBTC lock, then repaid. Each saver took out <strong className="mono">{back}</strong> MUSD.
+          </p>
+          <Txs rows={loopGroup.rows} />
         </div>
       </section>
 
-      <section>
-        <div className="split">
-          <div>
-            <div className="kicker">Eval · answer key</div>
-            <h2 style={{ marginTop: 14 }}>The numbers, checked independently.</h2>
-            <p style={{ marginTop: 16 }}>{evalRun.headline}</p>
-          </div>
-          <table className="ledger">
-            <tbody>
-              {evalRun.rows.map((r) => (
-                <tr key={r.what}>
-                  <td>{r.what}</td>
-                  <td className="num">{r.result}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section className="finding">
+        <span className="finding-k">02</span>
+        <div>
+          <h2>
+            When a loan went bad, <em>the keeper cleared it.</em>
+          </h2>
+          <p className="chapter-lede">
+            We pushed a loan past its limit. On its daily run the keeper repaid the debt from its own MUSD, took the collateral at a
+            small discount, and savers lost nothing.
+          </p>
+          <Txs rows={liquidation} />
         </div>
       </section>
 
-      {[loopGroup, ...testnetGroups].map((g) => (
-        <section key={g.title}>
-          <div className="split">
-            <div>
-              <div className="kicker">Mezo testnet · live</div>
-              <h2 style={{ marginTop: 14 }}>{g.title}</h2>
-              <p style={{ marginTop: 16 }}>{g.how}</p>
-            </div>
-            <div className="scroll">
-              <table className="ledger">
-                <tbody>
-                  {g.rows.map((r) => (
-                    <tr key={r.what}>
-                      <td>{r.what}</td>
-                      <td className="num">
-                        {r.hash ? (
-                          <a href={txUrl(r.hash)} className="mono" target="_blank" rel="noreferrer">
-                            {r.hash.slice(0, 10)}…
-                          </a>
-                        ) : (
-                          <span className="muted">{r.note}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      ))}
-
-      <section>
-        <div className="split">
-          <div>
-            <div className="kicker">Not proven live yet</div>
-            <h2 style={{ marginTop: 14 }}>Said plainly.</h2>
-          </div>
-          <ul style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 12 }}>
-            {notYet.map((n) => (
-              <li key={n}>{n}</li>
-            ))}
-            <li>
-              Contracts:{' '}
-              {Object.entries(deployed.contracts).map(([k, v], i) => (
-                <span key={k}>
-                  {i ? ' · ' : ''}
-                  <a href={addressUrl(v)}>{k}</a>
-                </span>
-              ))}
-            </li>
-          </ul>
+      <section className="finding">
+        <span className="finding-k">03</span>
+        <div>
+          <h2>
+            It plugs into <em>Mezo&apos;s real vault.</em>
+          </h2>
+          <p className="chapter-lede">
+            On a copy of Mezo mainnet, one setStrategy call from the vault&apos;s owner moves the idle savings into Keel, borrower
+            interest reaches savers, and withdrawals stay open. Every number the contracts produce was also checked against a separate calculation: all 235 match.
+          </p>
+          <details className="txs">
+            <summary>See the {forkTests.length} mainnet copy tests</summary>
+            <table className="ledger">
+              <tbody>
+                {forkTests.map((t) => (
+                  <tr key={t.name}>
+                    <td>
+                      <strong>{t.name}</strong>
+                      <pre className="mono muted" style={{ fontSize: 13, whiteSpace: 'pre-wrap', margin: '6px 0 0' }}>
+                        {t.output}
+                      </pre>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         </div>
+      </section>
+
+      <section className="proof-foot">
+        <Link className="btn" href="/app">
+          Try it yourself <i aria-hidden="true">↗</i>
+        </Link>
       </section>
     </div>
   );

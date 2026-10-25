@@ -44,9 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav className="nav">
               <Link href="/app">App</Link>
-              <Link href="/why">Why Keel</Link>
+              <Link href="/#how">How it works</Link>
               <Link href="/proof">Proof</Link>
-              <Link href="/data">Mezo data</Link>
               <a href="https://github.com/jenzylove/keel">Code</a>
             </nav>
             <div className="bar-right">
@@ -74,12 +73,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <h4>Product</h4>
                   <Link href="/app">App</Link>
                   <Link href="/#live">Run a real loan</Link>
-                  <Link href="/why">Why Keel</Link>
+                  <Link href="/#how">How it works</Link>
                 </div>
                 <div>
                   <h4>Proof</h4>
                   <Link href="/proof">Every transaction</Link>
-                  <Link href="/data">Mezo data</Link>
                   <a href="https://github.com/jenzylove/keel">Code</a>
                 </div>
                 <div>

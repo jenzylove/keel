@@ -45,9 +45,7 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 | **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo testnet, with Mezo mainnet readings |
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
 | **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
-| **Why Keel** | [/why](https://keel-psi-seven.vercel.app/why): the problem in Mezo's own numbers |
 | **Proof** | [/proof](https://keel-psi-seven.vercel.app/proof) and [docs/proof/testnet-runs.md](docs/proof/testnet-runs.md): every claim linked to a transaction |
-| **Mezo's numbers** | [/data](https://keel-psi-seven.vercel.app/data): the loop, read live from mainnet and archive state |
 | **Product spec** | [docs/PRD.md](docs/PRD.md), including the questions the Mezo team will ask |
 | **Audit notes** | [docs/AUDIT.md](docs/AUDIT.md) |
 | **Eval** | [docs/eval/RESULTS.md](docs/eval/RESULTS.md): the contracts against an answer key, peg term on and off |
@@ -59,7 +57,7 @@ No keys needed.
 1. Open the [app](https://keel-psi-seven.vercel.app/app) and read the live quote in the Borrow tab.
 2. Press "No wallet? Watch our demo wallet run a real loan" and open any transaction link.
 3. Open [/proof](https://keel-psi-seven.vercel.app/proof) and look at "The loop, both sides".
-4. Open [/why](https://keel-psi-seven.vercel.app/why) for the problem in Mezo's numbers.
+4. Read the problem in Mezo's own numbers on the [landing page](https://keel-psi-seven.vercel.app/#problem).
 5. Optional: run the mainnet fork test command shown in "Run it".
 
 ## What is real and what is not
