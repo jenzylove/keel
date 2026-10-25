@@ -167,6 +167,142 @@
       "what": "borrower3 deposits veBTC #407, borrows 20 MUSD",
       "hash": "0xed4e410f8911266733d173082e1d6f5feac0bb6ff49ae091625ffba9c9d7a61a",
       "block": 16345608
+    },
+    {
+      "key": "borrower1-topup",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Send borrower1 the interest owed",
+      "hash": "0x399d61a005b89a81128af3116b61074e37ef833ac3f6dd5343c25e83fe1ee4fc",
+      "block": 16349501
+    },
+    {
+      "key": "borrower1-repay-approve",
+      "who": "borrower1",
+      "address": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+      "what": "borrower1 approves the repayment",
+      "hash": "0x27788efb2ed0b8575514341c7c3ea9ce4643e41adf68d62e2d52905d99ab84e7",
+      "block": 16349502
+    },
+    {
+      "key": "borrower1-repay",
+      "who": "borrower1",
+      "address": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+      "what": "borrower1 repays loan #6 (interest first, to savers)",
+      "hash": "0x647c88a429b7eb7547d087c0a6251d3fa38247edad3103a79e49662b9e7a78b7",
+      "block": 16349504
+    },
+    {
+      "key": "borrower1-close",
+      "who": "borrower1",
+      "address": "0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5",
+      "what": "borrower1 closes loan #6, collateral returned",
+      "hash": "0xe060cbc19754a965e3a90f8f4026d09a824d904bbe88c569f10fd87f02cb5431",
+      "block": 16349505
+    },
+    {
+      "key": "borrower2-topup",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Send borrower2 the interest owed",
+      "hash": "0xee99c264e5a9af14ea2f44452c7fd5e43f90d335343276c925c167fdc11c4ef6",
+      "block": 16349506
+    },
+    {
+      "key": "borrower2-repay-approve",
+      "who": "borrower2",
+      "address": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+      "what": "borrower2 approves the repayment",
+      "hash": "0x71ccf2ad3e5f099ff3d3db4ad5e5f3275400f1a35b2322d2a7192eba964c544d",
+      "block": 16349507
+    },
+    {
+      "key": "borrower2-repay",
+      "who": "borrower2",
+      "address": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+      "what": "borrower2 repays loan #7 (interest first, to savers)",
+      "hash": "0x9f8e58a1fdb726b04384ffccc682b84e198a329f1fa940959e22592757a99782",
+      "block": 16349508
+    },
+    {
+      "key": "borrower2-close",
+      "who": "borrower2",
+      "address": "0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42",
+      "what": "borrower2 closes loan #7, collateral returned",
+      "hash": "0x6040f251be6e59f41250876f2fecae281f2e75431b470fe12a489dbd688d35c5",
+      "block": 16349510
+    },
+    {
+      "key": "borrower3-topup",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Send borrower3 the interest owed",
+      "hash": "0x17ed2440d818a89999784ce69922a11b3e900911bf7ab10f31891a29fc2b6ed8",
+      "block": 16349512
+    },
+    {
+      "key": "borrower3-repay-approve",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 approves the repayment",
+      "hash": "0x09ea8fc9f7fe69f0d227f5db943ea7c615d6f0372a516a19fc3b177c20369c7d",
+      "block": 16349514
+    },
+    {
+      "key": "borrower3-repay",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 repays loan #8 (interest first, to savers)",
+      "hash": "0xaa4057f548dd12c177829248b00deec9000b8544dbd3280d007077e2bc0bbfbc",
+      "block": 16349515
+    },
+    {
+      "key": "borrower3-close",
+      "who": "borrower3",
+      "address": "0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe",
+      "what": "borrower3 closes loan #8, collateral returned",
+      "hash": "0x6df8b280740428dd7fe712b4e4ba002f305bead6775d67b6893d21aee7b59ee1",
+      "block": 16349517
+    },
+    {
+      "key": "release",
+      "who": "deployer",
+      "address": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "what": "Vault pulls released interest from Keel",
+      "hash": "0x9538ab71aed37400c7e01d8cb8b38f54c04a314f5f328e2226bd74722a38a5ff",
+      "block": 16349519
+    },
+    {
+      "key": "saver1-claim",
+      "who": "saver1",
+      "address": "0x8306adc4e1Ffb0649010084547bCcD9c0c47717b",
+      "what": "saver1 claims their yield",
+      "hash": "0xa0872a0994fe7de75b7880ad1888ec23b3200ecf70000f123e1bbfe851e60ae8",
+      "block": 16349521
+    },
+    {
+      "key": "saver1-withdraw",
+      "who": "saver1",
+      "address": "0x8306adc4e1Ffb0649010084547bCcD9c0c47717b",
+      "what": "saver1 withdraws their 60 MUSD",
+      "hash": "0x4e75f674851bedd3f37ee5fcb8fae7291424f990637b569bf14ec28dea88e98b",
+      "block": 16349524
+    },
+    {
+      "key": "saver2-claim",
+      "who": "saver2",
+      "address": "0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E",
+      "what": "saver2 claims their yield",
+      "hash": "0xbef8be68a680205a44a0a7b81c8222322b085ba0c9b967c3344af2fe007a69e8",
+      "block": 16349525
+    },
+    {
+      "key": "saver2-withdraw",
+      "who": "saver2",
+      "address": "0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E",
+      "what": "saver2 withdraws their 60 MUSD",
+      "hash": "0xda22fa9faaf63330356764189d17f9d7bdb875bcf90120b94d7418f45dd6b411",
+      "block": 16349527
     }
   ],
   "loans": {
@@ -231,6 +367,52 @@
         "sMUSD": "60",
         "claimableYield": "0",
         "walletMUSD": "0"
+      }
+    }
+  },
+  "afterRepay": {
+    "at": "2026-10-25T00:08:33.858Z",
+    "strategy": {
+      "principal": "1627",
+      "lent": "0",
+      "yieldOwed": "0.003149115690005616",
+      "reserve": "0.000447916678420074",
+      "unreleased": "0.003148682157169465"
+    },
+    "vaultYieldIndex": "586033297975",
+    "savers": {
+      "saver1": {
+        "sMUSD": "60",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      },
+      "saver2": {
+        "sMUSD": "60",
+        "claimableYield": "0",
+        "walletMUSD": "0"
+      }
+    }
+  },
+  "after": {
+    "at": "2026-10-25T00:09:13.253Z",
+    "strategy": {
+      "principal": "1507",
+      "lent": "0",
+      "yieldOwed": "0.003148473908584764",
+      "reserve": "0.000447916678420074",
+      "unreleased": "0.003148473908584764"
+    },
+    "vaultYieldIndex": "586429102651",
+    "savers": {
+      "saver1": {
+        "sMUSD": "0",
+        "claimableYield": "0",
+        "walletMUSD": "60.0000014945742402"
+      },
+      "saver2": {
+        "sMUSD": "0",
+        "claimableYield": "0",
+        "walletMUSD": "60.00000149514618138"
       }
     }
   }

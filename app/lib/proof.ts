@@ -124,7 +124,7 @@ export const notYet = [
 ];
 
 type LoopStep = { key: string; what: string; hash: string };
-type LoopSnap = { strategy: { principal: string; lent: string } };
+type LoopSnap = { strategy: { principal: string; lent: string; unreleased: string }; savers?: Record<string, { walletMUSD: string }> };
 const lr = loopRun as unknown as { steps: LoopStep[]; before?: LoopSnap; afterOpen?: LoopSnap; after?: LoopSnap };
 const closed = Boolean(lr.after);
 
@@ -132,7 +132,7 @@ const closed = Boolean(lr.after);
 export const loopGroup: ProofGroup = {
   title: closed ? 'The loop, both sides, run end to end' : 'The loop, both sides, running now',
   how: closed
-    ? 'Fresh wallets played two savers and three borrowers, one of them borrowing against a veBTC lock it created. Savers deposited, borrowers borrowed outside the redemption system, repaid with interest, and got their collateral back; the vault pulled the released interest and savers claimed it and withdrew.'
+    ? `Fresh wallets played two savers and three borrowers, one of them borrowing against a veBTC lock it created. Savers deposited 120 MUSD; borrowers took 75 MUSD across three loans redemptions couldn't reach, repaid with interest about four hours later, and got their BTC and veBTC back. The vault pulled the released interest and each saver withdrew ${lr.after?.savers?.saver1?.walletMUSD.slice(0, 10) ?? 'more than'} MUSD for their 60. The rest of the interest (${lr.after?.strategy.unreleased.slice(0, 6) ?? 'some'} MUSD) is still being released over the week, as designed, so a deposit timed just before a repayment can't take it.`
     : `Fresh wallets play two savers and three borrowers, one of them borrowing against a veBTC lock it created. Savers deposited 120 MUSD, and ${lr.afterOpen?.strategy.lent.split('.')[0] ?? 'some'} MUSD is lent across three loans redemptions can't reach. The loans are left open so interest builds; the repay, release and withdraw steps are added here when they run.`,
   rows: lr.steps.filter((s) => !s.key.startsWith('fund')).map((s) => ({ what: s.what.replace(/^(saver|borrower)(\d)/, (_, r, n) => `${r === 'saver' ? 'Saver' : 'Borrower'} ${n}`), hash: s.hash })),
 };
