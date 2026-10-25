@@ -63,15 +63,44 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <main>{children}</main>
         <div className="wrap">
-          <footer className="footer">
-            <span>Keel · built for the Mezo Buildathon · live product on Mezo testnet, readings from Mezo mainnet</span>
-            <span className="mono">MIT</span>
-            <span style={{ flexBasis: '100%' }}>
-              <Link href="/proof">Proof</Link> · <Link href="/why">Why Keel</Link> · <Link href="/data">Mezo data</Link> ·{' '}
-              <a href="https://github.com/jenzylove/keel">Code</a> · <a href={addressUrl(deployed.contracts.vault)}>Savings vault</a> ·{' '}
-              <a href={addressUrl(deployed.contracts.keelStrategy)}>KeelStrategy</a> ·{' '}
-              <a href={addressUrl(deployed.contracts.keelMarket)}>KeelMarket</a>
-            </span>
+          <footer className="site-foot">
+            <div className="foot-top">
+              <div className="foot-brand">
+                <Link href="/" className="mark" aria-label="Keel home">
+                  <KeelMark />
+                  Keel
+                </Link>
+                <p>Borrow against your Bitcoin without being redeemed. Savers earn the interest.</p>
+                <Link className="btn" href="/app">
+                  Open the app
+                </Link>
+              </div>
+              <div className="foot-cols">
+                <div>
+                  <h4>Product</h4>
+                  <Link href="/app">App</Link>
+                  <Link href="/#live">Run a real loan</Link>
+                  <Link href="/why">Why Keel</Link>
+                </div>
+                <div>
+                  <h4>Proof</h4>
+                  <Link href="/proof">Every transaction</Link>
+                  <Link href="/data">Mezo data</Link>
+                  <a href="https://github.com/jenzylove/keel">Code</a>
+                </div>
+                <div>
+                  <h4>Testnet contracts</h4>
+                  <a href={addressUrl(deployed.contracts.vault)}>Savings vault</a>
+                  <a href={addressUrl(deployed.contracts.keelStrategy)}>KeelStrategy</a>
+                  <a href={addressUrl(deployed.contracts.keelMarket)}>KeelMarket</a>
+                </div>
+              </div>
+            </div>
+            <div className="foot-word" aria-hidden="true">KEEL</div>
+            <div className="foot-bottom">
+              <span>Built for the Mezo Buildathon · live on Mezo testnet, readings from Mezo mainnet</span>
+              <span>MIT</span>
+            </div>
           </footer>
         </div>
         </WalletProvider>
