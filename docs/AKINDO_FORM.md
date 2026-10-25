@@ -31,9 +31,9 @@ MUSD is the asset lent and the yield savers earn; MEZO isn't used.
 3. After the buildathon: a professional audit, then a governance proposal to move the savings vault's 7.38M with `setStrategy`.
 
 **Links:**
-- Live: https://keel-psi-seven.vercel.app
+- Live: https://keel-psi-seven.vercel.app (app: /app)
 - Repo: https://github.com/jenzylove/keel
-- Deck: [deck link]
+- Deck: https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK (share it from its Share menu first)
 - Video: [video link]
 
 **Team:** [name, role, X or LinkedIn]
