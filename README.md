@@ -1,24 +1,26 @@
 <p align="center">
-  <img src="app/public/favicon.svg" width="72" alt="Keel" />
+  <img src="docs/media/brand/mark.svg" width="76" alt="Keel" />
 </p>
 
 <h1 align="center">Keel</h1>
 
 <p align="center">
-  <b>Mezo's savings vault lends its idle MUSD to Bitcoin holders, outside redemptions.</b><br />
-  Savers earn from borrowers who stay. Borrowers can't be redeemed away.
+  <b>Borrow against your Bitcoin. Never redeemed.</b><br />
+  A drop in strategy for Mezo's MUSD savings vault: it lends idle savings to BTC and veBTC holders, outside redemptions, and the interest goes to savers.
 </p>
 
 <p align="center">
-  <a href="https://keel-psi-seven.vercel.app"><img alt="Live" src="https://img.shields.io/badge/live-keel--psi--seven.vercel.app-3ddc84" /></a>
-  <img alt="Mezo testnet" src="https://img.shields.io/badge/Mezo-testnet%2031611-e6007a" />
-  <img alt="Tests" src="https://img.shields.io/badge/tests-67%20unit%20%2B%206%20mainnet%20fork-3ddc84" />
-  <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-3ddc84" />
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue" />
+  <a href="https://keel-psi-seven.vercel.app"><img alt="Live" src="https://img.shields.io/badge/live-keel--psi--seven.vercel.app-e5141b?style=flat-square" /></a>
+  <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
+  <img alt="Mezo testnet" src="https://img.shields.io/badge/Mezo-testnet%2031611-111111?style=flat-square" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-67%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
+  <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-111111?style=flat-square" />
+  <img alt="Built for" src="https://img.shields.io/badge/built%20for-Mezo%20Buildathon-e5141b?style=flat-square" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" />
 </p>
 
 <p align="center">
-  <img src="docs/design/home-app.png" width="860" alt="Keel: Borrow, Save and Loans in one panel, with a live quote" />
+  <img src="docs/media/hero.png" width="900" alt="Keel landing page: Borrow against Bitcoin. Never redeemed." />
 </p>
 
 ## The problem, read from Mezo mainnet
@@ -49,6 +51,7 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 | **Product spec** | [docs/PRD.md](docs/PRD.md), including the questions the Mezo team will ask |
 | **Audit notes** | [docs/AUDIT.md](docs/AUDIT.md) |
 | **Eval** | [docs/eval/RESULTS.md](docs/eval/RESULTS.md): the contracts against an answer key, peg term on and off |
+| **Security** | [SECURITY.md](SECURITY.md): scope, protections and how to report |
 
 ## Judge fast path
 
@@ -56,7 +59,7 @@ No keys needed.
 
 1. Open the [app](https://keel-psi-seven.vercel.app/app) and read the live quote in the Borrow tab.
 2. Press "No wallet? Watch our demo wallet run a real loan" and open any transaction link.
-3. Open [/proof](https://keel-psi-seven.vercel.app/proof) and look at "The loop, both sides".
+3. Open [/proof](https://keel-psi-seven.vercel.app/proof): savers paid back with interest, a bad loan cleared by the keeper, and the plug in on a copy of Mezo mainnet.
 4. Read the problem in Mezo's own numbers on the [landing page](https://keel-psi-seven.vercel.app/#problem).
 5. Optional: run the mainnet fork test command shown in "Run it".
 
@@ -74,6 +77,10 @@ No keys needed.
 
 ## The front door
 
+<p align="center">
+  <img src="docs/media/app.png" width="860" alt="The Keel app: a live quote before any wallet, Connect wallet top right" />
+</p>
+
 The app lives at /app, with Connect wallet in the top bar on every page. One panel, three tabs:
 
 - **Borrow** shows a live quote before any wallet: the most you can borrow, the rate, your health after borrowing, and that redemptions can't take the loan. A wallet is asked for only when you press the action. Collateral is Bitcoin or a veBTC lock.
@@ -82,7 +89,7 @@ The app lives at /app, with Connect wallet in the top bar on every page. One pan
 
 A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay and close end to end with a test wallet, and each step was confirmed in the app.
 
-**The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Borrowers took 75 MUSD across three loans, one of them against a veBTC lock (#407) the borrower created, repaid with interest about four hours later and got their collateral back. Each saver withdrew 60.0000015 MUSD for their 60; the rest of the interest keeps releasing over the week by design. All 36 steps are on /proof, in "The loop, both sides". Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
+**The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Borrowers took 75 MUSD across three loans, one of them against a veBTC lock (#407) the borrower created, repaid with interest about four hours later and got their collateral back. Each saver withdrew 60.0000015 MUSD for their 60; the rest of the interest keeps releasing over the week by design. All 36 steps are on /proof, under "Savers got their money back, with interest". Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
 
 **The keeper** is a daily Vercel cron. It claims savers' yield, steps the peg premium, and liquidated an unhealthy loan from its own MUSD float on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
 
