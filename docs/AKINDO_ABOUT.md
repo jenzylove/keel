@@ -43,8 +43,10 @@ We tested the plug in on a copy of Mezo mainnet with the real vault and its 7.38
 
 ## What's next
 
-1. **Wave 2 (by Nov 15):** an opt in Keel vault on Mezo mainnet with small caps, so real savers and borrowers use it before any governance call.
-2. **Wave 2 (by Nov 15):** veBTC rewards pay a loan's interest automatically, and the keeper liquidates from its own float on mainnet.
-3. **After the buildathon:** an external audit, then a governance proposal to move the savings vault's idle MUSD into Keel with `setStrategy`.
+Keel only matters once it runs on real money, so every next step leads there.
+
+- **Real users before any vote.** An opt in Keel vault on Mezo mainnet with small caps, so savers and borrowers use it with real MUSD and BTC before Mezo is asked to trust it with the main vault.
+- **Loans that pay themselves.** A veBTC lock's rewards go toward its loan's interest automatically, so borrowing against locked Bitcoin gets cheaper the longer you hold.
+- **Earn the vault.** An external audit and a clean record on mainnet, then a governance proposal for Mezo to move its idle savings into Keel with one `setStrategy` call.
 
 **Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Deck](https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK) · [Proof](https://keel-psi-seven.vercel.app/proof)
