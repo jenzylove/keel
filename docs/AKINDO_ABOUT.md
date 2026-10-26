@@ -41,7 +41,7 @@ Keel fixes all three with one mechanism: savers' idle MUSD is lent to Bitcoin ho
 
 - The best place to plug in on Mezo is the savings vault it already has. Extending a Mezo product beats asking anyone to trust a new pool.
 - Redemptions protect the peg, but on a fork that trades under its line they quietly empty the loan book and fund savers from it. Taking the loan out of their reach is cleaner than fighting them.
-- Ship the proof with the product: every claim on the site links to a transaction.
+- Ship the proof with the product: every result on the site links to its evidence.
 
 ## What's next
 

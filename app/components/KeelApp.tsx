@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { formatUnits, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
+import { formatUnits, parseAbi, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
 import { useWallet } from '@/components/WalletProvider';
 import { deployed, testnet, txUrl } from '@/lib/chains';
 import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
@@ -10,6 +10,8 @@ import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
 
 const MARKET = deployed.contracts.keelMarket as Address;
+const STRATEGY = deployed.contracts.keelStrategy as Address;
+const strategyAbi = parseAbi(['function lendable() view returns (uint256)', 'function lent() view returns (uint256)']);
 const FAUCET = 'https://faucet.test.mezo.org';
 /** Below this a wallet can't lock anything useful and still pay fees. */
 const FAUCET_BELOW = 1_000_000_000_000_000n; // 0.001 BTC
@@ -61,7 +63,9 @@ export function KeelApp({ market }: { market: Market | null }) {
   const [demo, setDemo] = useState(false);
 
   const [btcIn, setBtcIn] = useState('0.002');
-  const [borrowIn, setBorrowIn] = useState('50');
+  const [borrowIn, setBorrowIn] = useState('20');
+  /** MUSD Keel can still lend: savings are lent up to a 20% cap, read live. */
+  const [room, setRoom] = useState<number | null>(null);
   const [nftPick, setNftPick] = useState('');
   const [saveIn, setSaveIn] = useState('100');
 
@@ -104,6 +108,19 @@ export function KeelApp({ market }: { market: Market | null }) {
     return { w: c.wallet, a: c.account };
   };
 
+  const readRoom = useCallback(async () => {
+    const [cap, out] = await Promise.all([
+      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lendable' }),
+      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lent' }),
+    ]);
+    setRoom(Math.max(0, Number(formatUnits(cap > out ? cap - out : 0n, 18))));
+  }, []);
+  useEffect(() => {
+    readRoom().catch(() => {});
+    const id = setInterval(() => readRoom().catch(() => {}), 30_000);
+    return () => clearInterval(id);
+  }, [readRoom]);
+
   // Load positions whenever a wallet connects or changes account.
   useEffect(() => {
     if (account) refresh(account).catch(() => {});
@@ -136,6 +153,7 @@ export function KeelApp({ market }: { market: Market | null }) {
     } finally {
       setBusy(false);
       await refresh(a).catch(() => {});
+      readRoom().catch(() => {});
     }
   };
 
@@ -158,10 +176,13 @@ export function KeelApp({ market }: { market: Market | null }) {
     : null;
   const collBtc = coll === 'btc' ? num(btcIn) : pick ? Number(formatUnits(pick.amount, 18)) : NaN;
   const collValue = market ? collBtc * market.btcPrice : NaN;
-  const maxBorrow = risk ? (collValue * risk[0]) / 10_000 : NaN;
+  const collLimit = risk ? (collValue * risk[0]) / 10_000 : NaN;
+  const roomBound = room !== null && Number.isFinite(collLimit) && room < collLimit;
+  const maxBorrow = roomBound ? room! : collLimit;
   const want = num(borrowIn);
   const health = risk && want > 0 ? (collValue * risk[1]) / 10_000 / want : NaN;
-  const tooMuch = Number.isFinite(want) && Number.isFinite(maxBorrow) && want > maxBorrow;
+  const tooMuch = Number.isFinite(want) && Number.isFinite(collLimit) && want > collLimit;
+  const overRoom = !tooMuch && room !== null && Number.isFinite(want) && want > room;
   const tooLittle = market && Number.isFinite(want) && want > 0 && want < market.minLoan;
 
   const borrow = () =>
@@ -316,11 +337,17 @@ export function KeelApp({ market }: { market: Market | null }) {
             </div>
           </dl>
           {tooMuch && <p className="hint warn">That is more than this collateral can back. Lower the amount or add collateral.</p>}
+          {overRoom && (
+            <p className="hint warn">
+              Keel can lend {money(room!)} MUSD more right now: at most a fifth of savings is ever lent. Borrow that much or less, or try again after a loan is repaid.
+            </p>
+          )}
+          {!overRoom && roomBound && <p className="hint">Keel can lend {money(room!)} MUSD more right now, the cap on savings.</p>}
           {tooLittle && <p className="hint warn">The smallest loan is {money(market!.minLoan)} MUSD.</p>}
           {market && !market.borrowingOpen && <p className="hint warn">New borrowing is paused while Mezo&apos;s peg pool runs thin. Repaying stays open.</p>}
 
           <div className="actions">
-            <button className="btn" disabled={busy || tooMuch || !!tooLittle || (market !== null && !market.borrowingOpen)} onClick={borrow}>
+            <button className="btn" disabled={busy || tooMuch || overRoom || !!tooLittle || (market !== null && !market.borrowingOpen)} onClick={borrow}>
               {busy ? 'Working…' : !account ? 'Connect wallet and borrow' : coll === 'btc' ? 'Lock BTC and borrow' : 'Deposit veBTC and borrow'}
             </button>
           </div>

@@ -244,7 +244,7 @@ section.first { border-top: 0; padding-top: 32px; }
 @keyframes wheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(12px); opacity: 0; } 100% { opacity: 0; } }
 @media (max-width: 900px) {
   .front-copy { left: 32px; right: 32px; top: auto; bottom: 104px; transform: none; }
-  .front-orb { width: 130vw; right: -40vw; top: 30%; opacity: 0.7; }
+  .front-orb { width: 130vw; right: -40vw; top: 34%; opacity: 0.55; }
 }
 
 /* ---------- landing: the red line ---------- */
@@ -335,9 +335,12 @@ section.first { border-top: 0; padding-top: 32px; }
   .spine-wrap { --indent: 28px; }
 }
 @media (max-width: 860px) {
-  .bar { grid-template-columns: auto 1fr; padding: 14px 16px; }
-  .nav { display: none; }
+  .bar { grid-template-columns: auto 1fr; padding: 12px 16px; row-gap: 10px; }
+  .nav { grid-column: 1 / -1; grid-row: 2; justify-self: center; font-size: 13px; padding: 4px; background: rgba(10, 10, 11, 0.94); }
+  .nav a { padding: 6px 12px; }
   .net { display: none; }
+  main { padding-top: 120px; }
+  .front { margin-top: -120px; }
 }
 
 /* ---------- footer ---------- */

@@ -56,9 +56,23 @@ export function friendlyError(e: unknown): string {
   const msg = (w?.message ?? String(e)).split('\n')[0];
   if (w?.code === 4001 || /user (rejected|denied)|rejected the request|cancel/i.test(msg)) return 'You cancelled in your wallet. Nothing was sent.';
   if (unknownChain(e)) return 'Your wallet could not switch to Mezo testnet. Add it in your wallet (chain 31611, RPC rpc.test.mezo.org) and try again.';
+  if (/LendCapExceeded|0xc375827a|lend cap/i.test(raw(e)))
+    return 'Keel has reached its lending cap for now: at most a fifth of savings is ever lent. Borrow less, or try again after a loan is repaid.';
+  if (/InsufficientLiquidity|0xa17e11d5/i.test(raw(e))) return 'The savings vault has less free MUSD than that right now. Borrow less.';
   if (/does not exist|is not available|method not found/i.test(msg))
     return 'Your wallet’s Mezo testnet connection dropped the request. In your wallet’s network settings, set the Mezo Testnet RPC to https://rpc.test.mezo.org and try again.';
   if (/insufficient funds|exceeds balance/i.test(msg)) return 'This wallet needs testnet BTC to pay gas. Get some free at faucet.test.mezo.org.';
   if (/No browser wallet/i.test(msg)) return msg;
   return msg.length > 160 ? `${msg.slice(0, 157)}…` : msg;
+}
+
+/** Every message a viem error carries, so contract error names nested in it are found. */
+function raw(e: unknown): string {
+  const parts: string[] = [];
+  let x = e as { message?: string; shortMessage?: string; details?: string; metaMessages?: string[]; cause?: unknown } | undefined;
+  for (let i = 0; x && i < 6; i++) {
+    parts.push(x.shortMessage ?? '', x.message ?? '', x.details ?? '', ...(x.metaMessages ?? []));
+    x = x.cause as typeof x;
+  }
+  return parts.join(' ');
 }
