@@ -31,11 +31,9 @@ Keel fixes all three with one mechanism: savers' idle MUSD is lent to Bitcoin ho
 
 ## How we built it
 
-1. Read the problem straight from Mezo mainnet: the loan book, the savings vault's yield index and where its income came from, and the MUSD price.
-2. Wrote KeelStrategy against the vault's real IVaultStrategy interface, and KeelMarket for loans against BTC, timed veBTC and permanent veBTC, with liquidation, a reserve, a peg premium, a borrowing brake and a settings timelock. Keel's admin is whoever owns the vault, read live.
-3. Ran the governance call on a copy of Mezo mainnet: the multisig moves the real 7.38M into Keel, borrower interest reaches savers, withdrawals stay open.
-4. Deployed to Mezo testnet and played both sides with fresh wallets: two savers and three borrowers, one against a veBTC lock. Each saver put in 60 MUSD and took out 60.0000015. A keeper liquidated an unhealthy loan from its own float.
-5. Built the app: a landing page that reads Mezo's numbers live, and one panel for Borrow, Save and Loans with Connect wallet in the top bar.
+Keel is two contracts on Mezo. KeelStrategy plugs into the savings vault through the vault's own strategy interface: it holds savers' MUSD, keeps at least 80% liquid and lends the rest. KeelMarket holds the loans: BTC or veBTC goes in, MUSD comes out, and liquidation, the reserve, the peg premium and the settings delay all live there. There is no new admin; Keel answers to whoever owns the vault.
+
+We tested the plug in on a copy of Mezo mainnet with the real vault and its 7.38M, then deployed to testnet and ran both sides with fresh wallets. Savers deposited, borrowers took loans (one against a veBTC lock), everyone was paid back, and a keeper cleared a bad loan from its own float. The app is Next.js on Vercel and reads Mezo's numbers live.
 
 ## What we learned
 
