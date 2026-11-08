@@ -1,0 +1,45 @@
+{
+  "chainId": 31612,
+  "explorer": "https://explorer.mezo.org",
+  "contracts": {
+    "vault": "0x9450b4a37fd7f247194f0eb0e18d0fe3a671483d",
+    "vaultImplementation": "0x283b4f82e2cbe97711bd41817c7c52df40f28b82",
+    "idleStrategy": "0xcE69E88CFEBb08828C9C7866ecC91326DE141a10",
+    "keelStrategy": "0x0298c746fc52f1b9bb1449de0464bf4056806509",
+    "keelMarket": "0x3d6e71dfc30fdf24b8d2a9f9d564c3dc7c29d0d9",
+    "pegOracle": "0x557cfccd083f26150189ecb07cc945bcf3698eb5"
+  },
+  "mezo": {
+    "musd": "0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186",
+    "btc": "0x7b7C000000000000000000000000000000000000",
+    "veBTC": "0x3D4b1b884A7a1E59fE8589a3296EC8f8cBB6f279",
+    "voter": "0x48233cCC97B87Ba93bCA212cbEe48e3210211f03",
+    "priceFeed": "0xc5aC5A8892230E0A3e1c473881A2de7353fFcA88"
+  },
+  "params": {
+    "governance": "the vault owner, read live",
+    "configDelaySeconds": 172800,
+    "maxLentBps": 5000,
+    "reserveBps": 1000,
+    "principalCap": "2000 MUSD",
+    "throttle": "2000 mUSDC floor on 0xCC372B7E15535aB225fe17c1075831D38ef7aC1a",
+    "minLoan": "5 MUSD",
+    "minLiquidBps": 1000,
+    "feeBps": 500,
+    "feeRecipient": "0x680b733F9e678c64de23a0781404F631D2C5099c"
+  },
+  "txs": {
+    "vaultImplementation": "0x3fe5aa7fcd800e9ea0c9eaf9d60b352973322b5955397cf5fd680e9b0c548ef9",
+    "vaultProxy": "0xd3f4ba2fe87492808079095aa39ff08376d41fc73fbcc7471ee9714ba132473d",
+    "pegOracle": "0x78163d46b1c2922b4328dcd5b591b54c7e2e4ab9d01613b6ed7e4c33d9f22f3b",
+    "keelStrategy": "0x9715746b88f35dcc20b7f606f8405ec52d0adbfc9dfb4c8a3a10729500a25f68",
+    "proposeParams": "0xcf48886e6820285654788d78ec9a6d12c515d88e494de3c05871a5a4e1678bd0",
+    "applyParams": "0x8c45670b95c29b530cb6ae6c6b39b6eb8b8064ea0e784c49f65833ef0421fd4e",
+    "keelMarket": "0xefb752fa06531d9f2f79d011f76f2babdb58aa59529f7518f7a694522efb4d51",
+    "setMarket": "0x57ed77c24f943b035af2ab18b9b2027dc8de3f97e620291b7285bb89ae9fccdf",
+    "setStrategy": "0x2d11b4356b40055043f1165d60ae0bfb2736f571d295b20b60e7b7eb089d672e",
+    "setPrincipalCap": "0x0fdc4bd91702b42823200727cc3c4f8603ad5f21d0f977469e6b94982eb5a773",
+    "setThrottle": "0x55fa2793c1c56ea253ddfc8bc3d11f54cc88592e9dd658a399bb27c260dbaa64"
+  },
+  "history": []
+}

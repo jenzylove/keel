@@ -1,0 +1,35 @@
+{
+  "steps": [
+    {
+      "key": "swap-send",
+      "what": "Sends 0.00014 BTC to Mezo's BTC/MUSD pool",
+      "hash": "0x5422f1313603c82f99413f7c8d8f6044644f2d8100a20e6171c6abd607dd4dd2"
+    },
+    {
+      "key": "swap",
+      "what": "Swaps it for 10.6514 MUSD on Mezo's BTC/MUSD pool",
+      "hash": "0xf9a473d5fa62a956665b298f9ff9e7158c078afd6f78cac645c8149167d2a2fe"
+    },
+    {
+      "key": "save-approve",
+      "what": "Approves 10 MUSD for the Keel vault",
+      "hash": "0x1c097ddb0392a4c007802d363ed94d7ca3bd11dae2328acad21590b6c3660a78"
+    },
+    {
+      "key": "save",
+      "what": "Deposits 10 MUSD into the Keel opt in vault on Mezo mainnet; the vault puts it straight into KeelStrategy",
+      "hash": "0x4deb4c52088ef0a58dd7a5260dff100bc97f86af41b2b30dd2128dc8d035dafd"
+    },
+    {
+      "key": "loan-approve",
+      "what": "Approves 0.00016 BTC as collateral",
+      "hash": "0xaa3c95b68940d72b62c7122e0d0cb18301dadcc9da3278b0f8b67982ed63e8ee"
+    },
+    {
+      "key": "loan",
+      "what": "Locks 0.00016 BTC and borrows 5 MUSD from the vault, outside Mezo's redemption system",
+      "hash": "0x68aad50cba1876600d4d7fc87a07dc6d8ff058b247f72e117c56eed57a53b298"
+    }
+  ],
+  "loanId": 1
+}
