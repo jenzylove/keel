@@ -19,6 +19,7 @@
   <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-111111?style=flat-square" />
   <img alt="Built for" src="https://img.shields.io/badge/built%20for-Mezo%20Buildathon-e5141b?style=flat-square" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" />
+  <a href="https://x.com/dollar782"><img alt="@dollar782 on X" src="https://img.shields.io/badge/X-@dollar782-111111?style=flat-square&logo=x" /></a>
 </p>
 
 <p align="center">
