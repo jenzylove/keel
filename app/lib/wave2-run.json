@@ -1,0 +1,54 @@
+{
+  "steps": [
+    {
+      "key": "ve-approve",
+      "what": "Tester approves 0.0005 BTC for a veBTC lock",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0xb5a4b6117e04fbb2bd6e6cc058cce4381de0f0fbcb25159084c33da56a548e50"
+    },
+    {
+      "key": "ve-lock",
+      "what": "Tester locks 0.0005 BTC as veBTC for 21 days",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0x50802a845257bd1f706c2d260c73f8757ede6e407c98186134202b94859c24c8"
+    },
+    {
+      "key": "ve-approve-market",
+      "what": "Tester approves veBTC #422 to Keel",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0xfdf08a0d7e6cae241dbee5daaab4698d32477dd63cbb75638d782fb03747dd71"
+    },
+    {
+      "key": "open",
+      "what": "Tester deposits veBTC #422 and borrows 10 MUSD",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0x760d9d29675c7f184894dd4ad77c18e9623a65ee71f4d3451a2c537f2ea58a03"
+    },
+    {
+      "key": "vote",
+      "what": "Loan #1 votes with veBTC #422 for the MUSD/BTC pool, through Keel",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0x12ecaa7b787155a0c5a960aab39c24ca26a090592a94f6ffe6b1756baf20e22b"
+    },
+    {
+      "key": "autopay",
+      "what": "Loan #1 turns on auto pay: the keeper may claim its rewards to pay the debt",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0x27369f9882710e0cf8a5817d655c530729a4edcab833b758121c7dce581ab8af"
+    },
+    {
+      "key": "bribe-approve",
+      "what": "Deployer approves 5 MUSD for a bribe",
+      "from": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "hash": "0x2095f8a35e11ee11dee9b095cba310eedfcd0dbc61c023f0a4f70a6c72bd7886"
+    },
+    {
+      "key": "bribe",
+      "what": "Deployer adds a 5 MUSD bribe for MUSD/BTC voters this week",
+      "from": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
+      "hash": "0xf548cfd5d9204e7d4a2ddda917e951a990f68d2a968496bbf0ae99a977518fc8"
+    }
+  ],
+  "nftId": 422,
+  "loanId": 1
+}

@@ -4,6 +4,7 @@ import { forkTests, loopGroup, testnetGroups, type ProofRow } from '@/lib/proof'
 import { txUrl } from '@/lib/chains';
 import loopRun from '@/lib/loop-run.json';
 import { outsideUsers } from '@/lib/reads';
+import wave2Run from '@/lib/wave2-run.json';
 
 export const revalidate = 300;
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: 'Proof · Keel' };
 
 type Snap = { savers: Record<string, { walletMUSD: string }> };
 const loop = loopRun as unknown as { after?: Snap };
+const wave2 = wave2Run as { steps: { key: string; what: string; hash: string }[]; nftId?: number; loanId?: number };
 
 function Txs({ rows }: { rows: ProofRow[] }) {
   return (
@@ -118,6 +120,21 @@ export default async function Page() {
               </tbody>
             </table>
           </details>
+        </div>
+      </section>
+
+      <section className="finding">
+        <span className="finding-k">04</span>
+        <div>
+          <h2>
+            A locked veBTC keeps voting, <em>and its rewards pay the loan.</em>
+          </h2>
+          <p className="chapter-lede">
+            A test wallet locked BTC as veBTC #{wave2.nftId}, borrowed against it on Keel, and voted for Mezo&apos;s MUSD/BTC pool through
+            Keel, on Mezo&apos;s own voter. With auto pay on, the keeper claims what the lock earns each day, and the MUSD among it pays the
+            loan, interest first.
+          </p>
+          <Txs rows={wave2.steps.map((st) => ({ what: st.what, hash: st.hash }))} />
         </div>
       </section>
 

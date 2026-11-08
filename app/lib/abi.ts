@@ -29,11 +29,18 @@ export const strategyAbi = parseAbi([
   'function maxLentBps() view returns (uint256)',
   'function admin() view returns (address)',
   'function reserveBps() view returns (uint256)',
+  'function withdrawable() view returns (uint256)',
+  'function feeBps() view returns (uint256)',
+  'function minLiquidBps() view returns (uint256)',
+  'function liquidityHealthy() view returns (bool)',
 ]);
 
 export const marketAbi = parseAbi([
   'function vote(uint256 id, address[] pools, uint256[] weights)',
   'function claimRewards(uint256 id, address[] rewards, address[][] tokens, bool bribes)',
+  'function claimRewardsToDebt(uint256 id, address[] rewards, address[][] tokens, bool bribes)',
+  'function setAutoPay(uint256 id, bool on)',
+  'function autoPay(uint256) view returns (bool)',
   'function currentRate() view returns (uint256)',
   'function saverRate() view returns (uint256)',
   'function pegPremium() view returns (uint256)',

@@ -2,12 +2,12 @@
   "chainId": 31611,
   "explorer": "https://explorer.test.mezo.org",
   "contracts": {
-    "vault": "0xfe3dc6700968529627b777ff33343017c6adaf7f",
-    "vaultImplementation": "0x52ce3343a3240fb47ad8a41c4d81083b3611f886",
-    "idleStrategy": "0x044cb755a0C7A7A356bdaE58644175b3285b989b",
-    "keelStrategy": "0xfb29823eee00289450c66bb75b1be4f0507625ee",
-    "keelMarket": "0x54251073caa7f40c97d633b1fe3787b47a5dcb51",
-    "pegOracle": "0x8667e21924f8f9953656a4e82a401a040ca32879"
+    "vault": "0x40d5b453eb25dd8b1dfd484c0b80f7ede0dc7def",
+    "vaultImplementation": "0x75aae4c09b28a03fef9a9fb92e59d715489a03bf",
+    "idleStrategy": "0xbB7e7484F498b8457f1Df1Bbb045Ee7d143eB095",
+    "keelStrategy": "0xdab084ebfd118489ada2021c5e60afd5e2fc26f9",
+    "keelMarket": "0x32a94a9af2751afc771aa09d00d95faa6629135e",
+    "pegOracle": "0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7"
   },
   "mezo": {
     "musd": "0x118917a40FAF1CD7a13dB0Ef56C86De7973Ac503",
@@ -54,16 +54,19 @@
     },
     "minLoan": "10 MUSD",
     "principalCap": "none",
-    "throttle": "off"
+    "throttle": "off",
+    "minLiquidBps": 1000,
+    "feeBps": 0,
+    "feeRecipient": "none"
   },
   "txs": {
-    "vaultImplementation": "0x7b08509ac65242161db36845d970d0efd2a97c65e34bcad659c59f6eeeaa8121",
-    "vaultProxy": "0x839eaac3b68b72d870797ddd527c985b20ec1e5a5b8a743ac888535e695ef62d",
-    "pegOracle": "0x181407beb859f6244183a88ce86bd3076e4ff6343162fe5ae31e60430b228803",
-    "keelStrategy": "0x1b60790ccdc707288dee66dd18a10c3659c3b27579f8842e6aae8aaf8b52572f",
-    "keelMarket": "0x48ebd739b0d7234c3c1ad9359d7c8c0ea88fc219107eda289df8c7a1501a7ec0",
-    "setMarket": "0x6419c3a09295449e21af50ee078df8fb4103bdc48d97860514c1ddf0fbce2a44",
-    "setStrategy": "0x8f519e6950380fe3289b1b3c07a4e3c3bf6d50858c1dc04402de5610a212d282"
+    "vaultImplementation": "0x2a61d72976f744561f74ad79dc5acb429928975b66dcea42033d1994b872e762",
+    "vaultProxy": "0x2dc0b2a08570b2172fb1b1ea2b0be0d35679af300ff63e364de880a41db1486f",
+    "pegOracle": "0xe5a67db5180a7a7729e42bca396a2695ab9210be8ff7aeb4d8f4112ad054665f",
+    "keelStrategy": "0x764f9f89da486657642fb03280a898128cb6ba1c2f7847c067aae44940cd5f6f",
+    "keelMarket": "0x1b0ff8306713629277d10858ef96d7cc2ce5af41bbe24803eef562afd6a33f6b",
+    "setMarket": "0xf051cf3d0e50751daacc9b8ac8abe4184bed742dd8064321b2bb1eb46565e7f9",
+    "setStrategy": "0x7e0107fadb26d0465c62242c6c1073a61b21ad9af4a8a8df4bfc737d1d318a81"
   },
   "history": [
     {
@@ -116,6 +119,26 @@
         "setStrategy": "0x37259e12bab7b3ff5afc4ac09d51b2aa31445ace685fad04a275cecb0c4131ce",
         "openTroveForTestMusd": "0x70a90832e1550375c055d699450d8224e237173ca073d3dce94c837251b9c186",
         "pegOracle": "0x48f16ee7d0fcb24c05445a6506d6c8cb466a5771a6dd6a1b821b376bf82fc304"
+      }
+    },
+    {
+      "note": "Replaced on 2026-11-08 by the deployment above.",
+      "contracts": {
+        "vault": "0xfe3dc6700968529627b777ff33343017c6adaf7f",
+        "vaultImplementation": "0x52ce3343a3240fb47ad8a41c4d81083b3611f886",
+        "idleStrategy": "0x044cb755a0C7A7A356bdaE58644175b3285b989b",
+        "keelStrategy": "0xfb29823eee00289450c66bb75b1be4f0507625ee",
+        "keelMarket": "0x54251073caa7f40c97d633b1fe3787b47a5dcb51",
+        "pegOracle": "0x8667e21924f8f9953656a4e82a401a040ca32879"
+      },
+      "txs": {
+        "vaultImplementation": "0x7b08509ac65242161db36845d970d0efd2a97c65e34bcad659c59f6eeeaa8121",
+        "vaultProxy": "0x839eaac3b68b72d870797ddd527c985b20ec1e5a5b8a743ac888535e695ef62d",
+        "pegOracle": "0x181407beb859f6244183a88ce86bd3076e4ff6343162fe5ae31e60430b228803",
+        "keelStrategy": "0x1b60790ccdc707288dee66dd18a10c3659c3b27579f8842e6aae8aaf8b52572f",
+        "keelMarket": "0x48ebd739b0d7234c3c1ad9359d7c8c0ea88fc219107eda289df8c7a1501a7ec0",
+        "setMarket": "0x6419c3a09295449e21af50ee078df8fb4103bdc48d97860514c1ddf0fbce2a44",
+        "setStrategy": "0x8f519e6950380fe3289b1b3c07a4e3c3bf6d50858c1dc04402de5610a212d282"
       }
     }
   ]

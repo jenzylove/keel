@@ -203,6 +203,14 @@ export default async function Home() {
           <p className="label">Fair questions</p>
           <div className="faq">
             <details>
+              <summary>How do I get BTC on Mezo?</summary>
+              <p>
+                To try Keel, get free test BTC from Mezo&apos;s faucet at faucet.test.mezo.org. For real BTC, swap USDC or ETH for tBTC,
+                WBTC or cbBTC on Ethereum, then deposit it through Mezo&apos;s own bridge in the Mezo app. It arrives as BTC in 30 to 60
+                minutes. The app walks you through both.
+              </p>
+            </details>
+            <details>
               <summary>Can my Keel loan be redeemed?</summary>
               <p>No. Redemptions only reach loans in Mezo’s TroveManager. Keel loans live in Keel’s own market.</p>
             </details>

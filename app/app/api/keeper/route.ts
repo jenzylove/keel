@@ -5,6 +5,8 @@ import { deployed, mezoTestnet, testnet } from '@/lib/chains';
 import { erc20Abi, mainnetAbi, marketAbi, strategyAbi, vaultAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
 
+import { TESTNET_POOLS } from '@/lib/pools';
+
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -116,6 +118,33 @@ export async function GET(req: Request) {
         address: MARKET, abi: marketAbi, functionName: 'liquidate', args: [p.id, need],
       });
       done.push({ id: Number(p.id), kind: isVe ? 'veBTC' : 'BTC', hash, status: receipt.status });
+    }
+    return done;
+  });
+  // Loans whose borrower turned on auto pay: claim what the veBTC earned in
+  // every Mezo pool, and the MUSD among it pays the loan, interest first.
+  await attempt(report, 'autoPay', async () => {
+    const next = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'nextLoanId' });
+    const fees = TESTNET_POOLS.map((p) => p.fees);
+    const bribes = TESTNET_POOLS.map((p) => p.bribe);
+    const tokens = TESTNET_POOLS.map((p) => p.tokens);
+    const done: unknown[] = [];
+    for (let i = 1n; i < next; i++) {
+      const [loan, on] = await Promise.all([
+        testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'loans', args: [i] }),
+        testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'autoPay', args: [i] }),
+      ]);
+      if (!on || loan[1] !== 2) continue;
+      for (const [kind, rewards] of [['fees', fees], ['bribes', bribes]] as const) {
+        try {
+          const { hash, receipt } = await sendTx(testnet, wallet, {
+            address: MARKET, abi: marketAbi, functionName: 'claimRewardsToDebt', args: [i, rewards, tokens, kind === 'bribes'],
+          });
+          done.push({ id: Number(i), kind, hash, status: receipt.status });
+        } catch (e) {
+          done.push({ id: Number(i), kind, error: (e as Error).message.split('\n')[0].slice(0, 160) });
+        }
+      }
     }
     return done;
   });

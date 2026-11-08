@@ -58,7 +58,9 @@ export function friendlyError(e: unknown): string {
   if (unknownChain(e)) return 'Your wallet could not switch to Mezo testnet. Add it in your wallet (chain 31611, RPC rpc.test.mezo.org) and try again.';
   if (/LendCapExceeded|0xc375827a|lend cap/i.test(raw(e)))
     return 'Keel has reached its lending cap for now: at most a fifth of savings is ever lent. Borrow less, or try again after a loan is repaid.';
-  if (/InsufficientLiquidity|0xa17e11d5/i.test(raw(e))) return 'The savings vault has less free MUSD than that right now. Borrow less.';
+  if (/InsufficientLiquidity|0xa17e11d5/i.test(raw(e))) return 'Keel has less free MUSD than that right now. Try a smaller amount, or try again after a repayment.';
+  if (/BelowLiquidityBuffer|0xa76fc46c/i.test(raw(e))) return 'Keel keeps a slice of savings free for withdrawals, and this loan would dip into it. Borrow less, or try after a repayment.';
+  if (/NotAllowed|0x3d693ada/i.test(raw(e))) return 'Only the borrower can claim for this loan until they turn on auto pay.';
   if (/does not exist|is not available|method not found/i.test(msg))
     return 'Your wallet’s Mezo testnet connection dropped the request. In your wallet’s network settings, set the Mezo Testnet RPC to https://rpc.test.mezo.org and try again.';
   if (/insufficient funds|exceeds balance/i.test(msg)) return 'This wallet needs testnet BTC to pay gas. Get some free at faucet.test.mezo.org.';

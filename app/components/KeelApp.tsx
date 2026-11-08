@@ -9,10 +9,11 @@ import { sendTx } from '@/lib/send';
 import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
 import { TESTNET_POOLS } from '@/lib/pools';
+import { GetBtc } from '@/components/GetBtc';
 
 const MARKET = deployed.contracts.keelMarket as Address;
 const STRATEGY = deployed.contracts.keelStrategy as Address;
-const strategyAbi = parseAbi(['function lendable() view returns (uint256)', 'function lent() view returns (uint256)']);
+const strategyAbi = parseAbi(['function lendable() view returns (uint256)', 'function lent() view returns (uint256)', 'function withdrawable() view returns (uint256)']);
 const FAUCET = 'https://faucet.test.mezo.org';
 /** Below this a wallet can't lock anything useful and still pay fees. */
 const FAUCET_BELOW = 1_000_000_000_000_000n; // 0.001 BTC
@@ -24,7 +25,7 @@ const VE = deployed.mezo.veBTC as Address;
 type Tab = 'borrow' | 'save' | 'loans';
 type Coll = 'btc' | 've';
 type Line = { text: string; hash?: Hash; ok?: boolean };
-type MyLoan = { id: bigint; kind: number; btc: bigint; nftId: bigint; debt: bigint; health: bigint };
+type MyLoan = { id: bigint; kind: number; btc: bigint; nftId: bigint; debt: bigint; health: bigint; autoPay: boolean };
 type Nft = { id: bigint; amount: bigint; permanent: boolean };
 
 /** Live market numbers, read on the server so a visitor sees a real quote
@@ -67,6 +68,8 @@ export function KeelApp({ market }: { market: Market | null }) {
   const [borrowIn, setBorrowIn] = useState('20');
   /** MUSD Keel can still lend: savings are lent up to a 20% cap, read live. */
   const [room, setRoom] = useState<number | null>(null);
+  /** MUSD savers can withdraw right now: liquid savings plus the reserve. */
+  const [canWithdraw, setCanWithdraw] = useState<bigint | null>(null);
   const [nftPick, setNftPick] = useState('');
   const [saveIn, setSaveIn] = useState('100');
   const [poolPick, setPoolPick] = useState(0);
@@ -88,8 +91,11 @@ export function KeelApp({ market }: { market: Market | null }) {
         ids.map(async (id) => {
           const l = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'loans', args: [id] });
           if (l[0].toLowerCase() !== who.toLowerCase() || l[1] === 0) return null;
-          const pos = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] });
-          return { id, kind: l[1], btc: l[3], nftId: l[4], debt: pos[1], health: pos[2] };
+          const [pos, auto] = await Promise.all([
+            testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] }),
+            testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'autoPay', args: [id] }),
+          ]);
+          return { id, kind: l[1], btc: l[3], nftId: l[4], debt: pos[1], health: pos[2], autoPay: auto };
         }),
       )
     ).filter((x): x is MyLoan => x !== null);
@@ -111,10 +117,12 @@ export function KeelApp({ market }: { market: Market | null }) {
   };
 
   const readRoom = useCallback(async () => {
-    const [cap, out] = await Promise.all([
+    const [cap, out, free] = await Promise.all([
       testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lendable' }),
       testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lent' }),
+      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'withdrawable' }),
     ]);
+    setCanWithdraw(free);
     setRoom(Math.max(0, Number(formatUnits(cap > out ? cap - out : 0n, 18))));
   }, []);
   useEffect(() => {
@@ -216,6 +224,8 @@ export function KeelApp({ market }: { market: Market | null }) {
     act(async (w, a) => {
       const amt = amount(saveIn, 'the amount');
       if (bal && amt > bal.smusd) throw new Error(`You have ${fmt(bal.smusd, 18, 2)} sMUSD saved. Withdraw that much or less.`);
+      if (canWithdraw !== null && amt > canWithdraw)
+        throw new Error(`Right now ${fmt(canWithdraw, 18, 2)} MUSD can leave at once while loans are out. Withdraw that much, and the rest frees up as loans are repaid.`);
       await send(w, a, 'Withdraw from savings', { address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [amt] });
     });
 
@@ -226,12 +236,21 @@ export function KeelApp({ market }: { market: Market | null }) {
       await send(w, a, `Vote with veBTC #${l.nftId} for ${p.name}`, { address: MARKET, abi: marketAbi, functionName: 'vote', args: [l.id, [p.pool], [10_000n]] });
     });
 
-  /** Claims the pool's fees and bribes earned by the loan's veBTC. */
+  /** Claims what the loan's veBTC earned in every pool. MUSD pays the loan,
+   *  interest first; every other token goes to the wallet. */
   const claimFor = (l: MyLoan) =>
     act(async (w, a) => {
-      const p = TESTNET_POOLS[poolPick];
-      await send(w, a, `Claim ${p.name} fees`, { address: MARKET, abi: marketAbi, functionName: 'claimRewards', args: [l.id, [p.fees], [p.tokens], false] });
-      await send(w, a, `Claim ${p.name} bribes`, { address: MARKET, abi: marketAbi, functionName: 'claimRewards', args: [l.id, [p.bribe], [p.tokens], true] });
+      const fees = TESTNET_POOLS.map((p) => p.fees);
+      const bribes = TESTNET_POOLS.map((p) => p.bribe);
+      const tokens = TESTNET_POOLS.map((p) => p.tokens);
+      await send(w, a, `Claim fees, MUSD to loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'claimRewardsToDebt', args: [l.id, fees, tokens, false] });
+      await send(w, a, `Claim bribes, MUSD to loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'claimRewardsToDebt', args: [l.id, bribes, tokens, true] });
+    });
+
+  /** Lets the keeper claim this loan's rewards every day and pay the loan with them. */
+  const toggleAutoPay = (l: MyLoan) =>
+    act(async (w, a) => {
+      await send(w, a, `${l.autoPay ? 'Turn off' : 'Turn on'} auto pay for loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'setAutoPay', args: [l.id, !l.autoPay] });
     });
 
   const repayAndClose = (l: MyLoan) =>
@@ -261,22 +280,12 @@ export function KeelApp({ market }: { market: Market | null }) {
         ))}
       </div>
 
-      {account && bal && bal.btc < FAUCET_BELOW && (
-        <div className="faucet">
-          <div>
-            <strong>This wallet has no test BTC yet</strong>
-            <span>Keel runs on Mezo testnet, so the BTC is free. Grab some from Mezo&apos;s faucet, then come back.</span>
-          </div>
-          <div className="faucet-actions">
-            <a className="btn small" href={FAUCET} target="_blank" rel="noreferrer">
-              Get test BTC ↗
-            </a>
-            <button className="linkish" onClick={() => refresh(account).catch(() => {})}>
-              I have it, refresh
-            </button>
-          </div>
-        </div>
-      )}
+      <GetBtc
+        key={account && bal && bal.btc < FAUCET_BELOW ? 'empty' : 'ok'}
+        open={!!(account && bal && bal.btc < FAUCET_BELOW)}
+        empty={!!(account && bal && bal.btc < FAUCET_BELOW)}
+        onRefresh={account ? () => refresh(account).catch(() => {}) : undefined}
+      />
       {account && bal && bal.btc >= FAUCET_BELOW && (
         <div className="wallet-strip">
           <span>
@@ -469,9 +478,15 @@ export function KeelApp({ market }: { market: Market | null }) {
                               Vote
                             </button>
                             <button className="btn ghost small" disabled={busy} onClick={() => claimFor(l)}>
-                              Claim rewards
+                              Claim rewards to loan
+                            </button>
+                            <button className={`btn small ${l.autoPay ? '' : 'ghost'}`} disabled={busy} onClick={() => toggleAutoPay(l)}>
+                              {l.autoPay ? 'Auto pay on' : 'Turn on auto pay'}
                             </button>
                           </div>
+                          <p className="ve-note">
+                            MUSD your lock earns pays this loan, interest first.{l.autoPay ? ' Keel claims it for you every day.' : ''}
+                          </p>
                         </td>
                       </tr>
                     )}
