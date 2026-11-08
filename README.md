@@ -15,7 +15,7 @@
   <a href="https://github.com/jenzylove/keel/actions/workflows/verify.yml"><img alt="verify" src="https://github.com/jenzylove/keel/actions/workflows/verify.yml/badge.svg" /></a>
   <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
   <img alt="Mezo testnet" src="https://img.shields.io/badge/Mezo-testnet%2031611-111111?style=flat-square" />
-  <img alt="Tests" src="https://img.shields.io/badge/tests-67%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-85%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
   <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-111111?style=flat-square" />
   <img alt="Built for" src="https://img.shields.io/badge/built%20for-Mezo%20Buildathon-e5141b?style=flat-square" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" />
@@ -29,7 +29,7 @@
 
 - **MUSD has traded under $0.9925 since July.** Redeeming 1 MUSD pays $1 of BTC minus 0.75%, so below that price anyone can buy MUSD cheap and redeem it against the weakest loan.
 - **That emptied the loan book.** There were 49 MUSD loans in June and 1 on 2026-10-20.
-- **Savers are paid by that same process.** The vault's 7.38M MUSD of principal is lent to no one. Savers earned about 3% a year over the last 30 days, and 65% of it arrived as BTC fees that redemptions pay. With almost no loans left, that income is running out.
+- **Savers are paid by that same process.** The vault's idle savings, 1.30M MUSD on 2026-11-08, are lent to no one. In the 30 days to 2026-10-21 savers earned about 3% a year, and 65% of it arrived as BTC fees that redemptions pay. With almost no loans left, that income is running out.
 - **Locked Bitcoin can't be borrowed against.** 806 BTC sits in veBTC, and Mezo's own FAQ says it can't be used as collateral.
 
 ## What Keel does
@@ -41,6 +41,9 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 3. **Interest goes to savers** over a week, with 10% kept as a reserve that absorbs losses first.
 4. **The rate leans against the peg.** Below $0.995 it steps up, at most 1 point a week, read from a 24 hour average of Mezo's own mUSDC/MUSD pool. New borrowing pauses when that pool's dollar side runs thin.
 5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust.
+6. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. The MUSD it earns goes to the loan, interest first; with auto pay on, the keeper claims it every day.
+7. **Withdrawals degrade gracefully.** `withdrawable()` says exactly what can leave now, the reserve covers a leaving saver, and new borrowing pauses before liquid savings fall under a 10% buffer.
+8. **A protocol share pays the keeper.** A timelocked share of interest, 5% on the mainnet vault and 0 on testnet, pays for the keeper and hosting. Savers get the rest.
 
 ## How it works
 
@@ -53,6 +56,7 @@ flowchart LR
     M -- "interest, released over a week" --> K
     K -- "yield" --> V
     M -. "unhealthy loan" .-> X["Keeper<br/>liquidates from its own float"]
+    B -. "veBTC rewards in MUSD<br/>pay the loan (auto pay)" .-> M
 ```
 
 Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMarket, so no redemption can take it; the only way it closes early is a normal liquidation if BTC falls far enough, and any surplus goes back to the borrower.
@@ -62,6 +66,7 @@ Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMa
 | | |
 |---|---|
 | **Demo video** | [youtu.be/iSvGuXuLK7A](https://youtu.be/iSvGuXuLK7A): two minutes, one borrower's journey on the live site, real testnet transactions |
+| **Deck** | [docs/Keel-deck.pdf](docs/Keel-deck.pdf) |
 | **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo testnet, with Mezo mainnet readings |
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
 | **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
@@ -70,6 +75,8 @@ Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMa
 | **Audit notes** | [docs/AUDIT.md](docs/AUDIT.md) |
 | **Eval** | [docs/eval/RESULTS.md](docs/eval/RESULTS.md): the contracts against an answer key, peg term on and off |
 | **Security** | [SECURITY.md](SECURITY.md): scope, protections and how to report |
+| **Verified contracts** | KeelStrategy, KeelMarket, the peg oracle and the vault on Sourcify (links under Contracts) |
+| **Video script** | [docs/video/script.md](docs/video/script.md) and [subtitles](docs/video/keel-demo.srt) |
 
 ## Judge fast path
 
@@ -78,15 +85,19 @@ No keys needed.
 1. Open the [app](https://keel-psi-seven.vercel.app/app) and read the live quote in the Borrow tab.
 2. Press "No wallet? Watch our demo wallet run a real loan" and open any transaction link.
 3. Open [/proof](https://keel-psi-seven.vercel.app/proof): savers paid back with interest, a bad loan cleared by the keeper, and the plug in on a copy of Mezo mainnet.
-4. Read the problem in Mezo's own numbers on the [landing page](https://keel-psi-seven.vercel.app/#problem).
-5. Optional: run the mainnet fork test command shown in "Run it".
+4. On /proof, finding 04: a veBTC loan votes for a Mezo pool through Keel, on Mezo's own voter, with auto pay on.
+5. Read the problem in Mezo's own numbers on the [landing page](https://keel-psi-seven.vercel.app/#problem).
+6. Optional: run the mainnet fork test command shown in "Run it".
 
 ## What is real and what is not
 
 | Part | Status |
 |---|---|
 | Contracts on Mezo testnet | Live, real transactions |
-| Mainnet integration | Proven on a fork with Mezo's real 7.38M vault, not deployed |
+| Mainnet integration | Proven on a copy of mainnet with Mezo's real savings vault |
+| Opt in vault on Mezo mainnet | Deploy script ready; a dry run on a mainnet copy passes every wiring check |
+| veBTC votes and reward claims | Real testnet transactions on Mezo's own voter, through Keel |
+| Contracts | Verified on Sourcify, exact match |
 | Home page numbers | Read live from Mezo testnet and mainnet |
 | Demo wallet loan | Real testnet transactions |
 | Loop run | Real testnet transactions, fresh wallets playing both sides |
@@ -102,14 +113,16 @@ No keys needed.
 The app lives at /app, with Connect wallet in the top bar on every page. One panel, three tabs:
 
 - **Borrow** shows a live quote before any wallet: the most you can borrow, the rate, your health after borrowing, and that redemptions can't take the loan. A wallet is asked for only when you press the action. Collateral is Bitcoin or a veBTC lock.
-- **Save** takes MUSD and shows the live saver rate.
-- **Loans** lists your loans with Repay and close.
+- **Save** takes MUSD, shows the live saver rate, and caps a withdrawal at what can leave right now.
+- **Loans** lists your loans with Repay and close. A veBTC loan also gets Vote, Claim rewards to loan and an auto pay switch.
+
+A wallet with no BTC gets a short guide: free test BTC from Mezo's faucet to try Keel, or real BTC from USDC or ETH through Mezo's own bridge.
 
 A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay and close end to end with a test wallet, and each step was confirmed in the app.
 
 **The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Borrowers took 75 MUSD across three loans, one of them against a veBTC lock (#407) the borrower created, repaid with interest about four hours later and got their collateral back. Each saver withdrew 60.0000015 MUSD for their 60; the rest of the interest keeps releasing over the week by design. All 36 steps are on /proof, under "Savers got their money back, with interest". Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
 
-**The keeper** is a daily Vercel cron. It claims savers' yield, steps the peg premium, and liquidated an unhealthy loan from its own MUSD float on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
+**The keeper** is a daily Vercel cron. It claims savers' yield, steps the peg premium, claims rewards for loans with auto pay on, and liquidated an unhealthy loan from its own MUSD float on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
 
 
 ## Contracts
@@ -121,7 +134,7 @@ A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay an
 | [`KeelMath`](contracts/src/libraries/KeelMath.sol) | Interest, health, liquidation and the rate curve |
 | [`PegOracles`](contracts/src/oracles/PegOracles.sol) | MUSD price from Mezo pools: concentrated liquidity TWAP on mainnet, basic pool `quote()` on testnet |
 
-Testnet addresses are in [deployments/testnet.json](deployments/testnet.json).
+Testnet addresses are in [deployments/testnet.json](deployments/testnet.json). Verified on Sourcify: [KeelStrategy](https://repo.sourcify.dev/31611/0xdab084ebfd118489ada2021c5e60afd5e2fc26f9) · [KeelMarket](https://repo.sourcify.dev/31611/0x32a94a9af2751afc771aa09d00d95faa6629135e) · [peg oracle](https://repo.sourcify.dev/31611/0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7) · [vault](https://repo.sourcify.dev/31611/0x40d5b453eb25dd8b1dfd484c0b80f7ede0dc7def). Reverify any deployment with `node script/verify.mjs testnet`.
 
 ## Run it
 
@@ -129,7 +142,7 @@ Testnet addresses are in [deployments/testnet.json](deployments/testnet.json).
 # contracts: unit, fuzz and eval tests
 cd contracts && npm ci && forge test --no-match-path 'test/fork/*'
 
-# mainnet fork: Mezo's multisig moves the real 7.38M into Keel
+# mainnet copy: Mezo's multisig moves the vault's real idle savings into Keel
 forge test --match-path 'test/fork/*'
 
 # the loop: fresh wallets play savers and borrowers on testnet (run from contracts/)
