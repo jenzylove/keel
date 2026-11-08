@@ -1,5 +1,5 @@
 import { createPublicClient, encodeFunctionData, http, keccak256 } from 'viem';
-import { TESTNET_RPCS } from './chains';
+import { MAINNET_RPCS, TESTNET_RPCS, mezoMainnet } from './chains';
 import type { Abi, Account, Chain, Hash, PublicClient, TransactionReceipt, Transport, WalletClient } from 'viem';
 
 /** Mezo's public testnet RPC sits behind a load balancer whose nodes can lag
@@ -31,6 +31,9 @@ type Opts = {
    *  run ends with a clear error before its host's time limit. */
   deadline?: number;
 };
+
+/** Every public endpoint of the chain a client reads, mainnet or testnet. */
+const rpcsOf = (chainId: number | undefined) => (chainId === mezoMainnet.id ? MAINNET_RPCS : TESTNET_RPCS);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -109,9 +112,9 @@ export async function sendTx(
   const gasPrice = await pub.getGasPrice();
   const raw = await account.signTransaction({ to: req.address, data, gas, gasPrice, nonce, chainId: chain!.id, type: 'legacy' });
   const hash = keccak256(raw);
-  // Broadcast to every testnet endpoint, so one lagging or dropping node
+  // Broadcast to every endpoint of the chain, so one lagging or dropping node
   // can't lose it.
-  const endpoints = TESTNET_RPCS.map((u) => createPublicClient({ chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }));
+  const endpoints = rpcsOf(chain?.id).map((u) => createPublicClient({ chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }));
   let lastBroadcastError = '';
   for (let i = 0; i < 20 && (!opts.deadline || Date.now() < opts.deadline); i++) {
     for (const ep of endpoints) {
@@ -134,7 +137,7 @@ export async function sendTx(
 async function waitReceipt(pub: PublicClient, hash: Hash): Promise<TransactionReceipt> {
   // Mezo's testnet nodes can answer "not found" for a mined transaction for a
   // while, so ask every endpoint in turn instead of trusting one answer.
-  const endpoints = [pub, ...TESTNET_RPCS.map((u) => createPublicClient({ chain: pub.chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }))];
+  const endpoints = [pub, ...rpcsOf(pub.chain?.id).map((u) => createPublicClient({ chain: pub.chain, transport: http(u, { timeout: 15_000, retryCount: 0 }) }))];
   const until = Date.now() + 180_000;
   while (Date.now() < until) {
     for (const ep of endpoints) {

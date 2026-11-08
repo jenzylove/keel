@@ -1,17 +1,18 @@
 'use client';
 
-const FAUCET = 'https://faucet.test.mezo.org';
 const MEZO_BRIDGE = 'https://mezo.org/overview';
 const SWAP = 'https://app.uniswap.org/swap?outputCurrency=0x18084fbA666a33d37592fA2633fD49a74DD93a88';
 const BRIDGE_DOCS = 'https://mezo.org/docs/users/getting-started/bridging';
 
 /** How a new user gets BTC onto Mezo: free test BTC to try Keel now, or real
- *  BTC through Mezo's own bridge. Keel never holds funds in transit. */
-export function GetBtc({ open, empty, onRefresh }: { open: boolean; empty: boolean; onRefresh?: () => void }) {
+ *  BTC through Mezo's own bridge. Keel never holds funds in transit. With no
+ *  faucet (mainnet) only the bridge path shows. */
+export function GetBtc({ open, empty, onRefresh, faucet }: { open: boolean; empty: boolean; onRefresh?: () => void; faucet: string | null }) {
   return (
     <details className={`getbtc ${empty ? 'empty' : ''}`} open={open}>
       <summary>{empty ? 'This wallet has no BTC on Mezo yet. Here is how to get some.' : 'New to Mezo? How to get BTC'}</summary>
-      <div className="getbtc-paths">
+      <div className={`getbtc-paths ${faucet ? '' : 'one'}`}>
+        {faucet && (
         <div>
           <h4>Try Keel now, free</h4>
           <ol>
@@ -20,7 +21,7 @@ export function GetBtc({ open, empty, onRefresh }: { open: boolean; empty: boole
             <li>Come back and borrow. It takes about a minute.</li>
           </ol>
           <div className="getbtc-actions">
-            <a className="btn small" href={FAUCET} target="_blank" rel="noreferrer">
+            <a className="btn small" href={faucet} target="_blank" rel="noreferrer">
               Get test BTC ↗
             </a>
             {onRefresh && (
@@ -30,6 +31,7 @@ export function GetBtc({ open, empty, onRefresh }: { open: boolean; empty: boole
             )}
           </div>
         </div>
+        )}
         <div>
           <h4>Bring real BTC to Mezo</h4>
           <ol>
@@ -53,6 +55,13 @@ export function GetBtc({ open, empty, onRefresh }: { open: boolean; empty: boole
               Mezo&apos;s guide ↗
             </a>
           </p>
+          {!faucet && onRefresh && (
+            <div className="getbtc-actions">
+              <button className="linkish" onClick={onRefresh}>
+                I have it, refresh
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </details>

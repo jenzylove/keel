@@ -5,6 +5,8 @@ import { txUrl } from '@/lib/chains';
 import loopRun from '@/lib/loop-run.json';
 import { outsideUsers } from '@/lib/reads';
 import wave2Run from '@/lib/wave2-run.json';
+import mainnetRun from '@/lib/mainnet-run.json';
+import mainnetDeploy from '@/lib/mainnet.json';
 
 export const revalidate = 300;
 
@@ -12,9 +14,12 @@ export const metadata: Metadata = { title: 'Proof · Keel' };
 
 type Snap = { savers: Record<string, { walletMUSD: string }> };
 const loop = loopRun as unknown as { after?: Snap };
+const main = mainnetRun as { steps: { key: string; what: string; hash: string }[]; loanId?: number };
+const mainTx = (h: string) => `https://explorer.mezo.org/tx/${h}`;
+const mainContracts = (mainnetDeploy as { contracts: Record<string, string> }).contracts;
 const wave2 = wave2Run as { steps: { key: string; what: string; hash: string }[]; nftId?: number; loanId?: number };
 
-function Txs({ rows }: { rows: ProofRow[] }) {
+function Txs({ rows, link = txUrl }: { rows: ProofRow[]; link?: (h: string) => string }) {
   return (
     <details className="txs">
       <summary>See the {rows.length} transactions</summary>
@@ -25,7 +30,7 @@ function Txs({ rows }: { rows: ProofRow[] }) {
               <td>{r.what}</td>
               <td className="num">
                 {r.hash ? (
-                  <a href={txUrl(r.hash)} className="mono" target="_blank" rel="noreferrer">
+                  <a href={link(r.hash)} className="mono" target="_blank" rel="noreferrer">
                     {r.hash.slice(0, 10)}…
                   </a>
                 ) : (
@@ -55,7 +60,7 @@ export default async function Page() {
           Don&apos;t take our word. <em>Open the transactions.</em>
         </h1>
         <p className="chapter-lede">
-          Everything below ran for real on Mezo testnet, or against a copy of Mezo mainnet with its real vault and balances.
+          Everything below ran for real: on Mezo mainnet, on Mezo testnet, or against a copy of Mezo mainnet with its real vault and balances.
         </p>
         {outside && outsideTotal > 0 && (
           <p className="outside">
@@ -69,6 +74,27 @@ export default async function Page() {
         <span className="finding-k">01</span>
         <div>
           <h2>
+            Live on Mezo mainnet, <em>with real money.</em>
+          </h2>
+          <p className="chapter-lede">
+            Keel&apos;s opt in vault runs on Mezo mainnet against Mezo&apos;s own MUSD, PriceFeed and pool price. Its first saver deposited 10
+            MUSD bought on Mezo&apos;s BTC/MUSD pool, and its first borrower locked BTC and borrowed 5 MUSD, outside the redemption system.
+            Every contract is verified on Sourcify.
+          </p>
+          <Txs rows={main.steps.map((st) => ({ what: st.what, hash: st.hash }))} link={mainTx} />
+          <p className="contracts-line">
+            <a href={`https://explorer.mezo.org/address/${mainContracts.vault}`} target="_blank" rel="noreferrer">Vault ↗</a>
+            <a href={`https://explorer.mezo.org/address/${mainContracts.keelStrategy}`} target="_blank" rel="noreferrer">KeelStrategy ↗</a>
+            <a href={`https://explorer.mezo.org/address/${mainContracts.keelMarket}`} target="_blank" rel="noreferrer">KeelMarket ↗</a>
+            <a href={`https://repo.sourcify.dev/31612/${mainContracts.keelMarket}`} target="_blank" rel="noreferrer">Source on Sourcify ↗</a>
+          </p>
+        </div>
+      </section>
+
+      <section className="finding">
+        <span className="finding-k">02</span>
+        <div>
+          <h2>
             Savers got their money back, <em>with interest.</em>
           </h2>
           <p className="chapter-lede">
@@ -80,7 +106,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">02</span>
+        <span className="finding-k">03</span>
         <div>
           <h2>
             When a loan went bad, <em>the keeper cleared it.</em>
@@ -94,7 +120,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">03</span>
+        <span className="finding-k">04</span>
         <div>
           <h2>
             It plugs into <em>Mezo&apos;s real vault.</em>
@@ -124,7 +150,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">04</span>
+        <span className="finding-k">05</span>
         <div>
           <h2>
             A locked veBTC keeps voting, <em>and its rewards pay the loan.</em>

@@ -2,6 +2,7 @@ import 'server-only';
 import { formatUnits } from 'viem';
 import { MAINNET, deployed, mainnet, testnet } from './chains';
 import { erc20Abi, mainnetAbi, marketAbi, strategyAbi, veAbi } from './abi';
+import { NETWORKS, type NetKey } from './networks';
 
 const n = (v: bigint, d = 18) => Number(formatUnits(v, d));
 
@@ -163,41 +164,43 @@ export type KeelState = {
   loans: KeelLoan[];
 };
 
-const S = deployed.contracts.keelStrategy as `0x${string}`;
-const M = deployed.contracts.keelMarket as `0x${string}`;
-const VE = deployed.mezo.veBTC as `0x${string}`;
-
-export async function keelState(): Promise<KeelState | null> {
+/** Keel's whole book on one network: testnet by default, or the opt in
+ *  mainnet vault. */
+export async function keelState(key: NetKey = 'testnet'): Promise<KeelState | null> {
+  const { client, contracts, tokens } = NETWORKS[key];
+  const S = contracts.keelStrategy;
+  const M = contracts.keelMarket;
+  const VE = tokens.veBTC;
   return safe(async () => {
     const rs = (f: 'principal' | 'lent' | 'liquid' | 'lendable' | 'reserve' | 'yieldOwed' | 'badDebt') =>
-      testnet.readContract({ address: S, abi: strategyAbi, functionName: f });
+      client.readContract({ address: S, abi: strategyAbi, functionName: f });
     const rm = <F extends 'currentRate' | 'saverRate' | 'pegPremium' | 'lastMusdPrice' | 'lastPegStep' | 'lastBtcPrice' | 'nextLoanId'>(f: F) =>
-      testnet.readContract({ address: M, abi: marketAbi, functionName: f });
+      client.readContract({ address: M, abi: marketAbi, functionName: f });
     const [principal, lent, liquid, lendable, reserve, yieldOwed, badDebt, rate, saverRate, peg, musdP, pegAt, btcP, next, open] =
       await Promise.all([
         rs('principal'), rs('lent'), rs('liquid'), rs('lendable'), rs('reserve'), rs('yieldOwed'), rs('badDebt'),
         rm('currentRate'), rm('saverRate'), rm('pegPremium'), rm('lastMusdPrice'), rm('lastPegStep'), rm('lastBtcPrice'), rm('nextLoanId'),
-        testnet.readContract({ address: M, abi: marketAbi, functionName: 'borrowingOpen' }),
+        client.readContract({ address: M, abi: marketAbi, functionName: 'borrowingOpen' }),
       ]);
     const [rb, rt, rp, min] = await Promise.all([
-      testnet.readContract({ address: M, abi: marketAbi, functionName: 'btcRisk' }),
-      testnet.readContract({ address: M, abi: marketAbi, functionName: 'veTimedRisk' }),
-      testnet.readContract({ address: M, abi: marketAbi, functionName: 'vePermanentRisk' }),
-      testnet.readContract({ address: M, abi: marketAbi, functionName: 'minLoan' }),
+      client.readContract({ address: M, abi: marketAbi, functionName: 'btcRisk' }),
+      client.readContract({ address: M, abi: marketAbi, functionName: 'veTimedRisk' }),
+      client.readContract({ address: M, abi: marketAbi, functionName: 'vePermanentRisk' }),
+      client.readContract({ address: M, abi: marketAbi, functionName: 'minLoan' }),
     ]);
     const ids = Array.from({ length: Number(next) - 1 }, (_, i) => BigInt(i + 1));
     const loans = (
       await Promise.all(
         ids.map(async (id): Promise<KeelLoan | null> => {
           const [l, pos] = await Promise.all([
-            testnet.readContract({ address: M, abi: marketAbi, functionName: 'loans', args: [id] }),
-            testnet.readContract({ address: M, abi: marketAbi, functionName: 'position', args: [id] }),
+            client.readContract({ address: M, abi: marketAbi, functionName: 'loans', args: [id] }),
+            client.readContract({ address: M, abi: marketAbi, functionName: 'position', args: [id] }),
           ]);
           const [owner, kind, , btc, nftId] = l;
           if (kind === 0) return null;
           let permanent: boolean | null = null;
           if (kind === 2) {
-            const lk = await safe(() => testnet.readContract({ address: VE, abi: veAbi, functionName: 'locked', args: [nftId] }));
+            const lk = await safe(() => client.readContract({ address: VE, abi: veAbi, functionName: 'locked', args: [nftId] }));
             permanent = lk ? lk[2] : null;
           }
           const health = pos[2] > 10n ** 30n ? null : n(pos[2]);

@@ -2,7 +2,7 @@ import type { KeelLoan } from '@/lib/reads';
 import { addressUrl } from '@/lib/chains';
 import { short, usd } from '@/lib/fmt';
 
-export function LoanTable({ loans }: { loans: KeelLoan[] }) {
+export function LoanTable({ loans, net = 'testnet' }: { loans: KeelLoan[]; net?: 'testnet' | 'mainnet' }) {
   if (loans.length === 0) return <p className="muted">No open loans right now.</p>;
   return (
     <table className="ledger">
@@ -41,7 +41,7 @@ export function LoanTable({ loans }: { loans: KeelLoan[] }) {
                 {h === null ? '∞' : h.toFixed(2)}
               </td>
               <td className="mono">
-                <a href={addressUrl(l.owner)}>{short(l.owner)}</a>
+                <a href={addressUrl(l.owner, net)}>{short(l.owner)}</a>
               </td>
             </tr>
           );

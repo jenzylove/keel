@@ -58,7 +58,7 @@ export default async function Home() {
       <section className="front">
         <div className="front-frame">
           <div className="front-copy">
-            <span className="front-tag">Live on Mezo testnet</span>
+            <span className="front-tag">Live on Mezo mainnet</span>
             <h1>
               Borrow against Bitcoin.
               <br />

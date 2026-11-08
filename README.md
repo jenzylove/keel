@@ -14,7 +14,7 @@
   <a href="https://youtu.be/iSvGuXuLK7A"><img alt="Demo video" src="https://img.shields.io/badge/demo-2%20min%20video-e5141b?style=flat-square&logo=youtube&logoColor=white" /></a>
   <a href="https://github.com/jenzylove/keel/actions/workflows/verify.yml"><img alt="verify" src="https://github.com/jenzylove/keel/actions/workflows/verify.yml/badge.svg" /></a>
   <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
-  <img alt="Mezo testnet" src="https://img.shields.io/badge/Mezo-testnet%2031611-111111?style=flat-square" />
+  <img alt="Mezo mainnet" src="https://img.shields.io/badge/Mezo-mainnet%20%2B%20testnet-111111?style=flat-square" />
   <img alt="Tests" src="https://img.shields.io/badge/tests-85%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
   <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-111111?style=flat-square" />
   <img alt="Built for" src="https://img.shields.io/badge/built%20for-Mezo%20Buildathon-e5141b?style=flat-square" />
@@ -67,7 +67,7 @@ Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMa
 |---|---|
 | **Demo video** | [youtu.be/iSvGuXuLK7A](https://youtu.be/iSvGuXuLK7A): two minutes, one borrower's journey on the live site, real testnet transactions |
 | **Deck** | [docs/Keel-deck.pdf](docs/Keel-deck.pdf) |
-| **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo testnet, with Mezo mainnet readings |
+| **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo mainnet (opt in vault) and testnet, with Mezo mainnet readings |
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
 | **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
 | **Proof** | [/proof](https://keel-psi-seven.vercel.app/proof) and [docs/proof/testnet-runs.md](docs/proof/testnet-runs.md): every result with its evidence: testnet transactions, mainnet copy tests and the eval |
@@ -93,9 +93,9 @@ No keys needed.
 
 | Part | Status |
 |---|---|
-| Contracts on Mezo testnet | Live, real transactions |
+| Contracts on Mezo mainnet and testnet | Live, real transactions |
 | Mainnet integration | Proven on a copy of mainnet with Mezo's real savings vault |
-| Opt in vault on Mezo mainnet | Deploy script ready; a dry run on a mainnet copy passes every wiring check |
+| Opt in vault on Mezo mainnet | Live with real money: first deposit of 10 MUSD and a 5 MUSD loan against BTC, on Mezo's own MUSD, PriceFeed and pool price |
 | veBTC votes and reward claims | Real testnet transactions on Mezo's own voter, through Keel |
 | Contracts | Verified on Sourcify, exact match |
 | Home page numbers | Read live from Mezo testnet and mainnet |
@@ -133,6 +133,8 @@ A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay an
 | [`KeelMarket`](contracts/src/KeelMarket.sol) | Loans against BTC and veBTC, liquidation, vote and reward passthrough, peg premium, throttle, config timelock |
 | [`KeelMath`](contracts/src/libraries/KeelMath.sol) | Interest, health, liquidation and the rate curve |
 | [`PegOracles`](contracts/src/oracles/PegOracles.sol) | MUSD price from Mezo pools: concentrated liquidity TWAP on mainnet, basic pool `quote()` on testnet |
+
+Mainnet: [vault](https://explorer.mezo.org/address/0x9450b4a37fd7f247194f0eb0e18d0fe3a671483d), [KeelStrategy](https://repo.sourcify.dev/31612/0x0298c746fc52f1b9bb1449de0464bf4056806509), [KeelMarket](https://repo.sourcify.dev/31612/0x3d6e71dfc30fdf24b8d2a9f9d564c3dc7c29d0d9), [peg oracle](https://repo.sourcify.dev/31612/0x557cfccd083f26150189ecb07cc945bcf3698eb5), all verified on Sourcify; addresses and the first run in [deployments/mainnet.json](deployments/mainnet.json) and [deployments/mainnet-run.json](deployments/mainnet-run.json).
 
 Testnet addresses are in [deployments/testnet.json](deployments/testnet.json). Verified on Sourcify: [KeelStrategy](https://repo.sourcify.dev/31611/0xdab084ebfd118489ada2021c5e60afd5e2fc26f9) · [KeelMarket](https://repo.sourcify.dev/31611/0x32a94a9af2751afc771aa09d00d95faa6629135e) · [peg oracle](https://repo.sourcify.dev/31611/0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7) · [vault](https://repo.sourcify.dev/31611/0x40d5b453eb25dd8b1dfd484c0b80f7ede0dc7def). Reverify any deployment with `node script/verify.mjs testnet`.
 

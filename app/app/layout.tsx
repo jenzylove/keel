@@ -3,7 +3,8 @@ import Link from 'next/link';
 import './globals.css';
 import { KeelMark } from '@/components/KeelMark';
 import { addressUrl, deployed } from '@/lib/chains';
-import { ConnectButton, WalletProvider } from '@/components/WalletProvider';
+import mainnetDeploy from '@/lib/mainnet.json';
+import { ConnectButton, NetToggle, WalletProvider } from '@/components/WalletProvider';
 import { BarShade } from '@/components/BarShade';
 
 export const metadata: Metadata = {
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="https://github.com/jenzylove/keel">Code</a>
             </nav>
             <div className="bar-right">
-              <span className="net">Mezo testnet</span>
+              <NetToggle />
               <ConnectButton />
             </div>
           </header>
@@ -81,16 +82,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <a href="https://github.com/jenzylove/keel">Code</a>
                 </div>
                 <div>
-                  <h4>Testnet contracts</h4>
-                  <a href={addressUrl(deployed.contracts.vault)}>Savings vault</a>
-                  <a href={addressUrl(deployed.contracts.keelStrategy)}>KeelStrategy</a>
-                  <a href={addressUrl(deployed.contracts.keelMarket)}>KeelMarket</a>
+                  <h4>Contracts</h4>
+                  <a href={`https://explorer.mezo.org/address/${mainnetDeploy.contracts.keelMarket}`}>KeelMarket on mainnet</a>
+                  <a href={`https://explorer.mezo.org/address/${mainnetDeploy.contracts.vault}`}>Vault on mainnet</a>
+                  <a href={addressUrl(deployed.contracts.keelMarket)}>KeelMarket on testnet</a>
                 </div>
               </div>
             </div>
             <div className="foot-word" aria-hidden="true">Keel</div>
             <div className="foot-bottom">
-              <span>Built for the Mezo Buildathon · live on Mezo testnet, readings from Mezo mainnet</span>
+              <span>Built for the Mezo Buildathon · live on Mezo mainnet and testnet</span>
               <span>MIT</span>
             </div>
           </footer>

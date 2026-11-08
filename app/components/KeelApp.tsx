@@ -1,30 +1,20 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { formatUnits, parseAbi, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
 import { useWallet } from '@/components/WalletProvider';
-import { deployed, testnet, txUrl } from '@/lib/chains';
 import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
 import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
-import { TESTNET_POOLS } from '@/lib/pools';
+import type { NetKey } from '@/lib/networks';
 import { GetBtc } from '@/components/GetBtc';
 
-const MARKET = deployed.contracts.keelMarket as Address;
-const STRATEGY = deployed.contracts.keelStrategy as Address;
 const strategyAbi = parseAbi(['function lendable() view returns (uint256)', 'function lent() view returns (uint256)', 'function withdrawable() view returns (uint256)']);
-const FAUCET = 'https://faucet.test.mezo.org';
-/** Below this a wallet can't lock anything useful and still pay fees. */
-const FAUCET_BELOW = 1_000_000_000_000_000n; // 0.001 BTC
-const VAULT = deployed.contracts.vault as Address;
-const MUSD = deployed.mezo.musd as Address;
-const BTC = deployed.mezo.btc as Address;
-const VE = deployed.mezo.veBTC as Address;
 
 type Tab = 'borrow' | 'save' | 'loans';
 type Coll = 'btc' | 've';
-type Line = { text: string; hash?: Hash; ok?: boolean };
+type Line = { text: string; hash?: Hash; url?: string; ok?: boolean };
 type MyLoan = { id: bigint; kind: number; btc: bigint; nftId: bigint; debt: bigint; health: bigint; autoPay: boolean };
 type Nft = { id: bigint; amount: bigint; permanent: boolean };
 
@@ -53,8 +43,16 @@ const fmt = (v: bigint, d = 18, digits = 4) => Number(formatUnits(v, d)).toLocal
 const money = (v: number, digits = 2) => (Number.isFinite(v) ? v.toLocaleString('en-US', { maximumFractionDigits: digits }) : '—');
 const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
 
-export function KeelApp({ market }: { market: Market | null }) {
-  const { wallet, account, connect, error: walletError } = useWallet();
+export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> }) {
+  const { wallet, account, connect, error: walletError, net } = useWallet();
+  const market = markets[net.key];
+  const pub = net.client;
+  const { keelMarket: MARKET, keelStrategy: STRATEGY, vault: VAULT } = net.contracts;
+  const { musd: MUSD, btc: BTC, veBTC: VE } = net.tokens;
+  const POOLS = net.pools;
+  /** The network a read started on, so a late answer from the other one is dropped. */
+  const netNow = useRef(net.key);
+  netNow.current = net.key;
   const [tab, setTab] = useState<Tab>('borrow');
   const [coll, setColl] = useState<Coll>('btc');
   const [log, setLog] = useState<Line[]>([]);
@@ -66,7 +64,7 @@ export function KeelApp({ market }: { market: Market | null }) {
 
   const [btcIn, setBtcIn] = useState('0.002');
   const [borrowIn, setBorrowIn] = useState('20');
-  /** MUSD Keel can still lend: savings are lent up to a 20% cap, read live. */
+  /** MUSD Keel can still lend: savings are lent up to a cap, read live. */
   const [room, setRoom] = useState<number | null>(null);
   /** MUSD savers can withdraw right now: liquid savings plus the reserve. */
   const [canWithdraw, setCanWithdraw] = useState<bigint | null>(null);
@@ -77,38 +75,43 @@ export function KeelApp({ market }: { market: Market | null }) {
   const say = (l: Line) => setLog((x) => [...x, l]);
 
   const refresh = useCallback(async (who: Address) => {
+    const k = net.key;
+    const stale = () => netNow.current !== k;
     const [btc, musd, smusd, next, veCount] = await Promise.all([
-      testnet.getBalance({ address: who }),
-      testnet.readContract({ address: MUSD, abi: erc20Abi, functionName: 'balanceOf', args: [who] }),
-      testnet.readContract({ address: VAULT, abi: vaultAbi, functionName: 'balanceOf', args: [who] }),
-      testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'nextLoanId' }),
-      testnet.readContract({ address: VE, abi: veAbi, functionName: 'balanceOf', args: [who] }),
+      pub.getBalance({ address: who }),
+      pub.readContract({ address: MUSD, abi: erc20Abi, functionName: 'balanceOf', args: [who] }),
+      pub.readContract({ address: VAULT, abi: vaultAbi, functionName: 'balanceOf', args: [who] }),
+      pub.readContract({ address: MARKET, abi: marketAbi, functionName: 'nextLoanId' }),
+      pub.readContract({ address: VE, abi: veAbi, functionName: 'balanceOf', args: [who] }),
     ]);
+    if (stale()) return;
     setBal({ btc, musd, smusd });
     const ids = Array.from({ length: Number(next) - 1 }, (_, i) => BigInt(i + 1));
     const mine = (
       await Promise.all(
         ids.map(async (id) => {
-          const l = await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'loans', args: [id] });
+          const l = await pub.readContract({ address: MARKET, abi: marketAbi, functionName: 'loans', args: [id] });
           if (l[0].toLowerCase() !== who.toLowerCase() || l[1] === 0) return null;
           const [pos, auto] = await Promise.all([
-            testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] }),
-            testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'autoPay', args: [id] }),
+            pub.readContract({ address: MARKET, abi: marketAbi, functionName: 'position', args: [id] }),
+            pub.readContract({ address: MARKET, abi: marketAbi, functionName: 'autoPay', args: [id] }),
           ]);
           return { id, kind: l[1], btc: l[3], nftId: l[4], debt: pos[1], health: pos[2], autoPay: auto };
         }),
       )
     ).filter((x): x is MyLoan => x !== null);
+    if (stale()) return;
     setLoans(mine);
     const owned = await Promise.all(
       Array.from({ length: Number(veCount) }, async (_, i) => {
-        const id = await testnet.readContract({ address: VE, abi: veAbi, functionName: 'ownerToNFTokenIdList', args: [who, BigInt(i)] });
-        const lk = await testnet.readContract({ address: VE, abi: veAbi, functionName: 'locked', args: [id] });
+        const id = await pub.readContract({ address: VE, abi: veAbi, functionName: 'ownerToNFTokenIdList', args: [who, BigInt(i)] });
+        const lk = await pub.readContract({ address: VE, abi: veAbi, functionName: 'locked', args: [id] });
         return { id, amount: BigInt(lk[0]), permanent: lk[2] };
       }),
     );
+    if (stale()) return;
     setNfts(owned.filter((x) => x.amount > 0n));
-  }, []);
+  }, [net.key, pub, MUSD, VAULT, MARKET, VE]);
 
   const doConnect = async (): Promise<{ w: WalletClient; a: Address } | null> => {
     const c = await connect();
@@ -117,14 +120,29 @@ export function KeelApp({ market }: { market: Market | null }) {
   };
 
   const readRoom = useCallback(async () => {
+    const k = net.key;
     const [cap, out, free] = await Promise.all([
-      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lendable' }),
-      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lent' }),
-      testnet.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'withdrawable' }),
+      pub.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lendable' }),
+      pub.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'lent' }),
+      pub.readContract({ address: STRATEGY, abi: strategyAbi, functionName: 'withdrawable' }),
     ]);
+    if (netNow.current !== k) return;
     setCanWithdraw(free);
     setRoom(Math.max(0, Number(formatUnits(cap > out ? cap - out : 0n, 18))));
-  }, []);
+  }, [net.key, pub, STRATEGY]);
+
+  // A new network starts clean: its own balances, loans, locks and room.
+  useEffect(() => {
+    setRoom(null);
+    setCanWithdraw(null);
+    setBal(null);
+    setLoans([]);
+    setNfts([]);
+    setNftPick('');
+    setPoolPick(0);
+    setLog([]);
+    setDemo(false);
+  }, [net.key]);
   useEffect(() => {
     readRoom().catch(() => {});
     const id = setInterval(() => readRoom().catch(() => {}), 30_000);
@@ -149,7 +167,8 @@ export function KeelApp({ market }: { market: Market | null }) {
   const act = async (f: (w: WalletClient, a: Address) => Promise<void>) => {
     let w = wallet;
     let a = account;
-    if (!w || !a) {
+    // Never sign with a wallet bound to the other network.
+    if (!w || !a || w.chain?.id !== net.chain.id) {
       const c = await doConnect();
       if (!c) return;
       w = c.w;
@@ -159,7 +178,7 @@ export function KeelApp({ market }: { market: Market | null }) {
     try {
       await f(w, a);
     } catch (e) {
-      say({ text: friendlyError(e), ok: false });
+      say({ text: friendlyError(e, net.key), ok: false });
     } finally {
       setBusy(false);
       await refresh(a).catch(() => {});
@@ -169,9 +188,10 @@ export function KeelApp({ market }: { market: Market | null }) {
 
   const send = async (w: WalletClient, a: Address, label: string, req: Omit<Parameters<typeof sendTx>[2], 'chain' | 'account'>, ready?: () => Promise<boolean>) => {
     say({ text: `${label}: confirm in your wallet` });
-    const { hash, receipt } = await sendTx(testnet, w, { ...req, chain: w.chain, account: a } as Parameters<typeof sendTx>[2], { ready });
+    if (w.chain?.id !== net.chain.id) throw new Error(`Your wallet is not on Mezo ${net.key}. Switch it and try again.`);
+    const { hash, receipt } = await sendTx(pub, w, { ...req, chain: w.chain, account: a } as Parameters<typeof sendTx>[2], { ready });
     const ok = receipt.status === 'success';
-    say({ text: `${label}: ${ok ? 'confirmed' : 'reverted'}`, hash, ok });
+    say({ text: `${label}: ${ok ? 'confirmed' : 'reverted'}`, hash, url: net.txUrl(hash), ok });
     if (!ok) throw new Error(`${label} reverted`);
   };
 
@@ -200,11 +220,11 @@ export function KeelApp({ market }: { market: Market | null }) {
       const debt = amount(borrowIn || '0', 'the MUSD to borrow', true);
       if (coll === 'btc') {
         const c = amount(btcIn, 'the BTC to lock');
-        if (bal && c >= bal.btc) throw new Error(`This wallet has ${fmt(bal.btc, 18, 5)} test BTC, and a little is needed for fees. Lock less.`);
+        if (bal && c >= bal.btc) throw new Error(`This wallet has ${fmt(bal.btc, 18, 5)} ${net.btcLabel}, and a little is needed for fees. Lock less.`);
         await send(w, a, 'Approve BTC', { address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, c] });
         await send(w, a, 'Lock BTC and borrow', { address: MARKET, abi: marketAbi, functionName: 'openWithBtc', args: [c, debt] });
       } else {
-        if (!nftPick) throw new Error('This wallet holds no veBTC lock on Mezo testnet');
+        if (!nftPick) throw new Error(`This wallet holds no veBTC lock on Mezo ${net.key}`);
         const id = BigInt(nftPick);
         await send(w, a, `Approve veBTC #${id}`, { address: VE, abi: veAbi, functionName: 'approve', args: [MARKET, id] });
         await send(w, a, `Deposit veBTC #${id} and borrow`, { address: MARKET, abi: marketAbi, functionName: 'openWithVeBTC', args: [id, debt] });
@@ -232,7 +252,7 @@ export function KeelApp({ market }: { market: Market | null }) {
   /** Votes with the loan's veBTC, all weight on one Mezo pool. */
   const voteFor = (l: MyLoan) =>
     act(async (w, a) => {
-      const p = TESTNET_POOLS[poolPick];
+      const p = POOLS[poolPick] ?? POOLS[0];
       await send(w, a, `Vote with veBTC #${l.nftId} for ${p.name}`, { address: MARKET, abi: marketAbi, functionName: 'vote', args: [l.id, [p.pool], [10_000n]] });
     });
 
@@ -240,9 +260,9 @@ export function KeelApp({ market }: { market: Market | null }) {
    *  interest first; every other token goes to the wallet. */
   const claimFor = (l: MyLoan) =>
     act(async (w, a) => {
-      const fees = TESTNET_POOLS.map((p) => p.fees);
-      const bribes = TESTNET_POOLS.map((p) => p.bribe);
-      const tokens = TESTNET_POOLS.map((p) => p.tokens);
+      const fees = POOLS.map((p) => p.fees);
+      const bribes = POOLS.map((p) => p.bribe);
+      const tokens = POOLS.map((p) => p.tokens);
       await send(w, a, `Claim fees, MUSD to loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'claimRewardsToDebt', args: [l.id, fees, tokens, false] });
       await send(w, a, `Claim bribes, MUSD to loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'claimRewardsToDebt', args: [l.id, bribes, tokens, true] });
     });
@@ -260,7 +280,7 @@ export function KeelApp({ market }: { market: Market | null }) {
       await send(w, a, 'Approve MUSD', { address: MUSD, abi: erc20Abi, functionName: 'approve', args: [MARKET, pay] });
       await send(w, a, `Repay loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'repay', args: [l.id, pay] });
       await send(w, a, `Close loan #${l.id}`, { address: MARKET, abi: marketAbi, functionName: 'close', args: [l.id] }, async () =>
-        (await testnet.readContract({ address: MARKET, abi: marketAbi, functionName: 'debtOf', args: [l.id] })) === 0n,
+        (await pub.readContract({ address: MARKET, abi: marketAbi, functionName: 'debtOf', args: [l.id] })) === 0n,
       );
     });
 
@@ -280,20 +300,29 @@ export function KeelApp({ market }: { market: Market | null }) {
         ))}
       </div>
 
+      {net.key === 'mainnet' && (
+        <p className="net-note">
+          <b>Mainnet: real BTC and MUSD.</b> A small opt in vault: 5 MUSD minimum loan, up to 2,000 MUSD of savings.
+        </p>
+      )}
+
       <GetBtc
-        key={account && bal && bal.btc < FAUCET_BELOW ? 'empty' : 'ok'}
-        open={!!(account && bal && bal.btc < FAUCET_BELOW)}
-        empty={!!(account && bal && bal.btc < FAUCET_BELOW)}
+        key={`${net.key}-${account && bal && bal.btc < net.lowBtc ? 'empty' : 'ok'}`}
+        faucet={net.faucet}
+        open={!!(account && bal && bal.btc < net.lowBtc)}
+        empty={!!(account && bal && bal.btc < net.lowBtc)}
         onRefresh={account ? () => refresh(account).catch(() => {}) : undefined}
       />
-      {account && bal && bal.btc >= FAUCET_BELOW && (
+      {account && bal && bal.btc >= net.lowBtc && (
         <div className="wallet-strip">
           <span>
-            <b>{fmt(bal.btc, 18, 5)}</b> test BTC · <b>{fmt(bal.musd, 18, 2)}</b> MUSD
+            <b>{fmt(bal.btc, 18, 5)}</b> {net.btcLabel} · <b>{fmt(bal.musd, 18, 2)}</b> MUSD
           </span>
-          <a href={FAUCET} target="_blank" rel="noreferrer">
-            Need more test BTC? ↗
-          </a>
+          {net.faucet && (
+            <a href={net.faucet} target="_blank" rel="noreferrer">
+              Need more test BTC? ↗
+            </a>
+          )}
         </div>
       )}
 
@@ -331,7 +360,7 @@ export function KeelApp({ market }: { market: Market | null }) {
           ) : (
             <p className="hint" style={{ marginTop: 20 }}>
               {account
-                ? 'This wallet holds no veBTC lock on Mezo testnet. Lock BTC in the Mezo testnet app to get one, or borrow against Bitcoin instead.'
+                ? `This wallet holds no veBTC lock on Mezo ${net.key}. Lock BTC in the Mezo ${net.key === 'testnet' ? 'testnet ' : ''}app to get one, or borrow against Bitcoin instead.`
                 : 'Connect a wallet to pick one of your veBTC locks. It keeps its voting power and rewards while it backs your loan.'}
             </p>
           )}
@@ -365,7 +394,7 @@ export function KeelApp({ market }: { market: Market | null }) {
           {tooMuch && <p className="hint warn">That is more than this collateral can back. Lower the amount or add collateral.</p>}
           {overRoom && (
             <p className="hint warn">
-              Keel can lend {money(room!)} MUSD more right now: at most a fifth of savings is ever lent. Borrow that much or less, or try again after a loan is repaid.
+              Keel can lend {money(room!)} MUSD more right now: at most {net.lendShare} of savings is ever lent. Borrow that much or less, or try again after a loan is repaid.
             </p>
           )}
           {!overRoom && roomBound && <p className="hint">Keel can lend {money(room!)} MUSD more right now, the cap on savings.</p>}
@@ -422,7 +451,7 @@ export function KeelApp({ market }: { market: Market | null }) {
               </button>
             )}
           </div>
-          <p className="hint">At least 80% of savings stays liquid for withdrawals. 10% of interest builds a reserve that takes losses first.</p>
+          <p className="hint">At least {net.liquidPct}% of savings stays liquid for withdrawals. 10% of interest builds a reserve that takes losses first.</p>
         </div>
       )}
 
@@ -468,7 +497,7 @@ export function KeelApp({ market }: { market: Market | null }) {
                           <div className="ve-tools">
                             <span>Your lock keeps voting and earning:</span>
                             <select value={poolPick} onChange={(e) => setPoolPick(Number(e.target.value))} aria-label="Mezo pool">
-                              {TESTNET_POOLS.map((p, i) => (
+                              {POOLS.map((p, i) => (
                                 <option key={p.pool} value={i}>
                                   {p.name}
                                 </option>
@@ -498,7 +527,7 @@ export function KeelApp({ market }: { market: Market | null }) {
           )}
           {bal && (
             <p className="hint">
-              Wallet: {fmt(bal.btc, 18, 5)} test BTC · {fmt(bal.musd, 18, 2)} MUSD
+              Wallet: {fmt(bal.btc, 18, 5)} {net.btcLabel} · {fmt(bal.musd, 18, 2)} MUSD
             </p>
           )}
         </div>
@@ -511,7 +540,7 @@ export function KeelApp({ market }: { market: Market | null }) {
             <div key={i} className={l.ok === false ? 'bad' : l.ok ? 'ok' : ''}>
               {l.text}{' '}
               {l.hash && (
-                <a href={txUrl(l.hash)} target="_blank" rel="noreferrer">
+                <a href={l.url ?? net.txUrl(l.hash)} target="_blank" rel="noreferrer">
                   {l.hash.slice(0, 12)}…
                 </a>
               )}
@@ -520,6 +549,7 @@ export function KeelApp({ market }: { market: Market | null }) {
         </div>
       )}
 
+      {net.hasDemo && (
       <div className="app-foot">
         {demo ? (
           <div className="terminal">
@@ -531,6 +561,7 @@ export function KeelApp({ market }: { market: Market | null }) {
           </button>
         )}
       </div>
+      )}
     </div>
   );
 }

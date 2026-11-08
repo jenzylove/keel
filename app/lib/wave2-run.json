@@ -47,8 +47,26 @@
       "what": "Deployer adds a 5 MUSD bribe for MUSD/BTC voters this week",
       "from": "0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD",
       "hash": "0xf548cfd5d9204e7d4a2ddda917e951a990f68d2a968496bbf0ae99a977518fc8"
+    },
+    {
+      "key": "ve-approve-market-2",
+      "what": "Tester approves veBTC #422 to Keel again",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0xe4fba6de6dde0e13559feada8c480760d67a0ee294a60cf5ebb32cb6d62a0295"
+    },
+    {
+      "key": "open-2",
+      "what": "Tester deposits veBTC #422 again and borrows 10 MUSD (its vote for MUSD/BTC this week stays on the lock)",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0xb3a217d5c091e8445c88af56e6a885b98c77023d7fefd5bd7da283296f3eefe1"
+    },
+    {
+      "key": "autopay-2",
+      "what": "Loan #4 turns on auto pay",
+      "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
+      "hash": "0x4c1953b8e6159f4f65e0524a27bff0d8204997f480ff4647491028e198da58a3"
     }
   ],
   "nftId": 422,
-  "loanId": 1
+  "loanId": 4
 }

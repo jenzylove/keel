@@ -22,7 +22,7 @@ export const mezoTestnet = defineChain({
  *  calls from shared hosts, which once left the live page with blanks. Reads
  *  are batched into Multicall3 (deployed on both chains), so a page costs a
  *  few requests, not dozens. */
-const MAINNET_RPCS = [
+export const MAINNET_RPCS = [
   process.env.MEZO_MAINNET_RPC,
   'https://mezo.drpc.org',
   'https://rpc-http.mezo.boar.network',
