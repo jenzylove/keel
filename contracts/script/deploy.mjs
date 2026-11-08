@@ -84,8 +84,10 @@ const NETWORKS = {
     // mUSDC/MUSD concentrated-liquidity pool holding Mezo's peg wall, 24h TWAP.
     oracle: { kind: 'cl', pool: '0xCC372B7E15535aB225fe17c1075831D38ef7aC1a', window: 86400 },
     configDelay: 172800n,
-    // A small opt in vault, so small loans are welcome.
-    minLoan: 10n * WAD,
+    // A small opt in vault, so small loans are welcome, and it may lend up to
+    // half its savings while it is this small (the contract's ceiling).
+    minLoan: 5n * WAD,
+    maxLentBps: 5000n,
     // A small, unaudited deployment: at most 2,000 MUSD of savings, so at most
     // 400 MUSD lent.
     principalCap: 2000n * WAD,
@@ -184,7 +186,7 @@ txs.pegOracle = oracle.hash;
 say('peg oracle', oracle.address, '· reads', Number(await read(oracle.address, oracleArt.abi, 'musdPrice')) / 1e18);
 
 const stratArt = art('KeelStrategy.sol', 'KeelStrategy');
-const strategy = await create(stratArt.bytecode.object, 'address, address, uint256, uint256', [cfg.musd, vault.address, common.maxLentBps, common.reserveBps]);
+const strategy = await create(stratArt.bytecode.object, 'address, address, uint256, uint256', [cfg.musd, vault.address, (cfg.maxLentBps ?? common.maxLentBps), common.reserveBps]);
 txs.keelStrategy = strategy.hash;
 say('KeelStrategy', strategy.address);
 
@@ -193,7 +195,7 @@ say('KeelStrategy', strategy.address);
 const feeRecipient = cfg.feeRecipient ?? (cfg.feeBps > 0n ? account.address : '0x0000000000000000000000000000000000000000');
 const DEFAULT_MIN_LIQUID_BPS = 1000n;
 if (cfg.minLiquidBps !== DEFAULT_MIN_LIQUID_BPS || cfg.feeBps > 0n) {
-  txs.proposeParams = (await call(strategy.address, stratArt.abi, 'proposeParams', [common.maxLentBps, common.reserveBps, cfg.minLiquidBps, cfg.feeBps, feeRecipient])).hash;
+  txs.proposeParams = (await call(strategy.address, stratArt.abi, 'proposeParams', [(cfg.maxLentBps ?? common.maxLentBps), common.reserveBps, cfg.minLiquidBps, cfg.feeBps, feeRecipient])).hash;
   txs.applyParams = (await call(strategy.address, stratArt.abi, 'applyParams')).hash;
 }
 
@@ -246,7 +248,7 @@ const record = {
     ...(prev.params ?? {}),
     governance: 'the vault owner, read live',
     configDelaySeconds: Number(cfg.configDelay),
-    maxLentBps: Number(common.maxLentBps),
+    maxLentBps: Number((cfg.maxLentBps ?? common.maxLentBps)),
     reserveBps: Number(common.reserveBps),
     principalCap: cfg.principalCap === 0n ? 'none' : `${cfg.principalCap / WAD} MUSD`,
     throttle: cfg.throttle ? `${cfg.throttle.floor / 10n ** 6n} mUSDC floor on ${cfg.throttle.pool}` : 'off',
