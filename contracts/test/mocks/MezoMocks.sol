@@ -76,12 +76,23 @@ contract MockVoter {
         voted[id] = false;
     }
 
+    MockERC20 public extraToken;
+    uint256 public extraAmount;
+
+    /// @dev A second token paid on every claim, e.g. MUSD.
+    function setExtra(MockERC20 token, uint256 amount) external {
+        extraToken = token;
+        extraAmount = amount;
+    }
+
     function claimFees(address[] calldata, address[][] calldata, uint256 id) external {
         rewardToken.mint(ve.ownerOf(id), 3e18);
+        if (extraAmount > 0) extraToken.mint(ve.ownerOf(id), extraAmount);
     }
 
     function claimBribes(address[] calldata, address[][] calldata, uint256 id) external {
         rewardToken.mint(ve.ownerOf(id), 5e18);
+        if (extraAmount > 0) extraToken.mint(ve.ownerOf(id), extraAmount);
     }
 }
 

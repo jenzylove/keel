@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { formatUnits, parseAbi, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
 import { useWallet } from '@/components/WalletProvider';
 import { deployed, testnet, txUrl } from '@/lib/chains';
@@ -8,6 +8,7 @@ import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
 import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
+import { TESTNET_POOLS } from '@/lib/pools';
 
 const MARKET = deployed.contracts.keelMarket as Address;
 const STRATEGY = deployed.contracts.keelStrategy as Address;
@@ -68,6 +69,7 @@ export function KeelApp({ market }: { market: Market | null }) {
   const [room, setRoom] = useState<number | null>(null);
   const [nftPick, setNftPick] = useState('');
   const [saveIn, setSaveIn] = useState('100');
+  const [poolPick, setPoolPick] = useState(0);
 
   const say = (l: Line) => setLog((x) => [...x, l]);
 
@@ -215,6 +217,21 @@ export function KeelApp({ market }: { market: Market | null }) {
       const amt = amount(saveIn, 'the amount');
       if (bal && amt > bal.smusd) throw new Error(`You have ${fmt(bal.smusd, 18, 2)} sMUSD saved. Withdraw that much or less.`);
       await send(w, a, 'Withdraw from savings', { address: VAULT, abi: vaultAbi, functionName: 'withdraw', args: [amt] });
+    });
+
+  /** Votes with the loan's veBTC, all weight on one Mezo pool. */
+  const voteFor = (l: MyLoan) =>
+    act(async (w, a) => {
+      const p = TESTNET_POOLS[poolPick];
+      await send(w, a, `Vote with veBTC #${l.nftId} for ${p.name}`, { address: MARKET, abi: marketAbi, functionName: 'vote', args: [l.id, [p.pool], [10_000n]] });
+    });
+
+  /** Claims the pool's fees and bribes earned by the loan's veBTC. */
+  const claimFor = (l: MyLoan) =>
+    act(async (w, a) => {
+      const p = TESTNET_POOLS[poolPick];
+      await send(w, a, `Claim ${p.name} fees`, { address: MARKET, abi: marketAbi, functionName: 'claimRewards', args: [l.id, [p.fees], [p.tokens], false] });
+      await send(w, a, `Claim ${p.name} bribes`, { address: MARKET, abi: marketAbi, functionName: 'claimRewards', args: [l.id, [p.bribe], [p.tokens], true] });
     });
 
   const repayAndClose = (l: MyLoan) =>
@@ -424,7 +441,8 @@ export function KeelApp({ market }: { market: Market | null }) {
                 </thead>
                 <tbody>
                   {loans.map((l) => (
-                    <tr key={String(l.id)}>
+                    <Fragment key={String(l.id)}>
+                    <tr>
                       <td className="mono">#{String(l.id)}</td>
                       <td>{l.kind === 1 ? `${fmt(l.btc, 18, 5)} BTC` : `veBTC #${String(l.nftId)}`}</td>
                       <td className="num">{fmt(l.debt, 18, 4)}</td>
@@ -435,6 +453,29 @@ export function KeelApp({ market }: { market: Market | null }) {
                         </button>
                       </td>
                     </tr>
+                    {l.kind !== 1 && (
+                      <tr className="ve-row">
+                        <td colSpan={5}>
+                          <div className="ve-tools">
+                            <span>Your lock keeps voting and earning:</span>
+                            <select value={poolPick} onChange={(e) => setPoolPick(Number(e.target.value))} aria-label="Mezo pool">
+                              {TESTNET_POOLS.map((p, i) => (
+                                <option key={p.pool} value={i}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button className="btn ghost small" disabled={busy} onClick={() => voteFor(l)}>
+                              Vote
+                            </button>
+                            <button className="btn ghost small" disabled={busy} onClick={() => claimFor(l)}>
+                              Claim rewards
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

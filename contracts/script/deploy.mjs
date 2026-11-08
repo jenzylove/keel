@@ -64,6 +64,11 @@ const NETWORKS = {
     minLoan: 10n * WAD,
     principalCap: 0n,
     throttle: null,
+    // New borrowing pauses while liquid principal is under 10% of principal.
+    minLiquidBps: 1000n,
+    // No protocol fee on testnet. A null recipient means the admin (deployer).
+    feeBps: 0n,
+    feeRecipient: null,
   },
   mainnet: {
     chainId: 31612,
@@ -79,10 +84,18 @@ const NETWORKS = {
     // mUSDC/MUSD concentrated-liquidity pool holding Mezo's peg wall, 24h TWAP.
     oracle: { kind: 'cl', pool: '0xCC372B7E15535aB225fe17c1075831D38ef7aC1a', window: 86400 },
     configDelay: 172800n,
-    minLoan: 100n * WAD,
+    // A small opt in vault, so small loans are welcome.
+    minLoan: 10n * WAD,
     // A small, unaudited deployment: at most 2,000 MUSD of savings, so at most
     // 400 MUSD lent.
     principalCap: 2000n * WAD,
+    // New borrowing pauses while liquid principal is under 10% of principal,
+    // 200 MUSD at the cap.
+    minLiquidBps: 1000n,
+    // 5% of borrower interest pays for the keeper and hosting. A null
+    // recipient means the admin (deployer).
+    feeBps: 500n,
+    feeRecipient: null,
     // New borrowing pauses while the wall holds less than 2,000 mUSDC. The
     // wall's dollar side fell from about 58k to 7.7k on 2026-10-21, so the floor
     // sits well under it; governance can raise it as the wall refills.
@@ -175,6 +188,15 @@ const strategy = await create(stratArt.bytecode.object, 'address, address, uint2
 txs.keelStrategy = strategy.hash;
 say('KeelStrategy', strategy.address);
 
+// The buffer and fee go through the timelocked params path. Before the market
+// is wired the delay is zero, so they apply at once.
+const feeRecipient = cfg.feeRecipient ?? (cfg.feeBps > 0n ? account.address : '0x0000000000000000000000000000000000000000');
+const DEFAULT_MIN_LIQUID_BPS = 1000n;
+if (cfg.minLiquidBps !== DEFAULT_MIN_LIQUID_BPS || cfg.feeBps > 0n) {
+  txs.proposeParams = (await call(strategy.address, stratArt.abi, 'proposeParams', [common.maxLentBps, common.reserveBps, cfg.minLiquidBps, cfg.feeBps, feeRecipient])).hash;
+  txs.applyParams = (await call(strategy.address, stratArt.abi, 'applyParams')).hash;
+}
+
 const marketArt = art('KeelMarket.sol', 'KeelMarket');
 const market = await create(
   marketArt.bytecode.object,
@@ -200,6 +222,9 @@ const checks = {
   'admin = deployer': (await read(market.address, marketArt.abi, 'admin')).toLowerCase() === account.address.toLowerCase(),
   'config delay': (await read(market.address, marketArt.abi, 'configDelay')) === cfg.configDelay,
   'principal cap': (await read(strategy.address, stratArt.abi, 'principalCap')) === cfg.principalCap,
+  'liquidity buffer': (await read(strategy.address, stratArt.abi, 'minLiquidBps')) === cfg.minLiquidBps,
+  'fee': (await read(strategy.address, stratArt.abi, 'feeBps')) === cfg.feeBps,
+  'fee recipient': (await read(strategy.address, stratArt.abi, 'feeRecipient')).toLowerCase() === feeRecipient.toLowerCase(),
 };
 say(checks);
 if (!Object.values(checks).every(Boolean)) throw new Error('wiring check failed');
@@ -226,6 +251,9 @@ const record = {
     principalCap: cfg.principalCap === 0n ? 'none' : `${cfg.principalCap / WAD} MUSD`,
     throttle: cfg.throttle ? `${cfg.throttle.floor / 10n ** 6n} mUSDC floor on ${cfg.throttle.pool}` : 'off',
     minLoan: `${cfg.minLoan / WAD} MUSD`,
+    minLiquidBps: Number(cfg.minLiquidBps),
+    feeBps: Number(cfg.feeBps),
+    feeRecipient: cfg.feeBps > 0n ? feeRecipient : 'none',
   },
   txs,
   history: [...(prev.history ?? []), ...(prev.contracts ? [{ note: `Replaced on ${new Date().toISOString().slice(0, 10)} by the deployment above.`, contracts: prev.contracts, txs: prev.txs }] : [])],

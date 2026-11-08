@@ -407,5 +407,122 @@ contract KeelMarketTest is Test {
         assertTrue(hNow > 1e18 && hLow < 1e18, "health judged at the given price");
     }
 
+    // ----- rewards pay the debt -----
+
+    address keeper = address(0x4EE9);
+
+    function _rewardLists(bool repeatMusd) internal view returns (address[] memory rw, address[][] memory toks) {
+        rw = new address[](1);
+        toks = new address[][](1);
+        toks[0] = new address[](repeatMusd ? 3 : 2);
+        toks[0][0] = address(reward);
+        toks[0][1] = address(musd);
+        if (repeatMusd) toks[0][2] = address(musd); // must not be counted twice
+    }
+
+    function test_musd_rewards_pay_interest_then_principal() external {
+        (uint256 id, ) = _openVe(1e18, false, 1_000e18);
+        vm.warp(block.timestamp + 30 days);
+        uint256 debtBefore = m.debtOf(id);
+        uint256 interest = debtBefore - 1_000e18;
+        uint256 aliceMusd = musd.balanceOf(alice);
+        voter.setExtra(musd, 50e18);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(true);
+        vm.prank(alice);
+        m.claimRewardsToDebt(id, rw, toks, true);
+        assertApproxEq(m.debtOf(id), debtBefore - 50e18, 1, "50 MUSD of rewards paid the debt once");
+        assertEq(strat.yieldOwed() + strat.reserve(), interest, "interest paid first, booked for savers");
+        assertEq(strat.lent(), 1_000e18 - (50e18 - interest), "the rest repaid principal");
+        assertEq(reward.balanceOf(alice), 5e18, "other tokens forwarded");
+        assertEq(musd.balanceOf(alice), aliceMusd, "no MUSD forwarded while debt is owed");
+        assertEq(musd.balanceOf(address(m)), 0, "nothing left behind");
+    }
+
+    function test_musd_rewards_beyond_the_debt_go_to_the_borrower() external {
+        (uint256 id, ) = _openVe(1e18, false, 100e18);
+        vm.warp(block.timestamp + 30 days);
+        uint256 debt = m.debtOf(id);
+        uint256 aliceMusd = musd.balanceOf(alice);
+        voter.setExtra(musd, 150e18);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(false);
+        vm.prank(alice);
+        m.claimRewardsToDebt(id, rw, toks, false);
+        assertEq(m.debtOf(id), 0, "debt cleared");
+        assertEq(strat.lent(), 0, "principal back with savers");
+        assertEq(musd.balanceOf(alice) - aliceMusd, 150e18 - debt, "excess to the borrower");
+        assertEq(reward.balanceOf(alice), 3e18, "fees forwarded");
+        vm.prank(alice);
+        m.close(id);
+    }
+
+    function test_reward_payment_never_leaves_debt_below_min_loan() external {
+        (uint256 id, ) = _openVe(1e18, false, 120e18);
+        uint256 aliceMusd = musd.balanceOf(alice);
+        voter.setExtra(musd, 50e18);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(false);
+        vm.prank(alice);
+        m.claimRewardsToDebt(id, rw, toks, true);
+        assertEq(m.debtOf(id), 100e18, "paid down to the minimum loan");
+        assertEq(musd.balanceOf(alice) - aliceMusd, 30e18, "the rest to the borrower");
+    }
+
+    function test_only_the_owner_claims_to_debt_until_auto_pay_is_on() external {
+        (uint256 id, ) = _openVe(1e18, false, 1_000e18);
+        voter.setExtra(musd, 50e18);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(false);
+        vm.prank(keeper);
+        vm.expectRevert(KeelMarket.NotAllowed.selector);
+        m.claimRewardsToDebt(id, rw, toks, true);
+        vm.prank(keeper);
+        vm.expectRevert(KeelMarket.NotLoanOwner.selector);
+        m.setAutoPay(id, true);
+        vm.prank(keeper);
+        vm.expectRevert(KeelMarket.NotLoanOwner.selector);
+        m.claimRewards(id, rw, toks, true); // plain forwarding stays owner only
+
+        vm.prank(alice);
+        m.setAutoPay(id, true);
+        assertTrue(m.autoPay(id), "opted in");
+        vm.prank(keeper);
+        m.claimRewardsToDebt(id, rw, toks, true);
+        assertEq(m.debtOf(id), 950e18, "keeper's claim paid the debt");
+        assertEq(reward.balanceOf(alice), 5e18, "rewards still go to the borrower, not the keeper");
+        assertEq(reward.balanceOf(keeper) + musd.balanceOf(keeper), 0, "keeper gets nothing");
+
+        vm.prank(alice);
+        m.setAutoPay(id, false);
+        vm.prank(keeper);
+        vm.expectRevert(KeelMarket.NotAllowed.selector);
+        m.claimRewardsToDebt(id, rw, toks, true);
+    }
+
+    function test_claim_to_debt_needs_a_vebtc_loan() external {
+        uint256 id = _openBtc(1e18, 1_000e18);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(false);
+        vm.prank(alice);
+        vm.expectRevert(KeelMarket.WrongKind.selector);
+        m.claimRewardsToDebt(id, rw, toks, true);
+    }
+
+    function test_plain_claim_still_forwards_musd() external {
+        (uint256 id, ) = _openVe(1e18, false, 1_000e18);
+        voter.setExtra(musd, 50e18);
+        uint256 aliceMusd = musd.balanceOf(alice);
+        (address[] memory rw, address[][] memory toks) = _rewardLists(true);
+        vm.prank(alice);
+        m.claimRewards(id, rw, toks, true);
+        assertEq(musd.balanceOf(alice) - aliceMusd, 50e18, "forwarded once");
+        assertEq(m.debtOf(id), 1_000e18, "debt untouched");
+    }
+
+    function test_saver_rate_excludes_the_fee() external {
+        _openBtc(1e18, 20_000e18);
+        uint256 before = m.saverRate();
+        strat.proposeParams(2_000, 1_000, 1_000, 1_000, address(0xFEE));
+        vm.warp(block.timestamp + DELAY);
+        strat.applyParams();
+        assertApproxEq(m.saverRate() * 9_000, before * 8_000, 1e14, "savers keep 80% instead of 90%");
+    }
+
     receive() external payable {}
 }

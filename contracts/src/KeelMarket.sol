@@ -109,6 +109,9 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     uint256 public totalPrincipal;
     uint256 public nextLoanId = 1;
     mapping(uint256 => Loan) public loans;
+    /// @notice Loans whose borrower lets anyone claim the NFT's rewards and
+    ///         put the MUSD among them toward the debt.
+    mapping(uint256 => bool) public autoPay;
 
     Config internal pending;
     /// @notice When the pending config may be applied (0 = nothing pending).
@@ -123,6 +126,8 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     event Liquidated(uint256 indexed id, address liquidator, uint256 paid, uint256 seizedBtc, uint256 nftId, uint256 surplus, uint256 badDebt);
     event Voted(uint256 indexed id, uint256 nftId);
     event RewardsForwarded(uint256 indexed id, address token, uint256 amount);
+    event RewardsRepaid(uint256 indexed id, uint256 amount);
+    event AutoPaySet(uint256 indexed id, bool on);
     event PegStepped(uint256 musdPrice, uint256 target, uint256 premium);
     event ConfigProposed(uint256 eta);
     event ConfigApplied();
@@ -147,6 +152,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     error NothingPending();
     error TooEarly(uint256 eta);
     error RateTooHigh();
+    error NotAllowed();
 
     modifier onlyAdmin() {
         if (msg.sender != admin()) revert OnlyAdmin();
@@ -306,6 +312,46 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         address[][] calldata tokens,
         bool bribes
     ) external nonReentrant onlyLoanOwner(id) {
+        _claim(id, rewards, tokens, bribes, false);
+    }
+
+    /// @notice Lets anyone, such as a keeper, call `claimRewardsToDebt` for
+    ///         this loan. Off by default.
+    function setAutoPay(uint256 id, bool on) external onlyLoanOwner(id) {
+        autoPay[id] = on;
+        emit AutoPaySet(id, on);
+    }
+
+    /// @notice Claims the NFT's fees or bribes and puts the MUSD among them
+    ///         toward the loan's debt, applied exactly as `repay` applies a
+    ///         payment: interest first, then principal, with savers paid
+    ///         through the strategy. MUSD beyond the debt and every other
+    ///         token go to the borrower. Only the borrower may call it unless
+    ///         they turned on `autoPay`, then anyone may.
+    /// @dev A payment never leaves a debt below `minLoan`: what would is held
+    ///      back and goes to the borrower instead, so a keeper's call never
+    ///      reverts on it.
+    function claimRewardsToDebt(
+        uint256 id,
+        address[] calldata rewards,
+        address[][] calldata tokens,
+        bool bribes
+    ) external nonReentrant {
+        if (msg.sender != loans[id].owner && !autoPay[id]) revert NotAllowed();
+        _accrue();
+        _claim(id, rewards, tokens, bribes, true);
+    }
+
+    /// @dev Claims through the voter and measures what each listed token
+    ///      gained. With `toDebt`, MUSD gains are summed and applied to the
+    ///      debt after the loop; everything else is forwarded to the borrower.
+    function _claim(
+        uint256 id,
+        address[] calldata rewards,
+        address[][] calldata tokens,
+        bool bribes,
+        bool toDebt
+    ) internal {
         Loan storage loan = loans[id];
         if (loan.kind != Kind.Ve) revert WrongKind();
 
@@ -325,17 +371,37 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         if (bribes) voter.claimBribes(rewards, tokens, loan.nftId);
         else voter.claimFees(rewards, tokens, loan.nftId);
 
+        uint256 musdGained;
         for (uint256 k = 0; k < n; ++k) {
             uint256 bal = IERC20(flat[k]).balanceOf(address(this));
             if (bal > before[k]) {
                 uint256 gained = bal - before[k];
-                // Mark the gain as forwarded so a repeated token isn't paid twice.
+                // Mark the gain as handled so a repeated token isn't paid twice.
                 for (uint256 m = k + 1; m < n; ++m) {
                     if (flat[m] == flat[k]) before[m] += gained;
                 }
-                IERC20(flat[k]).safeTransfer(loan.owner, gained);
-                emit RewardsForwarded(id, flat[k], gained);
+                if (toDebt && flat[k] == address(musd)) {
+                    musdGained += gained;
+                } else {
+                    IERC20(flat[k]).safeTransfer(loan.owner, gained);
+                    emit RewardsForwarded(id, flat[k], gained);
+                }
             }
+        }
+        if (musdGained == 0) return;
+
+        uint256 debt = KeelMath.debtOf(loan.scaled, borrowIndex);
+        uint256 paid = musdGained > debt ? debt : musdGained;
+        if (paid < debt && debt - paid < minLoan) paid = debt > minLoan ? debt - minLoan : 0;
+        if (paid > 0) {
+            musd.safeTransfer(address(strategy), paid);
+            _settle(id, paid, debt, false);
+            emit RewardsRepaid(id, paid);
+        }
+        uint256 rest = musdGained - paid;
+        if (rest > 0) {
+            musd.safeTransfer(loan.owner, rest);
+            emit RewardsForwarded(id, address(musd), rest);
         }
     }
 
@@ -443,7 +509,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     function saverRate() external view returns (uint256) {
         uint256 p = strategy.principal();
         if (p == 0) return 0;
-        uint256 keep = BPS - strategy.reserveBps();
+        uint256 keep = BPS - strategy.reserveBps() - strategy.feeBps();
         return (currentRate() * strategy.lent() * keep) / (p * BPS);
     }
 
@@ -476,7 +542,11 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         borrowLimit = KeelMath.maxBorrow(val, r.maxLtvBps);
     }
 
+    /// @notice False while the strategy's liquid principal is under its
+    ///         buffer or the watched pool is under its floor. Repaying, adding
+    ///         collateral and closing always stay open.
     function borrowingOpen() public view returns (bool) {
+        if (!strategy.liquidityHealthy()) return false;
         if (watchPool == address(0)) return true;
         return watchToken.balanceOf(watchPool) >= watchFloor;
     }

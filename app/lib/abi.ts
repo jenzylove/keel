@@ -32,6 +32,8 @@ export const strategyAbi = parseAbi([
 ]);
 
 export const marketAbi = parseAbi([
+  'function vote(uint256 id, address[] pools, uint256[] weights)',
+  'function claimRewards(uint256 id, address[] rewards, address[][] tokens, bool bribes)',
   'function currentRate() view returns (uint256)',
   'function saverRate() view returns (uint256)',
   'function pegPremium() view returns (uint256)',

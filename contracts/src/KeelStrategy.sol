@@ -18,10 +18,20 @@ interface IKeelMarket {
 /// @notice A strategy for Mezo's MUSD Savings Rate vault. It holds savers'
 ///         principal, lets KeelMarket borrow a capped share of it, and sends
 ///         the interest borrowers pay back to the vault as yield.
-/// @dev The vault calls `deallocate` inside a saver's withdrawal. While the
-///      vault is whole, at least `1 - maxLentBps` of principal is liquid when
-///      lending starts; withdrawals can still use that up while loans are out,
-///      and then savers wait for repayments. Principal can only be migrated
+/// @dev The vault calls `deallocate` inside a saver's withdrawal and pays the
+///      saver straight after, so a withdrawal is paid in full or not at all.
+///      `withdrawable()` says exactly how much can leave right now, so a front
+///      end can cap a withdrawal before sending it. That is the liquid
+///      principal plus the reserve while it is still held here: the reserve is
+///      a claim on the strategy's assets that absorbs losses first, and lending
+///      its MUSD to a leaving saver keeps that claim whole. Repayments refill it
+///      before any principal counts as liquid again. Yield owed to the vault is
+///      never used, so the vault's own claims never fail.
+///
+///      While liquid principal is under `minLiquidBps` of principal, new
+///      borrowing pauses and repayments stay open. Withdrawals also shrink
+///      what may be lent, which pushes utilisation up the steep part of the
+///      rate curve and pulls repayments in. Principal can only be migrated
 ///      away once nothing is lent out.
 ///
 ///      Interest is released to the vault over `DRIP` rather than in one lump
@@ -40,6 +50,10 @@ contract KeelStrategy is IVaultStrategy {
     uint256 public constant MAX_LENT_CEILING_BPS = 5_000;
     /// @notice Interest is released to savers evenly over this period.
     uint256 public constant DRIP = 7 days;
+    /// @notice Highest protocol share of interest, whatever the admin sets.
+    uint256 public constant MAX_FEE_BPS = 2_000;
+    /// @notice Liquidity buffer a new strategy starts with: 10% of principal.
+    uint256 public constant DEFAULT_MIN_LIQUID_BPS = 1_000;
 
     IERC20 public immutable musd;
     address public immutable vault;
@@ -68,11 +82,21 @@ contract KeelStrategy is IVaultStrategy {
     /// @notice Most principal the strategy accepts (0 = no limit). A small,
     ///         unaudited deployment keeps what savers can put at risk small.
     uint256 public principalCap;
+    /// @notice New borrowing pauses while liquid principal is below this
+    ///         share of principal.
+    uint256 public minLiquidBps;
+    /// @notice Protocol share of borrower interest, paid to `feeRecipient`
+    ///         to fund the keeper and hosting. Starts at zero.
+    uint256 public feeBps;
+    address public feeRecipient;
 
     /// @notice Proposed parameters and when they may be applied. They wait
     ///         the market's config delay, because the cap moves the rate.
     uint256 public pendingMaxLentBps;
     uint256 public pendingReserveBps;
+    uint256 public pendingMinLiquidBps;
+    uint256 public pendingFeeBps;
+    address public pendingFeeRecipient;
     uint256 public paramsEta;
 
     event MarketSet(address market);
@@ -87,12 +111,18 @@ contract KeelStrategy is IVaultStrategy {
     event ParamsCancelled();
     event Swept(address to, uint256 amount);
     event PrincipalCapSet(uint256 cap);
+    event BufferAndFeeSet(uint256 minLiquidBps, uint256 feeBps, address feeRecipient);
+    event BufferAndFeeProposed(uint256 minLiquidBps, uint256 feeBps, address feeRecipient, uint256 eta);
+    event FeePaid(address recipient, uint256 amount);
 
     error OnlyVault();
     error OnlyMarket();
     error OnlyAdmin();
     error MarketAlreadySet();
-    error InsufficientLiquidity(uint256 wanted, uint256 liquid);
+    /// @notice A withdrawal or draw asked for more than is available now.
+    error InsufficientLiquidity(uint256 wanted, uint256 available);
+    error BelowLiquidityBuffer(uint256 liquidAfter, uint256 buffer);
+    error ReserveNotHeld(uint256 wanted, uint256 held);
     error LendCapExceeded(uint256 wanted, uint256 available);
     error LoansOutstanding(uint256 lent);
     error BadParams();
@@ -129,7 +159,7 @@ contract KeelStrategy is IVaultStrategy {
     ) {
         musd = _musd;
         vault = _vault;
-        _setParams(_maxLentBps, _reserveBps);
+        _setParams(_maxLentBps, _reserveBps, DEFAULT_MIN_LIQUID_BPS, 0, address(0));
     }
 
     // ---------------------------------------------------------------------
@@ -146,10 +176,12 @@ contract KeelStrategy is IVaultStrategy {
     }
 
     /// @inheritdoc IVaultStrategy
+    /// @dev Pays from liquid principal, then from the reserve while it is held
+    ///      here. Reverts with the amount available when asked for more.
     function deallocate(uint256 amount) external onlyVault {
         _accrueMarket();
-        uint256 l = liquid();
-        if (amount > l) revert InsufficientLiquidity(amount, l);
+        uint256 a = withdrawable();
+        if (amount > a) revert InsufficientLiquidity(amount, a);
         emit Deallocate(amount);
         principal -= amount;
         musd.safeTransfer(vault, amount);
@@ -205,6 +237,9 @@ contract KeelStrategy is IVaultStrategy {
         if (amount > room) revert LendCapExceeded(amount, room);
         uint256 l = liquid();
         if (amount > l) revert InsufficientLiquidity(amount, l);
+        // A loan may not take liquid principal below the buffer savers rely on.
+        uint256 buffer = liquidityBuffer();
+        if (l - amount < buffer) revert BelowLiquidityBuffer(l - amount, buffer);
         lent += amount;
         emit Drawn(to, amount);
         musd.safeTransfer(to, amount);
@@ -225,9 +260,14 @@ contract KeelStrategy is IVaultStrategy {
         }
         uint256 rest = interestPart - cover;
         uint256 toReserve = (rest * reserveBps) / BPS;
+        uint256 fee = (rest * feeBps) / BPS;
         reserve += toReserve;
-        _addYield(rest - toReserve);
+        _addYield(rest - toReserve - fee);
         emit Repaid(principalPart, interestPart, toReserve);
+        if (fee > 0) {
+            emit FeePaid(feeRecipient, fee);
+            musd.safeTransfer(feeRecipient, fee);
+        }
     }
 
     /// @notice Records lent principal that will never come back. The reserve
@@ -255,6 +295,31 @@ contract KeelStrategy is IVaultStrategy {
         return bal > held ? bal - held : 0;
     }
 
+    /// @notice MUSD the vault can pull in a withdrawal right now: liquid
+    ///         principal plus the reserve still held here, never yield owed to
+    ///         the vault and never more than principal. A withdrawal of up to
+    ///         this amount always succeeds; one above it reverts.
+    function withdrawable() public view returns (uint256) {
+        uint256 free = _free();
+        return free < principal ? free : principal;
+    }
+
+    /// @notice Reserve MUSD held here rather than lent to leaving savers.
+    function reserveHeld() public view returns (uint256) {
+        uint256 free = _free();
+        return free < reserve ? free : reserve;
+    }
+
+    /// @notice Liquid principal below which new borrowing pauses.
+    function liquidityBuffer() public view returns (uint256) {
+        return (principal * minLiquidBps) / BPS;
+    }
+
+    /// @notice True while liquid principal is at or above the buffer.
+    function liquidityHealthy() public view returns (bool) {
+        return liquid() >= liquidityBuffer();
+    }
+
     /// @notice Interest booked but not yet released to the vault.
     function unreleased() public view returns (uint256) {
         uint256 elapsed = block.timestamp - dripAt;
@@ -278,16 +343,23 @@ contract KeelStrategy is IVaultStrategy {
         emit MarketSet(_market);
     }
 
-    /// @notice Proposes a new cap and reserve share. Lowering the cap raises
-    ///         the rate, so this waits the market's config delay like any
-    ///         other rate change.
+    /// @notice Proposes a new cap and reserve share, keeping the buffer and
+    ///         fee as they are. Lowering the cap raises the rate, so this
+    ///         waits the market's config delay like any other rate change.
     function proposeParams(uint256 _maxLentBps, uint256 _reserveBps) external onlyAdmin {
-        if (_maxLentBps > MAX_LENT_CEILING_BPS || _reserveBps > BPS) revert BadParams();
-        uint256 delay = market == address(0) ? 0 : IKeelMarket(market).configDelay();
-        pendingMaxLentBps = _maxLentBps;
-        pendingReserveBps = _reserveBps;
-        paramsEta = block.timestamp + delay;
-        emit ParamsProposed(_maxLentBps, _reserveBps, paramsEta);
+        _propose(_maxLentBps, _reserveBps, minLiquidBps, feeBps, feeRecipient);
+    }
+
+    /// @notice Proposes every parameter: the cap, the reserve share, the
+    ///         liquidity buffer, and the protocol fee and who receives it.
+    function proposeParams(
+        uint256 _maxLentBps,
+        uint256 _reserveBps,
+        uint256 _minLiquidBps,
+        uint256 _feeBps,
+        address _feeRecipient
+    ) external onlyAdmin {
+        _propose(_maxLentBps, _reserveBps, _minLiquidBps, _feeBps, _feeRecipient);
     }
 
     /// @notice Anyone may apply proposed parameters once the delay has passed.
@@ -296,7 +368,7 @@ contract KeelStrategy is IVaultStrategy {
         if (block.timestamp < paramsEta) revert TooEarly(paramsEta);
         paramsEta = 0;
         _accrueMarket();
-        _setParams(pendingMaxLentBps, pendingReserveBps);
+        _setParams(pendingMaxLentBps, pendingReserveBps, pendingMinLiquidBps, pendingFeeBps, pendingFeeRecipient);
     }
 
     /// @notice Limits new deposits. Instant, because it can only stop money
@@ -311,8 +383,11 @@ contract KeelStrategy is IVaultStrategy {
         emit ParamsCancelled();
     }
 
-    /// @notice Pays part of the reserve out to savers as yield.
+    /// @notice Pays part of the reserve out to savers as yield. Only reserve
+    ///         held here can be released, so yield owed is always on hand.
     function releaseReserve(uint256 amount) external onlyAdmin {
+        uint256 held = reserveHeld();
+        if (amount > held) revert ReserveNotHeld(amount, held);
         reserve -= amount;
         _addYield(amount);
         emit ReserveReleased(amount);
@@ -356,12 +431,61 @@ contract KeelStrategy is IVaultStrategy {
         if (market != address(0)) IKeelMarket(market).accrue();
     }
 
-    function _setParams(uint256 _maxLentBps, uint256 _reserveBps) private {
-        if (_maxLentBps > MAX_LENT_CEILING_BPS || _reserveBps > BPS) {
-            revert BadParams();
-        }
+    /// @dev MUSD here that is not yield owed to the vault.
+    function _free() private view returns (uint256) {
+        uint256 bal = musd.balanceOf(address(this));
+        return bal > yieldOwed ? bal - yieldOwed : 0;
+    }
+
+    function _propose(
+        uint256 _maxLentBps,
+        uint256 _reserveBps,
+        uint256 _minLiquidBps,
+        uint256 _feeBps,
+        address _feeRecipient
+    ) private {
+        _check(_maxLentBps, _reserveBps, _minLiquidBps, _feeBps, _feeRecipient);
+        uint256 delay = market == address(0) ? 0 : IKeelMarket(market).configDelay();
+        pendingMaxLentBps = _maxLentBps;
+        pendingReserveBps = _reserveBps;
+        pendingMinLiquidBps = _minLiquidBps;
+        pendingFeeBps = _feeBps;
+        pendingFeeRecipient = _feeRecipient;
+        paramsEta = block.timestamp + delay;
+        emit ParamsProposed(_maxLentBps, _reserveBps, paramsEta);
+        emit BufferAndFeeProposed(_minLiquidBps, _feeBps, _feeRecipient, paramsEta);
+    }
+
+    function _check(
+        uint256 _maxLentBps,
+        uint256 _reserveBps,
+        uint256 _minLiquidBps,
+        uint256 _feeBps,
+        address _feeRecipient
+    ) private pure {
+        if (
+            _maxLentBps > MAX_LENT_CEILING_BPS ||
+            _feeBps > MAX_FEE_BPS ||
+            _reserveBps + _feeBps > BPS ||
+            _minLiquidBps > BPS ||
+            (_feeBps != 0 && _feeRecipient == address(0))
+        ) revert BadParams();
+    }
+
+    function _setParams(
+        uint256 _maxLentBps,
+        uint256 _reserveBps,
+        uint256 _minLiquidBps,
+        uint256 _feeBps,
+        address _feeRecipient
+    ) private {
+        _check(_maxLentBps, _reserveBps, _minLiquidBps, _feeBps, _feeRecipient);
         maxLentBps = _maxLentBps;
         reserveBps = _reserveBps;
+        minLiquidBps = _minLiquidBps;
+        feeBps = _feeBps;
+        feeRecipient = _feeRecipient;
         emit ParamsSet(_maxLentBps, _reserveBps);
+        emit BufferAndFeeSet(_minLiquidBps, _feeBps, _feeRecipient);
     }
 }

@@ -278,4 +278,133 @@ contract KeelStrategyTest is Test {
         assertEq(s.liquid(), 1_000_000e18, "liquid is exactly principal");
         assertEq(s.reserve() + s.yieldOwed(), interest, "interest fully accounted");
     }
+
+    // ----- graceful withdrawals -----
+
+    function test_new_params_start_safe() external view {
+        assertEq(s.feeBps(), 0, "no fee by default");
+        assertEq(s.feeRecipient(), address(0), "no recipient by default");
+        assertEq(s.minLiquidBps(), 1_000, "10% buffer by default");
+        assertEq(s.liquidityBuffer(), 100_000e18, "buffer in MUSD");
+        assertTrue(s.liquidityHealthy(), "healthy");
+    }
+
+    function test_withdrawable_is_exact_and_includes_the_held_reserve() external {
+        vm.prank(market);
+        s.draw(borrower, 200_000e18);
+        _repayInterest(10_000e18); // 1,000 reserve, 9,000 yield owed
+        assertEq(s.liquid(), 800_000e18, "liquid principal");
+        assertEq(s.withdrawable(), 801_000e18, "liquid principal plus the reserve, never yield");
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.InsufficientLiquidity.selector, 801_000e18 + 1, 801_000e18));
+        s.deallocate(801_000e18 + 1);
+        s.deallocate(801_000e18);
+        assertEq(s.withdrawable(), 0, "nothing more right now");
+        assertEq(s.reserveHeld(), 0, "the reserve's MUSD went to the saver");
+        assertEq(s.reserve(), 1_000e18, "but its claim is intact");
+        assertEq(s.principal(), 199_000e18, "principal left");
+
+        // Yield owed is untouched, so the vault's claims still work.
+        vm.warp(block.timestamp + 7 days);
+        assertEq(s.claimYield(), 9_000e18, "yield paid in full");
+        // The reserve can't be released while its MUSD is out.
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.ReserveNotHeld.selector, 1, 0));
+        s.releaseReserve(1);
+
+        // Repayments refill the reserve first, then principal.
+        musd.mint(market, 200_000e18);
+        vm.startPrank(market);
+        musd.transfer(address(s), 200_000e18);
+        s.repaid(200_000e18, 0);
+        vm.stopPrank();
+        assertEq(s.reserveHeld(), 1_000e18, "reserve held again");
+        assertEq(s.liquid(), 199_000e18, "principal whole and liquid");
+        assertEq(s.withdrawable(), 199_000e18, "capped at principal");
+        s.releaseReserve(1_000e18);
+    }
+
+    function test_withdrawable_never_exceeds_principal() external {
+        musd.mint(address(s), 5e18); // a donation
+        assertEq(s.withdrawable(), 1_000_000e18, "capped at principal");
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.InsufficientLiquidity.selector, 1_000_000e18 + 1, 1_000_000e18));
+        s.deallocate(1_000_000e18 + 1);
+    }
+
+    function test_draw_keeps_the_liquidity_buffer() external {
+        s.proposeParams(5_000, 1_000, 6_000, 0, address(0));
+        vm.warp(block.timestamp + 2 days);
+        s.applyParams();
+        vm.prank(market);
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.BelowLiquidityBuffer.selector, 600_000e18 - 1, 600_000e18));
+        s.draw(borrower, 400_000e18 + 1);
+        vm.prank(market);
+        s.draw(borrower, 400_000e18);
+        assertTrue(s.liquidityHealthy(), "exactly at the buffer");
+        s.deallocate(1e18);
+        assertTrue(!s.liquidityHealthy(), "a withdrawal takes it under");
+    }
+
+    // ----- protocol fee -----
+
+    address feeTo = address(0xFEE);
+
+    function _setFee(uint256 feeBps) internal {
+        s.proposeParams(2_000, 1_000, 1_000, feeBps, feeTo);
+        vm.warp(block.timestamp + 2 days);
+        s.applyParams();
+    }
+
+    function test_fee_goes_to_recipient_and_savers_get_the_rest() external {
+        _setFee(500);
+        _repayInterest(1_000e18);
+        assertEq(musd.balanceOf(feeTo), 50e18, "5% to the protocol");
+        assertEq(s.reserve(), 100e18, "10% to the reserve");
+        assertEq(s.yieldOwed(), 850e18, "savers get the rest");
+        assertEq(s.liquid(), 1_000_000e18, "principal untouched");
+    }
+
+    function test_fee_comes_after_covering_a_loss() external {
+        _setFee(500);
+        vm.prank(market);
+        s.draw(borrower, 10_000e18);
+        vm.prank(market);
+        s.writeOff(1_000e18);
+        _repayInterest(2_000e18);
+        assertEq(s.uncovered(), 0, "loss covered first");
+        assertEq(musd.balanceOf(feeTo), 50e18, "fee on the rest only");
+        assertEq(s.yieldOwed(), 850e18, "savers");
+    }
+
+    function test_fee_waits_for_the_timelock() external {
+        s.proposeParams(2_000, 1_000, 1_000, 500, feeTo);
+        vm.expectRevert(abi.encodeWithSelector(KeelStrategy.TooEarly.selector, block.timestamp + 2 days));
+        s.applyParams();
+        _repayInterest(1_000e18);
+        assertEq(musd.balanceOf(feeTo), 0, "no fee before it applies");
+        vm.prank(borrower);
+        vm.expectRevert(KeelStrategy.OnlyAdmin.selector);
+        s.proposeParams(2_000, 1_000, 1_000, 2_000, borrower);
+        vm.warp(block.timestamp + 2 days);
+        s.applyParams();
+        assertEq(s.feeBps(), 500, "applied after the delay");
+        assertEq(s.feeRecipient(), feeTo, "recipient");
+        // The short form keeps the fee and buffer.
+        s.proposeParams(1_500, 1_000);
+        vm.warp(block.timestamp + 2 days);
+        s.applyParams();
+        assertEq(s.feeBps(), 500, "kept");
+        assertEq(s.minLiquidBps(), 1_000, "kept");
+        assertEq(s.maxLentBps(), 1_500, "cap changed");
+    }
+
+    function test_fee_is_capped() external {
+        vm.expectRevert(KeelStrategy.BadParams.selector);
+        s.proposeParams(2_000, 1_000, 1_000, 2_001, feeTo);
+        vm.expectRevert(KeelStrategy.BadParams.selector);
+        s.proposeParams(2_000, 1_000, 1_000, 500, address(0)); // a fee needs a recipient
+        vm.expectRevert(KeelStrategy.BadParams.selector);
+        s.proposeParams(2_000, 9_000, 1_000, 2_000, feeTo); // reserve plus fee over 100%
+        vm.expectRevert(KeelStrategy.BadParams.selector);
+        s.proposeParams(2_000, 1_000, 10_001, 0, address(0)); // buffer over 100%
+        s.proposeParams(2_000, 1_000, 1_000, 2_000, feeTo); // the cap itself is fine
+    }
 }

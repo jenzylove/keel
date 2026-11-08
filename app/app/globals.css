@@ -381,3 +381,9 @@ section.first { border-top: 0; padding-top: 32px; }
 .proof-foot { border-top: 0; padding: 8px 0 clamp(64px, 8vw, 104px); }
 .proof-foot a { color: var(--ink-2); text-decoration-color: var(--red); }
 @media (max-width: 760px) { .finding { grid-template-columns: 1fr; gap: 8px; } .finding-k { font-size: 40px; } }
+
+/* veBTC loan tools: vote and claim through Keel */
+.ve-row td { padding-top: 0; }
+.ve-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: 13px; color: var(--ink-2); padding: 4px 0 12px; }
+.ve-tools select { font: 500 13px var(--sans); background: var(--paper); color: var(--ink); border: 1px solid var(--rule-2); border-radius: 999px; padding: 7px 12px; }
+.outside { margin-top: 20px; display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 15px; }

@@ -1,0 +1,228 @@
+1
+00:00:00,410 --> 00:00:00,910
+In June,
+
+2
+00:00:00,930 --> 00:00:02,800
+forty nine people on Mezo had
+
+3
+00:00:02,820 --> 00:00:05,190
+a MUSD loan against their Bitcoin.
+
+4
+00:00:05,440 --> 00:00:07,350
+Today almost none are left.
+
+5
+00:00:07,600 --> 00:00:08,860
+They didn't repay.
+
+6
+00:00:09,110 --> 00:00:10,380
+They were redeemed.
+
+7
+00:00:11,220 --> 00:00:12,440
+This is Keel.
+
+8
+00:00:12,690 --> 00:00:14,270
+Borrow against your Bitcoin,
+
+9
+00:00:14,290 --> 00:00:15,880
+and never get redeemed.
+
+10
+00:00:16,730 --> 00:00:17,610
+On Mezo today,
+
+11
+00:00:17,630 --> 00:00:19,630
+when MUSD trades under a dollar,
+
+12
+00:00:19,650 --> 00:00:21,730
+anyone can buy it cheap and swap
+
+13
+00:00:21,750 --> 00:00:24,480
+it for the Bitcoin in the weakest loan.
+
+14
+00:00:24,730 --> 00:00:25,710
+And MUSD has sat
+
+15
+00:00:25,730 --> 00:00:27,540
+under that line since July.
+
+16
+00:00:28,390 --> 00:00:29,540
+Keel moves the loan
+
+17
+00:00:29,560 --> 00:00:31,450
+where redemptions can't reach.
+
+18
+00:00:31,700 --> 00:00:34,290
+Savers fund it from Mezo's savings vault.
+
+19
+00:00:34,540 --> 00:00:37,050
+You lock Bitcoin or a veBTC lock,
+
+20
+00:00:37,070 --> 00:00:37,950
+borrow MUSD,
+
+21
+00:00:37,970 --> 00:00:40,790
+and your interest pays the savers.
+
+22
+00:00:41,670 --> 00:00:43,020
+Let's take one.
+
+23
+00:00:43,270 --> 00:00:44,620
+I lock a little test
+
+24
+00:00:44,640 --> 00:00:46,880
+Bitcoin and ask for fifty MUSD.
+
+25
+00:00:47,130 --> 00:00:49,530
+Before signing, I see what I can borrow,
+
+26
+00:00:49,550 --> 00:00:50,710
+the rate, my health,
+
+27
+00:00:50,730 --> 00:00:52,580
+and the line that matters.
+
+28
+00:00:52,830 --> 00:00:54,410
+Redemptions can't take it.
+
+29
+00:00:55,280 --> 00:00:57,530
+I connect from the top bar, approve,
+
+30
+00:00:57,550 --> 00:00:58,510
+and borrow.
+
+31
+00:00:58,760 --> 00:01:00,560
+The MUSD is in my wallet.
+
+32
+00:01:03,680 --> 00:01:05,700
+Here's my loan and its health.
+
+33
+00:01:05,950 --> 00:01:06,980
+Only a deep fall
+
+34
+00:01:07,000 --> 00:01:08,790
+in Bitcoin could liquidate it,
+
+35
+00:01:08,810 --> 00:01:11,500
+and anything left over comes back to me.
+
+36
+00:01:12,340 --> 00:01:14,140
+I can repay any time.
+
+37
+00:01:14,390 --> 00:01:16,010
+The interest goes to savers,
+
+38
+00:01:16,030 --> 00:01:18,320
+and my Bitcoin comes straight back.
+
+39
+00:01:21,140 --> 00:01:23,010
+We ran the saver side too.
+
+40
+00:01:23,260 --> 00:01:25,240
+Two savers each put in sixty MUSD,
+
+41
+00:01:25,260 --> 00:01:26,440
+and each took out a
+
+42
+00:01:26,460 --> 00:01:28,430
+little more than they put in.
+
+43
+00:01:29,290 --> 00:01:30,290
+Under the hood,
+
+44
+00:01:30,310 --> 00:01:31,600
+Keel is a strategy
+
+45
+00:01:31,620 --> 00:01:33,500
+for Mezo's own savings vault,
+
+46
+00:01:33,520 --> 00:01:35,950
+where millions of MUSD sit idle.
+
+47
+00:01:36,200 --> 00:01:37,290
+One call from the
+
+48
+00:01:37,310 --> 00:01:38,810
+vault's owner plugs it in,
+
+49
+00:01:38,830 --> 00:01:40,280
+and we tested that call
+
+50
+00:01:40,300 --> 00:01:42,160
+on a copy of Mezo mainnet.
+
+51
+00:01:43,030 --> 00:01:44,830
+one of this is simulated.
+
+52
+00:01:45,080 --> 00:01:46,910
+Every step you just saw is
+
+53
+00:01:46,930 --> 00:01:49,520
+a real transaction on Mezo testnet.
+
+54
+00:01:50,370 --> 00:01:51,250
+Keel.
+
+55
+00:01:51,500 --> 00:01:53,400
+Borrow against your Bitcoin.
+
+56
+00:01:53,650 --> 00:01:54,870
+ever redeemed.
+
+57
+00:01:55,120 --> 00:01:58,690
+Try it now at keel-psi-seven.vercel.app.
+

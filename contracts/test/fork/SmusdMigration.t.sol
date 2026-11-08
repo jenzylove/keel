@@ -75,20 +75,22 @@ contract SmusdMigrationForkTest is Test {
         SMUSD.deposit(10_000e18);
         vm.stopPrank();
 
-        // A borrower takes 1M from the strategy and repays it with 50k interest.
+        // A borrower takes 200k from the strategy and repays it with 10k
+        // interest. Kept well under the 20% cap of the idle savings, which
+        // were about 1.3M MUSD in November 2026.
         vm.prank(market);
-        keel.draw(borrower, 1_000_000e18);
+        keel.draw(borrower, 200_000e18);
         vm.prank(FUNDER);
-        MUSD.transfer(market, 1_050_000e18);
+        MUSD.transfer(market, 210_000e18);
         vm.startPrank(market);
-        MUSD.transfer(address(keel), 1_050_000e18);
-        keel.repaid(1_000_000e18, 50_000e18);
+        MUSD.transfer(address(keel), 210_000e18);
+        keel.repaid(200_000e18, 10_000e18);
         vm.stopPrank();
 
         vm.warp(block.timestamp + 7 days); // interest is released over a week
         SMUSD.receiveYieldFromStrategy();
         assertEq(keel.yieldOwed(), 0, "yield handed to the vault");
-        assertEq(keel.reserve(), 5_000e18, "10% kept as reserve");
+        assertEq(keel.reserve(), 1_000e18, "10% kept as reserve");
 
         uint256 before = MUSD.balanceOf(saver);
         vm.prank(saver);

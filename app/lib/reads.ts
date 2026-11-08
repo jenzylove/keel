@@ -243,3 +243,41 @@ export async function musdWallTwap(): Promise<number | null> {
     return 1 / musdPerUsdc;
   });
 }
+
+/** Our own wallets: deployer, tester, demo, keeper, loop wallets and the
+ *  team's personal wallet. Anyone else who borrowed or saved is an outside user. */
+const OWN = new Set(
+  [
+    '0x3Cd55266cEF5cccC7EcCE7974eBba973c2C4B1eD',
+    '0x44439fF8686b5ee8a4D293659aD61630206E259f',
+    '0x3E64144A1D423B883f927d523D48ae03033F0dD8',
+    '0x5941fe7A986a07083bbE17acE9d93568bd6E10E2',
+    '0x8306adc4e1Ffb0649010084547bCcD9c0c47717b',
+    '0x92F2123eB3729Fd6517a6A69F84aa6651bB4A08E',
+    '0xfeF77f88f74E54a84825f72971fBA3fE80CF32A5',
+    '0x1F2c9a2F39B23046922863EA48DfCCFc627ffd42',
+    '0x6Cbc1E908e57674a655F0Da7f47D7683bb994cfe',
+    '0x8827d3af20efe02582aea67a5e704c04bad52324',
+    '0x680b733F9e678c64de23a0781404F631D2C5099c',
+  ].map((a) => a.toLowerCase()),
+);
+
+/** Wallets outside the team that borrowed from Keel or hold its savings, on testnet. */
+export async function outsideUsers(): Promise<{ borrowers: number; savers: number } | null> {
+  try {
+    const M = deployed.contracts.keelMarket as `0x${string}`;
+    const next = await testnet.readContract({ address: M, abi: marketAbi, functionName: 'nextLoanId' });
+    const owners = await Promise.all(
+      Array.from({ length: Number(next) - 1 }, (_, i) =>
+        testnet.readContract({ address: M, abi: marketAbi, functionName: 'loans', args: [BigInt(i + 1)] }).then((l) => String(l[0]).toLowerCase()),
+      ),
+    );
+    const borrowers = new Set(owners.filter((o) => !OWN.has(o) && o !== '0x0000000000000000000000000000000000000000'));
+    const res = await fetch(`https://api.explorer.test.mezo.org/api/v2/tokens/${deployed.contracts.vault}/holders`, { next: { revalidate: 300 } });
+    const items = res.ok ? ((await res.json()).items as { address: { hash: string } }[]) : [];
+    const savers = new Set(items.map((i) => i.address.hash.toLowerCase()).filter((a) => !OWN.has(a)));
+    return { borrowers: borrowers.size, savers: savers.size };
+  } catch {
+    return null;
+  }
+}

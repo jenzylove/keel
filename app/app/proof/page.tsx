@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { forkTests, loopGroup, testnetGroups, type ProofRow } from '@/lib/proof';
 import { txUrl } from '@/lib/chains';
 import loopRun from '@/lib/loop-run.json';
+import { outsideUsers } from '@/lib/reads';
+
+export const revalidate = 300;
 
 export const metadata: Metadata = { title: 'Proof · Keel' };
 
@@ -35,7 +38,9 @@ function Txs({ rows }: { rows: ProofRow[] }) {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+  const outside = await outsideUsers();
+  const outsideTotal = outside ? outside.borrowers + outside.savers : 0;
   const back = loop.after ? Number(loop.after.savers.saver1.walletMUSD).toFixed(7) : '60.0000015';
   // The liquidation story on the current deployment: loan opened, pushed under, cleared, setting restored.
   const liquidation = testnetGroups[0].rows.filter((r) => /loan #1|BTC setting|keeper/i.test(r.what));
@@ -50,6 +55,12 @@ export default function Page() {
         <p className="chapter-lede">
           Everything below ran for real on Mezo testnet, or against a copy of Mezo mainnet with its real vault and balances.
         </p>
+        {outside && outsideTotal > 0 && (
+          <p className="outside">
+            <span className="live-dot" /> {outside.borrowers} {outside.borrowers === 1 ? 'wallet' : 'wallets'} outside the team borrowed, and {outside.savers}{' '}
+            saved, on Mezo testnet.
+          </p>
+        )}
       </section>
 
       <section className="finding">
