@@ -163,8 +163,8 @@ export default async function Home() {
           </h2>
           <dl className="guards">
             <div>
-              <dt>80% stays liquid</dt>
-              <dd>At most a fifth of savings is ever lent. Withdrawals draw on the rest.</dd>
+              <dt>Most savings stay liquid</dt>
+              <dd>On Mezo’s main vault at most a fifth of savings is ever lent; the small mainnet vault lends up to half. Withdrawals draw on the rest.</dd>
             </div>
             <div>
               <dt>The rate leans against the peg</dt>
@@ -176,11 +176,11 @@ export default async function Home() {
             </div>
             <div>
               <dt>Nothing changes overnight</dt>
-              <dd>Risk and rate settings wait a fixed delay, and only the vault’s owner can propose them.</dd>
+              <dd>Risk and rate settings wait a fixed delay, and only the vault’s owner can propose them. On mainnet that owner is a 48 hour timelock.</dd>
             </div>
             <div>
               <dt>A keeper that acts</dt>
-              <dd>A daily keeper claims savers’ yield and liquidates unhealthy loans from its own float.</dd>
+              <dd>A daily keeper, on mainnet and testnet, claims savers’ yield, liquidates unhealthy loans from its own float and pays down auto pay loans from their veBTC rewards.</dd>
             </div>
           </dl>
         </section>
@@ -189,7 +189,7 @@ export default async function Home() {
           <span className="node" />
           <p className="label">Built for Mezo</p>
           <div className="idle">
-            <strong>{snap.idleSavings === null ? '7.38M' : compact(snap.idleSavings)}</strong>
+            <strong>{snap.idleSavings === null ? '1.30M' : compact(snap.idleSavings)}</strong>
             <span>MUSD sits in Mezo’s savings vault today, lent to no one.</span>
           </div>
           <p className="chapter-lede">
@@ -231,15 +231,16 @@ export default async function Home() {
             <details>
               <summary>Who carries the risk for savers?</summary>
               <p>
-                Savers do, beyond the reserve. That is why only a fifth can be lent, a tenth of interest builds the reserve, and a sale
-                below the debt pays principal first.
+                Savers do, beyond the reserve. That is why only part of savings can be lent, a tenth of interest builds the reserve,
+                and a sale below the debt pays principal first.
               </p>
             </details>
             <details>
               <summary>Is this live with real money?</summary>
               <p>
-                Not yet. It runs on Mezo testnet, and the mainnet integration is proven on a fork with Mezo’s real vault. Mainnet comes
-                next.
+                Yes, in a small opt in vault on Mezo mainnet with real BTC and MUSD, capped at 2,000 MUSD of savings and owned by a 48
+                hour timelock. Testnet stays open for free tries. Moving Mezo’s own savings vault onto Keel is one governance call,
+                already run on a copy of Mezo mainnet.
               </p>
             </details>
           </div>

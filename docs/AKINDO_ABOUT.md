@@ -2,13 +2,13 @@
 
 Keel lets you borrow MUSD against your Bitcoin, or a locked veBTC, without ever being redeemed. Savers fund the loans and earn the interest.
 
-It is built as a drop in strategy for Mezo's own MUSD savings vault. One `setStrategy` call by the multisig that owns the vault moves its idle MUSD into Keel. At least 80% stays liquid for withdrawals, and up to 20% is lent in Keel's own market, where redemptions can't reach. veBTC borrowers keep voting and keep their rewards.
+It is built as a drop in strategy for Mezo's own MUSD savings vault. One `setStrategy` call by the multisig that owns the vault moves its idle MUSD into Keel. At least 80% stays liquid for withdrawals, and up to 20% is lent (half on the small opt in mainnet vault) in Keel's own market, where redemptions can't reach. veBTC borrowers keep voting and keep their rewards.
 
 Try it at https://keel-psi-seven.vercel.app: the app shows a live quote before you connect anything, and a no wallet demo runs a real loan on Mezo testnet.
 
 ## The problem it solves
 
-- **Borrowers get redeemed.** Redeeming 1 MUSD pays $1 of BTC minus a 0.75% fee. MUSD has traded under $0.9925 since July, so anyone can buy it cheap and redeem it against the weakest loan. Mezo's loan book went from 49 loans in June to 1 today.
+- **Borrowers get redeemed.** Redeeming 1 MUSD pays $1 of BTC minus a 0.75% fee. MUSD has traded under $0.9925 since July, so anyone can buy it cheap and redeem it against the weakest loan. Mezo's loan book went from 49 loans in June to 1 on Oct 20.
 - **Savers are paid by that same process.** The savings vault's idle MUSD, 1.30M on Nov 8, is lent to no one. In the 30 days to Oct 21, 65% of what savers earned arrived as BTC fees from redemptions. With almost no loans left, that income is running out.
 - **Locked Bitcoin is stuck.** 806 BTC sits in veBTC, and none of it can be borrowed against.
 
@@ -31,7 +31,7 @@ Keel fixes all three with one mechanism: savers' idle MUSD is lent to Bitcoin ho
 
 ## How we built it
 
-Keel is two contracts on Mezo. KeelStrategy plugs into the savings vault through the vault's own strategy interface: it holds savers' MUSD, keeps at least 80% liquid and lends the rest. KeelMarket holds the loans: BTC or veBTC goes in, MUSD comes out, and liquidation, the reserve, the peg premium and the settings delay all live there. There is no new admin; Keel answers to whoever owns the vault.
+Keel is two contracts on Mezo. KeelStrategy plugs into the savings vault through the vault's own strategy interface: it holds savers' MUSD, keeps most of it liquid (at least 80% on the main vault design, half on the small mainnet vault) and lends the rest. KeelMarket holds the loans: BTC or veBTC goes in, MUSD comes out, and liquidation, the reserve, the peg premium and the settings delay all live there. There is no new admin; Keel answers to whoever owns the vault.
 
 We tested the plug in on a copy of Mezo mainnet with the real vault and its idle savings, then deployed to testnet and ran both sides with fresh wallets. Savers deposited, borrowers took loans (one against a veBTC lock), everyone was paid back, and a keeper cleared a bad loan from its own float. The app is Next.js on Vercel and reads Mezo's numbers live.
 
@@ -49,4 +49,4 @@ Keel only matters once it runs on real money, so every next step leads there.
 - **Loans that pay themselves.** A veBTC lock's rewards go toward its loan's interest automatically, so borrowing against locked Bitcoin gets cheaper the longer you hold.
 - **Earn the vault.** An external audit and a clean record on mainnet, then a governance proposal for Mezo to move its idle savings into Keel with one `setStrategy` call.
 
-**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Deck](https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK) · [Proof](https://keel-psi-seven.vercel.app/proof)
+**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Deck](https://github.com/jenzylove/keel/blob/main/docs/Keel-deck.pdf) · [Proof](https://keel-psi-seven.vercel.app/proof)

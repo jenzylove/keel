@@ -29,6 +29,21 @@
       "key": "loan",
       "what": "Locks 0.00016 BTC and borrows 5 MUSD from the vault, outside Mezo's redemption system",
       "hash": "0x68aad50cba1876600d4d7fc87a07dc6d8ff058b247f72e117c56eed57a53b298"
+    },
+    {
+      "key": "timelock",
+      "what": "Deploys a TimelockController with a 48 hour delay",
+      "hash": "0x91cac23934608b726bf8420e2bcf60d457619ab062c1c55e572752a7dfe93f1d"
+    },
+    {
+      "key": "owner-to-timelock",
+      "what": "Hands the vault, and so every Keel setting, to the timelock: no admin call lands in under 48 hours",
+      "hash": "0x39ee37c6165e6eb5f11a47c5c72da22a6c612afe1eaca475a133b8829960fd39"
+    },
+    {
+      "key": "keeper-float",
+      "what": "Funds the mainnet keeper with MUSD to liquidate unhealthy loans",
+      "hash": "0x3dfb4fa3fa5a2259d6874031dfadf1031b103b652ec3c0ad3da50da8a4839e91"
     }
   ],
   "loanId": 1

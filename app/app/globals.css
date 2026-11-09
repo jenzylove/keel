@@ -185,6 +185,8 @@ section.first { border-top: 0; padding-top: 32px; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--ink-2); }
 .hint { font-size: 13px; color: var(--muted); margin-top: 8px; }
 .hint.warn { color: var(--red-2); }
+.full-note { margin-top: 14px; padding: 12px 0 0; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); }
+.full-note p { margin: 0 0 8px; }
 .log { font: 12px/1.7 var(--mono); padding: 14px 0 0; border-top: 1px solid var(--rule); margin-top: 20px; word-break: break-all; color: var(--ink-2); }
 .log .ok { color: var(--ink); }
 .log .bad { color: var(--red-2); }

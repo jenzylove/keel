@@ -37,11 +37,11 @@
 
 Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy`, by the multisig that already owns the vault moves the idle MUSD into it.
 
-1. **At least 80% stays liquid** for withdrawals.
-2. **Up to 20% is lent** against BTC or a veBTC NFT, in KeelMarket rather than Mezo's TroveManager, so redemptions can't reach those loans. veBTC borrowers keep voting and keep their rewards.
+1. **At least 80% stays liquid** for withdrawals on Mezo's main vault. The small opt in mainnet vault, capped at 2,000 MUSD, keeps at least half liquid.
+2. **Up to 20% is lent** (half on the opt in vault) against BTC or a veBTC NFT, in KeelMarket rather than Mezo's TroveManager, so redemptions can't reach those loans. veBTC borrowers keep voting and keep their rewards.
 3. **Interest goes to savers** over a week, with 10% kept as a reserve that absorbs losses first.
 4. **The rate leans against the peg.** Below $0.995 it steps up, at most 1 point a week, read from a 24 hour average of Mezo's own mUSDC/MUSD pool. New borrowing pauses when that pool's dollar side runs thin.
-5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust.
+5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust. On the opt in mainnet vault that owner is a 48 hour TimelockController, so no admin call lands in less than two days.
 6. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. The MUSD it earns goes to the loan, interest first; with auto pay on, the keeper claims it every day.
 7. **Withdrawals degrade gracefully.** `withdrawable()` says exactly what can leave now, the reserve covers a leaving saver, and new borrowing pauses before liquid savings fall under a 10% buffer.
 8. **A protocol share pays the keeper.** A timelocked share of interest, 5% on the mainnet vault and 0 on testnet, pays for the keeper and hosting. Savers get the rest.
@@ -96,13 +96,13 @@ No keys needed.
 |---|---|
 | Contracts on Mezo mainnet and testnet | Live, real transactions |
 | Mainnet integration | Proven on a copy of mainnet with Mezo's real savings vault |
-| Opt in vault on Mezo mainnet | Live with real money: first deposit of 10 MUSD and a 5 MUSD loan against BTC, on Mezo's own MUSD, PriceFeed and pool price |
-| veBTC votes and reward claims | Real testnet transactions on Mezo's own voter, through Keel |
-| Contracts | Verified on Sourcify, exact match |
+| Opt in vault on Mezo mainnet | Live with real money on Mezo's own MUSD, PriceFeed and pool price. Keel's own wallet made the first deposit (10 MUSD) and loan (5 MUSD against BTC); the vault is owned by a 48 hour timelock |
+| veBTC votes and auto pay | Real testnet transactions on Mezo's own voter, through Keel; the keeper claims rewards to the loan after each weekly epoch |
+| Contracts | Keel's contracts, the mainnet timelock and idle strategy verified on Sourcify, exact match; the vault runs Mezo's own savings vault source, vendored unchanged |
 | Home page numbers | Read live from Mezo testnet and mainnet |
 | Demo wallet loan | Real testnet transactions |
 | Loop run | Real testnet transactions, fresh wallets playing both sides |
-| Keeper | Daily cron, real liquidation on 2026-10-22 |
+| Keeper | Daily cron on testnet and mainnet, each with its own key and MUSD float; real testnet liquidation on 2026-10-22 |
 | Savers' yield on Mezo mainnet today | Read live from the vault's yield index |
 
 ## The front door
@@ -123,7 +123,7 @@ A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay an
 
 **The loop run.** Fresh wallets play two savers and three borrowers on Mezo testnet. Savers deposited 120 MUSD. Borrowers took 75 MUSD across three loans, one of them against a veBTC lock (#407) the borrower created, repaid with interest about four hours later and got their collateral back. Each saver withdrew 60.0000015 MUSD for their 60; the rest of the interest keeps releasing over the week by design. All 36 steps are on /proof, under "Savers got their money back, with interest". Script: [contracts/script/loop.mjs](contracts/script/loop.mjs), record: [deployments/loop-run.json](deployments/loop-run.json).
 
-**The keeper** is a daily Vercel cron. It claims savers' yield, steps the peg premium, claims rewards for loans with auto pay on, and liquidated an unhealthy loan from its own MUSD float on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
+**The keeper** is a daily Vercel cron that runs on testnet and on the mainnet vault, each with its own key and MUSD float. It claims savers' yield, steps the peg premium, liquidates unhealthy loans and claims veBTC rewards to loans with auto pay on. It liquidated an unhealthy loan on an earlier testnet market on 2026-10-22 (tx `0xc190a65dcf0e93a0b8572c1105e265c3d49885eecdab3561e9897cc2497e4a42`).
 
 
 ## Contracts
@@ -165,8 +165,8 @@ cd app && npm ci && npm run dev
 
 ## Scope
 
-- The live product runs on Mezo testnet. Mainnet readings are read only, and the mainnet integration is proven on a fork with Mezo's real savings vault. Wave 2 brings it to mainnet.
-- The contracts are unaudited. Savers carry bad debt beyond the reserve, which is why lending is capped at 20%.
+- Keel runs on Mezo testnet and in a small opt in vault on Mezo mainnet, capped at 2,000 MUSD. Moving Mezo's own savings vault onto Keel is one governance call, run on a copy of mainnet in the fork tests.
+- The contracts are unaudited. Savers carry bad debt beyond the reserve, which is why lending is capped.
 - Borrower demand on Mezo is small today: about 60 BTC outside veBTC and the Enclaves, plus a handful of mid sized veBTC locks.
 
 ## License

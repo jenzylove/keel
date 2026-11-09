@@ -77,9 +77,11 @@ export default async function Page() {
             Live on Mezo mainnet, <em>with real money.</em>
           </h2>
           <p className="chapter-lede">
-            Keel&apos;s opt in vault runs on Mezo mainnet against Mezo&apos;s own MUSD, PriceFeed and pool price. Its first saver deposited 10
-            MUSD bought on Mezo&apos;s BTC/MUSD pool, and its first borrower locked BTC and borrowed 5 MUSD, outside the redemption system.
-            Every contract is verified on Sourcify.
+            Keel&apos;s opt in vault runs on Mezo mainnet against Mezo&apos;s own MUSD, PriceFeed and pool price. Keel&apos;s own wallet made the
+            first deposit, 10 MUSD bought on Mezo&apos;s BTC/MUSD pool, and the first loan, 5 MUSD against locked BTC outside the redemption
+            system, so the whole path has run with real money before anyone else&apos;s. The vault now belongs to a 48 hour timelock, and
+            the daily keeper watches it. Keel&apos;s contracts, the timelock and the vault&apos;s idle strategy are verified on Sourcify; the
+            vault itself runs Mezo&apos;s own savings vault source, unchanged.
           </p>
           <Txs rows={main.steps.map((st) => ({ what: st.what, hash: st.hash }))} link={mainTx} />
           <p className="contracts-line">

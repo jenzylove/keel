@@ -214,6 +214,8 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
   const tooMuch = Number.isFinite(want) && Number.isFinite(collLimit) && want > collLimit;
   const overRoom = !tooMuch && room !== null && Number.isFinite(want) && want > room;
   const tooLittle = market && Number.isFinite(want) && want > 0 && want < market.minLoan;
+  // Lending is full when what Keel can still lend is under the smallest loan.
+  const full = !!market && room !== null && room < market.minLoan;
 
   const borrow = () =>
     act(async (w, a) => {
@@ -391,6 +393,17 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
               <dd className="ok">No. It lives outside Mezo&apos;s redemption system</dd>
             </div>
           </dl>
+          {full ? (
+            <div className="full-note">
+              <p>
+                <b>Every MUSD Keel can lend is out on loan right now.</b> Borrowing opens again as savers add MUSD ({net.lendShare} of every MUSD saved can be lent) or a loan is repaid. Saving earns {pct(market!.saverRate)} a year in the meantime.
+              </p>
+              <button className="linkish" onClick={() => setTab('save')}>
+                Save MUSD and open room
+              </button>
+            </div>
+          ) : (
+            <>
           {tooMuch && <p className="hint warn">That is more than this collateral can back. Lower the amount or add collateral.</p>}
           {overRoom && (
             <p className="hint warn">
@@ -400,9 +413,11 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
           {!overRoom && roomBound && <p className="hint">Keel can lend {money(room!)} MUSD more right now, the cap on savings.</p>}
           {tooLittle && <p className="hint warn">The smallest loan is {money(market!.minLoan)} MUSD.</p>}
           {market && !market.borrowingOpen && <p className="hint warn">New borrowing is paused while Mezo&apos;s peg pool runs thin. Repaying stays open.</p>}
+            </>
+          )}
 
           <div className="actions">
-            <button className="btn" disabled={busy || tooMuch || overRoom || !!tooLittle || (market !== null && !market.borrowingOpen)} onClick={borrow}>
+            <button className="btn" disabled={busy || full || tooMuch || overRoom || !!tooLittle || (market !== null && !market.borrowingOpen)} onClick={borrow}>
               {busy ? 'Working…' : !account ? 'Connect wallet and borrow' : coll === 'btc' ? 'Lock BTC and borrow' : 'Deposit veBTC and borrow'}
             </button>
           </div>

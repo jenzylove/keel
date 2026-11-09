@@ -7,9 +7,9 @@
 **TL;DR:** Keel is a drop in strategy for Mezo's MUSD Savings Vault that lends its idle MUSD to BTC and veBTC holders, outside redemptions, so savers earn from borrowers who stay and borrowers can't be redeemed away.
 
 **How it works:**
-MUSD has traded under $0.9925 since July, so anyone can buy it cheap and redeem it against the weakest loan. That emptied Mezo's loan book: 49 MUSD loans in June, 1 on Oct 20. The savings vault holds 7.38M MUSD of principal that is lent to no one, and its savers are paid mostly by those same redemptions: 65% of the last 30 days' yield arrived as BTC fees from redemptions. With almost no loans left, that income is running out.
+MUSD has traded under $0.9925 since July, so anyone can buy it cheap and redeem it against the weakest loan. That emptied Mezo's loan book: 49 MUSD loans in June, 1 on Oct 20. The savings vault holds 1.30M MUSD of principal (Nov 8) that is lent to no one, and its savers are paid mostly by those same redemptions: 65% of the last 30 days' yield arrived as BTC fees from redemptions. With almost no loans left, that income is running out.
 
-Keel implements Mezo's own IVaultStrategy interface. One `setStrategy` call by the multisig that owns the vault moves the idle MUSD into KeelStrategy. At least 80% stays liquid for withdrawals. Up to 20% is lent through KeelMarket against native BTC, timed veBTC or permanent veBTC. Those loans live outside Mezo's TroveManager, so redemptions can't reach them, and veBTC borrowers keep voting and keep their rewards. Interest goes to savers over a week, with 10% kept as a reserve that takes losses first. The rate adds a peg premium when MUSD trades under $0.995, read from a 24 hour average of Mezo's mUSDC/MUSD pool, and new borrowing pauses when that pool's dollar side runs thin. Settings change only after a timelock, and Keel's admin is the vault's owner, read live, so it adds no new party to trust.
+Keel implements Mezo's own IVaultStrategy interface. One `setStrategy` call by the multisig that owns the vault moves the idle MUSD into KeelStrategy. At least 80% stays liquid for withdrawals. Up to 20% is lent (half on the small opt in mainnet vault) through KeelMarket against native BTC, timed veBTC or permanent veBTC. Those loans live outside Mezo's TroveManager, so redemptions can't reach them, and veBTC borrowers keep voting and keep their rewards. Interest goes to savers over a week, with 10% kept as a reserve that takes losses first. The rate adds a peg premium when MUSD trades under $0.995, read from a 24 hour average of Mezo's mUSDC/MUSD pool, and new borrowing pauses when that pool's dollar side runs thin. Settings change only after a timelock, and Keel's admin is the vault's owner, read live, so it adds no new party to trust.
 
 MUSD is the asset lent and the yield savers earn; MEZO isn't used.
 
@@ -19,21 +19,21 @@ MUSD is the asset lent and the yield savers earn; MEZO isn't used.
 
 **Track:** Track 1 (DeFi)
 
-**Chain deployed on:** Mezo (testnet live; mainnet integration proven on a fork)
+**Chain deployed on:** Mezo mainnet (opt in vault, capped at 2,000 MUSD, owned by a 48 hour timelock) and Mezo testnet
 
 **Project status:** Entirely new
 
-**Project readiness:** Testnet deployment
+**Project readiness:** Mainnet deployment (small opt in vault) plus testnet
 
 **Future milestones:**
-1. Wave 2 (by Nov 15): an opt in Keel vault on Mezo mainnet with small caps, so real savers and borrowers use it before any governance call.
-2. Wave 2 (by Nov 15): veBTC rewards pay a loan's interest automatically, and the keeper liquidates from its own MUSD float on mainnet.
-3. After the buildathon: a professional audit, then a governance proposal to move the savings vault's 7.38M with `setStrategy`.
+1. Next: real outside savers and borrowers on the opt in mainnet vault, with small caps, before Mezo is asked to trust Keel with the main vault.
+2. Then: an external audit and a clean mainnet record.
+3. After: a governance proposal for Mezo to move its idle savings into Keel with one `setStrategy` call.
 
 **Links:**
 - Live: https://keel-psi-seven.vercel.app (app: /app)
 - Repo: https://github.com/jenzylove/keel
-- Deck: https://claude.ai/artifact/HBtwT87sZMRoBzrzT7ahpK (share it from its Share menu first)
+- Deck: https://github.com/jenzylove/keel/blob/main/docs/Keel-deck.pdf
 - Video: https://youtu.be/iSvGuXuLK7A
 
-**Team:** [name, role, X or LinkedIn]
+**Team:** JDollar (solo builder: product, contracts, app). X: @dollar782

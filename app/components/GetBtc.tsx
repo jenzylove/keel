@@ -16,7 +16,7 @@ export function GetBtc({ open, empty, onRefresh, faucet }: { open: boolean; empt
         <div>
           <h4>Try Keel now, free</h4>
           <ol>
-            <li>Keel runs on Mezo testnet, so test BTC costs nothing.</li>
+            <li>Keel runs on Mezo testnet too, where test BTC costs nothing.</li>
             <li>Get some from Mezo&apos;s faucet with this wallet&apos;s address.</li>
             <li>Come back and borrow. It takes about a minute.</li>
           </ol>

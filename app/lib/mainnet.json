@@ -7,7 +7,8 @@
     "idleStrategy": "0xcE69E88CFEBb08828C9C7866ecC91326DE141a10",
     "keelStrategy": "0x0298c746fc52f1b9bb1449de0464bf4056806509",
     "keelMarket": "0x3d6e71dfc30fdf24b8d2a9f9d564c3dc7c29d0d9",
-    "pegOracle": "0x557cfccd083f26150189ecb07cc945bcf3698eb5"
+    "pegOracle": "0x557cfccd083f26150189ecb07cc945bcf3698eb5",
+    "timelock": "0x2f131C3e4aE7BcBB291859559c9bC720533a778a"
   },
   "mezo": {
     "musd": "0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186",
@@ -17,7 +18,7 @@
     "priceFeed": "0xc5aC5A8892230E0A3e1c473881A2de7353fFcA88"
   },
   "params": {
-    "governance": "the vault owner, read live",
+    "governance": "TimelockController 0x2f13\u2026778a owns the vault: 48 hour delay on every admin call (proposer: deployer, executor: anyone)",
     "configDelaySeconds": 172800,
     "maxLentBps": 5000,
     "reserveBps": 1000,
@@ -26,7 +27,8 @@
     "minLoan": "5 MUSD",
     "minLiquidBps": 1000,
     "feeBps": 500,
-    "feeRecipient": "0x680b733F9e678c64de23a0781404F631D2C5099c"
+    "feeRecipient": "0x680b733F9e678c64de23a0781404F631D2C5099c",
+    "keeper": "0xCc0e39Cc2E690B6a58D54A14b13e6ae8ea8a88D8"
   },
   "txs": {
     "vaultImplementation": "0x3fe5aa7fcd800e9ea0c9eaf9d60b352973322b5955397cf5fd680e9b0c548ef9",
@@ -39,7 +41,16 @@
     "setMarket": "0x57ed77c24f943b035af2ab18b9b2027dc8de3f97e620291b7285bb89ae9fccdf",
     "setStrategy": "0x2d11b4356b40055043f1165d60ae0bfb2736f571d295b20b60e7b7eb089d672e",
     "setPrincipalCap": "0x0fdc4bd91702b42823200727cc3c4f8603ad5f21d0f977469e6b94982eb5a773",
-    "setThrottle": "0x55fa2793c1c56ea253ddfc8bc3d11f54cc88592e9dd658a399bb27c260dbaa64"
+    "setThrottle": "0x55fa2793c1c56ea253ddfc8bc3d11f54cc88592e9dd658a399bb27c260dbaa64",
+    "timelock": "0x91cac23934608b726bf8420e2bcf60d457619ab062c1c55e572752a7dfe93f1d",
+    "transferOwnershipToTimelock": "0x39ee37c6165e6eb5f11a47c5c72da22a6c612afe1eaca475a133b8829960fd39",
+    "fundKeeperBtc": "0x45001c6cbbbade38f63c3877a8bb8bad5b259ea015e3ae0f42871422e4037caa",
+    "fundKeeperMusd": "0x3dfb4fa3fa5a2259d6874031dfadf1031b103b652ec3c0ad3da50da8a4839e91"
   },
-  "history": []
+  "history": [
+    {
+      "at": "2026-11-09",
+      "what": "Vault ownership moved from the deployer wallet to a 48 hour TimelockController; mainnet keeper funded with 0.00004 BTC and 5.65 MUSD float"
+    }
+  ]
 }
