@@ -151,7 +151,8 @@
       "proposeParams": "0x852aac61322260f63d3cbd6de1758bc78334fce5ab2da810ad5c1ce31a2fd90d",
       "openFunderTrove": "0xa12bcad70672b4bbce79ca9d561c8e1e37ef3f5ea7fa68fcfc6b1067591ca608",
       "deposit_funder": "0x0512abd68159d60e040e0e75e69dacc3d14c62c5c7f3d69034cdbb756a29dbc8",
-      "deposit_troveOwner": "0x828bdb49283c77889ddf3d7129f15ea0f5513a6a934a01c25616d0da222e45bb"
+      "deposit_troveOwner": "0x828bdb49283c77889ddf3d7129f15ea0f5513a6a934a01c25616d0da222e45bb",
+      "applyParams": "0xd4b3dd8b42773d5be27306e2e55cb53906559a0d462a444d8775ef0d36064331"
     },
     "previousMarket": "0x32a94a9af2751afc771aa09d00d95faa6629135e"
   }

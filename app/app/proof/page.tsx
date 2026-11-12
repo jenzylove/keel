@@ -7,6 +7,7 @@ import { outsideUsers } from '@/lib/reads';
 import wave2Run from '@/lib/wave2-run.json';
 import mainnetRun from '@/lib/mainnet-run.json';
 import mainnetDeploy from '@/lib/mainnet.json';
+import moveRun from '@/lib/move-run.json';
 
 export const revalidate = 300;
 
@@ -17,6 +18,7 @@ const loop = loopRun as unknown as { after?: Snap };
 const main = mainnetRun as { steps: { key: string; what: string; hash: string }[]; loanId?: number };
 const mainTx = (h: string) => `https://explorer.mezo.org/tx/${h}`;
 const mainContracts = (mainnetDeploy as { contracts: Record<string, string> }).contracts;
+const move = moveRun as { steps: { key: string; what: string; hash: string }[]; setup: { key: string; what: string; hash: string }[]; loanId: number };
 const wave2 = wave2Run as { steps: { key: string; what: string; hash: string }[]; nftId?: number; loanId?: number };
 
 function Txs({ rows, link = txUrl }: { rows: ProofRow[]; link?: (h: string) => string }) {
@@ -74,6 +76,23 @@ export default async function Page() {
         <span className="finding-k">01</span>
         <div>
           <h2>
+            A real Mezo loan moved into Keel, <em>in one transaction.</em>
+          </h2>
+          <p className="chapter-lede">
+            A wallet with an open Mezo loan on testnet signed one message for Mezo&apos;s own loan contracts. Keel paid the Mezo loan off with
+            savers&apos; MUSD, Mezo sent its BTC to Keel, and the same debt opened as Keel loan #{move.loanId}, where redemptions can&apos;t reach it.
+            The borrower needed no MUSD. The same move runs against Mezo mainnet&apos;s real loan contracts in the fork tests.
+          </p>
+          <Txs rows={move.steps.map((st) => ({ what: st.what, hash: st.hash }))} />
+          <p className="contracts-line">How the testnet vault was set up for it:</p>
+          <Txs rows={move.setup.map((st) => ({ what: st.what, hash: st.hash }))} />
+        </div>
+      </section>
+
+      <section className="finding">
+        <span className="finding-k">02</span>
+        <div>
+          <h2>
             Live on Mezo mainnet, <em>with real money.</em>
           </h2>
           <p className="chapter-lede">
@@ -94,7 +113,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">02</span>
+        <span className="finding-k">03</span>
         <div>
           <h2>
             Savers got their money back, <em>with interest.</em>
@@ -108,7 +127,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">03</span>
+        <span className="finding-k">04</span>
         <div>
           <h2>
             When a loan went bad, <em>the keeper cleared it.</em>
@@ -122,7 +141,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">04</span>
+        <span className="finding-k">05</span>
         <div>
           <h2>
             It plugs into <em>Mezo&apos;s real vault.</em>
@@ -152,7 +171,7 @@ export default async function Page() {
       </section>
 
       <section className="finding">
-        <span className="finding-k">05</span>
+        <span className="finding-k">06</span>
         <div>
           <h2>
             A locked veBTC keeps voting, <em>and its rewards pay the loan.</em>

@@ -15,7 +15,7 @@
   <a href="https://github.com/jenzylove/keel/actions/workflows/verify.yml"><img alt="verify" src="https://github.com/jenzylove/keel/actions/workflows/verify.yml/badge.svg" /></a>
   <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
   <img alt="Mezo mainnet" src="https://img.shields.io/badge/Mezo-mainnet%20%2B%20testnet-111111?style=flat-square" />
-  <img alt="Tests" src="https://img.shields.io/badge/tests-85%20unit%20%2B%206%20mainnet%20copy-111111?style=flat-square" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-108%20unit%20%2B%2011%20mainnet%20and%20testnet%20copy-111111?style=flat-square" />
   <img alt="Eval" src="https://img.shields.io/badge/eval-235%2F235-111111?style=flat-square" />
   <img alt="Built for" src="https://img.shields.io/badge/built%20for-Mezo%20Buildathon-e5141b?style=flat-square" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" />
@@ -42,9 +42,10 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 3. **Interest goes to savers** over a week, with 10% kept as a reserve that absorbs losses first.
 4. **The rate leans against the peg.** Below $0.995 it steps up, at most 1 point a week, read from a 24 hour average of Mezo's own mUSDC/MUSD pool. New borrowing pauses when that pool's dollar side runs thin.
 5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust. On the opt in mainnet vault that owner is a 48 hour TimelockController, so no admin call lands in less than two days.
-6. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. The MUSD it earns goes to the loan, interest first; with auto pay on, the keeper claims it every day.
-7. **Withdrawals degrade gracefully.** `withdrawable()` says exactly what can leave now, the reserve covers a leaving saver, and new borrowing pauses before liquid savings fall under a 10% buffer.
-8. **A protocol share pays the keeper.** A timelocked share of interest, 5% on the mainnet vault and 0 on testnet, pays for the keeper and hosting. Savers get the rest.
+6. **Move a Mezo loan into Keel with one signature.** A borrower signs one message for Mezo's own loan contracts (BorrowerOperationsSignatures). In one transaction Keel pays the Mezo loan off with savers' MUSD, Mezo sends its BTC to Keel, and the same debt opens in Keel, outside redemptions. No MUSD needed up front. A real Mezo testnet loan moved this way on 2026-11-12 (tx `0x4e8da82a06c84f1ebb32dc99d2c63a8a88b3817ec6c5a311005898e7b6300fe0`), and the fork tests run it against Mezo mainnet's loan contracts.
+7. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. Every Thursday its pool pays voters; Keel collects the lock's share, swaps BTC rewards into MUSD on Mezo's own BTC/MUSD pool (priced against Mezo's PriceFeed, 2% at most off), and pays the loan, interest first. With auto pay on, the keeper does it for you; the first payment landed on 2026-11-12.
+8. **Withdrawals degrade gracefully.** `withdrawable()` says exactly what can leave now, the reserve covers a leaving saver, and new borrowing pauses before liquid savings fall under a 10% buffer.
+9. **A protocol share pays the keeper.** A timelocked share of interest, 5% on the mainnet vault and 0 on testnet, pays for the keeper and hosting. Savers get the rest.
 
 ## How it works
 

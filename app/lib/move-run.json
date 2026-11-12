@@ -1,0 +1,39 @@
+{
+  "borrower": "0x471F65677F73B63929aA657B7a8240824Bad1523",
+  "market": "0xc325f2d30a8ee121906391160ab1cbaeb75d9bf3",
+  "loanId": 2,
+  "steps": [
+    {
+      "key": "move-approve",
+      "what": "The borrower approves a 0.0155 BTC top up so the moved loan fits Keel's limit",
+      "hash": "0x9de7964fd249a9171102d6dc514fce178869fd29d2a48b3d707294aa85bc9b91"
+    },
+    {
+      "key": "move",
+      "what": "One transaction: Keel pays off the borrower's Mezo loan (0.036 BTC, 1,803 MUSD) with savers' MUSD, Mezo sends its BTC to Keel, and the same debt opens as Keel loan #2, outside redemptions",
+      "hash": "0x4e8da82a06c84f1ebb32dc99d2c63a8a88b3817ec6c5a311005898e7b6300fe0"
+    }
+  ],
+  "setup": [
+    {
+      "key": "market",
+      "what": "Deploys the new KeelMarket that can take over a Mezo loan and swap BTC rewards to MUSD",
+      "hash": "0x3b9a7d8600eab6d78483fe2955f634319677af18282dbfcac7d4fb0ffae7a675"
+    },
+    {
+      "key": "setMarket",
+      "what": "Wires it to the same vault and strategy, so savers stay put",
+      "hash": "0x13d07fadda5dc8cb0e00dece35c2150a5a5618ba2db378c2f76457b1b92f3462"
+    },
+    {
+      "key": "funder-trove",
+      "what": "A second test wallet opens a Mezo loan to mint MUSD for savers",
+      "hash": "0xa12bcad70672b4bbce79ca9d561c8e1e37ef3f5ea7fa68fcfc6b1067591ca608"
+    },
+    {
+      "key": "deposit",
+      "what": "That MUSD is deposited as savings, so a 1,800 MUSD minimum Mezo loan fits",
+      "hash": "0x0512abd68159d60e040e0e75e69dacc3d14c62c5c7f3d69034cdbb756a29dbc8"
+    }
+  ]
+}

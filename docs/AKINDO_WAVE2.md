@@ -11,6 +11,8 @@
 
 Every item answers a note from the Wave 1 review.
 
+- Move a Mezo loan into Keel with one signature (new). Mezo's borrowers are the ones being redeemed. A borrower signs one message for Mezo's own BorrowerOperationsSignatures; in one transaction Keel pays the Mezo loan off with savers' MUSD, Mezo sends its BTC to Keel, and the same debt opens in Keel where redemptions can't reach it. No MUSD needed. A real Mezo testnet loan moved on Nov 12: https://explorer.test.mezo.org/tx/0x4e8da82a06c84f1ebb32dc99d2c63a8a88b3817ec6c5a311005898e7b6300fe0 . Fork tests run the same move against Mezo mainnet's loan contracts.
+- BTC rewards swapped on Mezo's DEX (new). Auto pay now swaps a lock's BTC rewards into MUSD on Mezo's own BTC/MUSD pool, checked against Mezo's PriceFeed (2% at most off), and pays the loan with it.
 - Live on Mezo mainnet with real money. An opt in Keel vault runs against Mezo's own MUSD, PriceFeed and pool price. Keel's own wallet ran the whole path first: 10 MUSD saved (bought on Mezo's BTC/MUSD pool), then 0.00016 BTC locked and 5 MUSD borrowed, outside the redemption system. Proof: https://keel-psi-seven.vercel.app/proof
 - No single key on mainnet. The vault, and so every Keel setting, belongs to a 48 hour TimelockController (0x2f13…778a). A daily keeper with its own key and MUSD float watches the mainnet loans as well as testnet.
 - One app for both networks. A Testnet | Mainnet switch moves the wallet to the right chain; testnet stays free for anyone without BTC.
@@ -20,7 +22,7 @@ Every item answers a note from the Wave 1 review.
 - Verified: Keel's contracts, the mainnet timelock and the vault's idle strategy are verified on Sourcify with an exact match; the vault runs Mezo's own savings vault source, vendored unchanged (Mezo's explorer verifier lists no compilers yet).
 - New users: a wallet with no BTC gets a guide to free test BTC, or USDC/ETH to BTC through Mezo's own bridge.
 - Materials: a PDF deck in the repo, the video's script and subtitles committed, team and roles named.
-- 91 contract tests (85 unit and fuzz, 6 on a copy of Mezo mainnet) and 235 numbers checked against an independent answer key.
+- 119 contract tests (108 unit and fuzz, 11 on copies of Mezo mainnet and testnet) and 235 numbers checked against an independent answer key.
 
 ## Milestones
 
