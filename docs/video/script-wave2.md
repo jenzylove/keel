@@ -1,4 +1,5 @@
 # Keel, Wave 2 demo video script
+nVideo: https://youtu.be/3Wd_9V7KwTg
 
 About 1:45. Recorded on the live site; the Mezo loan move is a real testnet transaction made on camera.
 

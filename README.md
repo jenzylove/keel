@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://keel-psi-seven.vercel.app"><img alt="Live" src="https://img.shields.io/badge/live-keel--psi--seven.vercel.app-e5141b?style=flat-square" /></a>
-  <a href="https://youtu.be/iSvGuXuLK7A"><img alt="Demo video" src="https://img.shields.io/badge/demo-2%20min%20video-e5141b?style=flat-square&logo=youtube&logoColor=white" /></a>
+  <a href="https://youtu.be/3Wd_9V7KwTg"><img alt="Demo video" src="https://img.shields.io/badge/demo-Wave%202%20video-e5141b?style=flat-square&logo=youtube&logoColor=white" /></a>
   <a href="https://github.com/jenzylove/keel/actions/workflows/verify.yml"><img alt="verify" src="https://github.com/jenzylove/keel/actions/workflows/verify.yml/badge.svg" /></a>
   <a href="https://keel-psi-seven.vercel.app/proof"><img alt="Proof" src="https://img.shields.io/badge/proof-real%20testnet%20transactions-111111?style=flat-square" /></a>
   <img alt="Mezo mainnet" src="https://img.shields.io/badge/Mezo-mainnet%20%2B%20testnet-111111?style=flat-square" />
@@ -67,7 +67,7 @@ Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMa
 
 | | |
 |---|---|
-| **Demo video** | [youtu.be/iSvGuXuLK7A](https://youtu.be/iSvGuXuLK7A): two minutes, one borrower's journey on the live site, real testnet transactions |
+| **Demo video** | [youtu.be/3Wd_9V7KwTg](https://youtu.be/3Wd_9V7KwTg): what changed in Wave 2, with a real Mezo loan moved into Keel live on testnet. Wave 1 video: [youtu.be/iSvGuXuLK7A](https://youtu.be/iSvGuXuLK7A) |
 | **Deck** | [docs/Keel-deck.pdf](docs/Keel-deck.pdf) |
 | **Live site** | [keel-psi-seven.vercel.app](https://keel-psi-seven.vercel.app): the app on Mezo mainnet (opt in vault) and testnet, with Mezo mainnet readings |
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |

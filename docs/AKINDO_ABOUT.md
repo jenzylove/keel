@@ -49,4 +49,4 @@ Keel only matters once it runs on real money, so every next step leads there.
 - **Loans that pay themselves.** A veBTC lock's rewards go toward its loan's interest automatically, so borrowing against locked Bitcoin gets cheaper the longer you hold.
 - **Earn the vault.** An external audit and a clean record on mainnet, then a governance proposal for Mezo to move its idle savings into Keel with one `setStrategy` call.
 
-**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/iSvGuXuLK7A) · [Deck](https://github.com/jenzylove/keel/blob/main/docs/Keel-deck.pdf) · [Proof](https://keel-psi-seven.vercel.app/proof)
+**Links:** [Live](https://keel-psi-seven.vercel.app) · [Repo](https://github.com/jenzylove/keel) · [Video](https://youtu.be/3Wd_9V7KwTg) · [Deck](https://github.com/jenzylove/keel/blob/main/docs/Keel-deck.pdf) · [Proof](https://keel-psi-seven.vercel.app/proof)

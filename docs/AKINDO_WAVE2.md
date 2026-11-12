@@ -3,7 +3,7 @@
 **Team:** JDollar (solo builder: product, contracts, app). X: @dollar782
 
 **Deck:** https://github.com/jenzylove/keel/blob/main/docs/Keel-deck.pdf
-**Video:** [new Wave 2 video link]
+**Video:** https://youtu.be/3Wd_9V7KwTg
 **Live demo:** https://keel-psi-seven.vercel.app (Testnet | Mainnet switch in the top bar)
 **Repo:** https://github.com/jenzylove/keel
 
