@@ -19,6 +19,10 @@ interface Vm {
     function addr(uint256) external returns (address);
     function mockCall(address, bytes calldata, bytes calldata) external;
     function etch(address, bytes calldata) external;
+    function expectEmit() external;
+    function allowCheatcodes(address) external;
+    function createSelectFork(string calldata, uint256) external returns (uint256);
+    function sign(uint256, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
 abstract contract Test {

@@ -58,6 +58,16 @@ const NETWORKS = {
     ve: '0xB63fcCd03521Cf21907627bd7fA465C129479231',
     voter: '0x72F8dd7F44fFa19E45955aa20A5486E8EB255738',
     priceFeed: '0x86bCF0841622a5dAC14A313a15f96A95421b9366',
+    // Mezo's trove contracts, for moving a Mezo loan into Keel. Read live
+    // from BorrowerOperations 0xCdF7…beE5.
+    trove: {
+      bos: '0xD757e3646AF370b15f32EB557F0F8380Df7D639e',
+      troveManager: '0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0',
+      borrowerOperations: '0xCdF7028ceAB81fA0C6971208e83fa7872994beE5',
+      activePool: '0x143A063F62340DA3A8bEA1C5642d18C6D0F7FF51',
+    },
+    // MUSD/BTC basic pool: BTC rewards are swapped here to pay loans.
+    btcSwapPool: '0xd16A5Df82120ED8D626a1a15232bFcE2366d6AA9',
     // MUSD/mUSDC basic stable pool: its quote() gives the peg oracle's price.
     oracle: { kind: 'basic', pool: '0x525F049A4494dA0a6c87E3C4df55f9929765Dc3e', stable: '0xe1a26db653708A2AD8F824E92Db9852410e33A59', granularity: 48n },
     configDelay: 600n,
@@ -81,6 +91,16 @@ const NETWORKS = {
     // Read live from veBTC.voter().
     voter: '0x48233cCC97B87Ba93bCA212cbEe48e3210211f03',
     priceFeed: '0xc5aC5A8892230E0A3e1c473881A2de7353fFcA88',
+    // Mezo's trove contracts, for moving a Mezo loan into Keel. Read live
+    // from BorrowerOperations 0x44b1…e031.
+    trove: {
+      bos: '0xB57ab578BF20b3e318f3EFAA587C51DBccE5df7a',
+      troveManager: '0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193',
+      borrowerOperations: '0x44b1bac67dDA612a41a58AAf779143B181dEe031',
+      activePool: '0x3012C2fE1240e3754E5C200A0946bb0E07474876',
+    },
+    // BTC/MUSD basic pool: BTC rewards are swapped here to pay loans.
+    btcSwapPool: '0x52e604c44417233b6CcEDDDc0d640A405Caacefb',
     // mUSDC/MUSD concentrated-liquidity pool holding Mezo's peg wall, 24h TWAP.
     oracle: { kind: 'cl', pool: '0xCC372B7E15535aB225fe17c1075831D38ef7aC1a', window: 86400 },
     configDelay: 172800n,
@@ -202,11 +222,12 @@ if (cfg.minLiquidBps !== DEFAULT_MIN_LIQUID_BPS || cfg.feeBps > 0n) {
 const marketArt = art('KeelMarket.sol', 'KeelMarket');
 const market = await create(
   marketArt.bytecode.object,
-  '(address,address,address,address,address,address,address), ((uint16,uint16,uint16)[3],(uint256,uint256,uint256,uint256),(uint256,uint256,uint256,uint256,uint256),address,uint256), uint256',
+  '(address,address,address,address,address,address,address), ((uint16,uint16,uint16)[3],(uint256,uint256,uint256,uint256),(uint256,uint256,uint256,uint256,uint256),address,uint256), uint256, (address,address,address,address,address)',
   [
     [cfg.musd, cfg.btc, cfg.ve, cfg.voter, cfg.priceFeed, oracle.address, strategy.address],
     [common.risks, common.rates, common.peg, oracle.address, cfg.minLoan],
     cfg.configDelay,
+    [cfg.trove.bos, cfg.trove.troveManager, cfg.trove.borrowerOperations, cfg.trove.activePool, cfg.btcSwapPool],
   ],
 );
 txs.keelMarket = market.hash;
@@ -226,6 +247,9 @@ const checks = {
   'principal cap': (await read(strategy.address, stratArt.abi, 'principalCap')) === cfg.principalCap,
   'liquidity buffer': (await read(strategy.address, stratArt.abi, 'minLiquidBps')) === cfg.minLiquidBps,
   'fee': (await read(strategy.address, stratArt.abi, 'feeBps')) === cfg.feeBps,
+  'trove contracts': (await read(market.address, marketArt.abi, 'bos')).toLowerCase() === cfg.trove.bos.toLowerCase()
+    && (await read(market.address, marketArt.abi, 'activePool')).toLowerCase() === cfg.trove.activePool.toLowerCase(),
+  'BTC swap pool': (await read(market.address, marketArt.abi, 'swapPool', [cfg.btc])).toLowerCase() === cfg.btcSwapPool.toLowerCase(),
   'fee recipient': (await read(strategy.address, stratArt.abi, 'feeRecipient')).toLowerCase() === feeRecipient.toLowerCase(),
 };
 say(checks);
@@ -243,7 +267,7 @@ const record = {
   chainId: cfg.chainId,
   explorer: cfg.explorer,
   contracts,
-  mezo: { musd: cfg.musd, btc: cfg.btc, veBTC: cfg.ve, voter: cfg.voter, priceFeed: cfg.priceFeed },
+  mezo: { musd: cfg.musd, btc: cfg.btc, veBTC: cfg.ve, voter: cfg.voter, priceFeed: cfg.priceFeed, ...cfg.trove, btcSwapPool: cfg.btcSwapPool },
   params: {
     ...(prev.params ?? {}),
     governance: 'the vault owner, read live',

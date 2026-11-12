@@ -6,7 +6,7 @@
     "vaultImplementation": "0x75aae4c09b28a03fef9a9fb92e59d715489a03bf",
     "idleStrategy": "0xbB7e7484F498b8457f1Df1Bbb045Ee7d143eB095",
     "keelStrategy": "0xdab084ebfd118489ada2021c5e60afd5e2fc26f9",
-    "keelMarket": "0x32a94a9af2751afc771aa09d00d95faa6629135e",
+    "keelMarket": "0xc325f2d30a8ee121906391160ab1cbaeb75d9bf3",
     "pegOracle": "0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7"
   },
   "mezo": {
@@ -141,5 +141,18 @@
         "setStrategy": "0x8f519e6950380fe3289b1b3c07a4e3c3bf6d50858c1dc04402de5610a212d282"
       }
     }
-  ]
+  ],
+  "v3": {
+    "txs": {
+      "repayOld4": "0x682ef286f25378c1fb1d9bbb99f7326df2fa15afe8aaf7a301f3d64313486176",
+      "closeOld4": "0x34949e573a072937b3470faab4343376c34477e4f7056d51fe113e6e4e13d07f",
+      "keelMarket": "0x3b9a7d8600eab6d78483fe2955f634319677af18282dbfcac7d4fb0ffae7a675",
+      "setMarket": "0x13d07fadda5dc8cb0e00dece35c2150a5a5618ba2db378c2f76457b1b92f3462",
+      "proposeParams": "0x852aac61322260f63d3cbd6de1758bc78334fce5ab2da810ad5c1ce31a2fd90d",
+      "openFunderTrove": "0xa12bcad70672b4bbce79ca9d561c8e1e37ef3f5ea7fa68fcfc6b1067591ca608",
+      "deposit_funder": "0x0512abd68159d60e040e0e75e69dacc3d14c62c5c7f3d69034cdbb756a29dbc8",
+      "deposit_troveOwner": "0x828bdb49283c77889ddf3d7129f15ea0f5513a6a934a01c25616d0da222e45bb"
+    },
+    "previousMarket": "0x32a94a9af2751afc771aa09d00d95faa6629135e"
+  }
 }

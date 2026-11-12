@@ -6,6 +6,7 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockVeBTC, MockVoter, MockPriceFeed, MockPegOracle} from "./mocks/MezoMocks.sol";
 import {KeelStrategy} from "../src/KeelStrategy.sol";
 import {KeelMarket} from "../src/KeelMarket.sol";
+import {noMezo} from "./mocks/NoMezo.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVeBTC, IVoter, IPriceFeed} from "../src/interfaces/IMezo.sol";
 import {IPegOracle} from "../src/oracles/PegOracles.sol";
@@ -58,7 +59,8 @@ contract KeelMarketTest is Test {
                 IPriceFeed(address(feed)), IPegOracle(address(peg)), strat
             ),
             _config(5_000, 6_500, 4_000, 5_500),
-            DELAY
+            DELAY,
+            noMezo()
         );
         strat.setMarket(address(m));
 

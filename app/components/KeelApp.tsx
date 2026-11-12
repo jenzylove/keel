@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { formatUnits, parseAbi, parseUnits, type Address, type Hash, type WalletClient } from 'viem';
 import { useWallet } from '@/components/WalletProvider';
-import { erc20Abi, marketAbi, vaultAbi, veAbi } from '@/lib/abi';
+import { erc20Abi, marketAbi, troveAbi, vaultAbi, veAbi } from '@/lib/abi';
 import { sendTx } from '@/lib/send';
 import { friendlyError } from '@/lib/wallet';
 import { DemoRunner } from '@/app/demo/DemoRunner';
@@ -17,6 +17,17 @@ type Coll = 'btc' | 've';
 type Line = { text: string; hash?: Hash; url?: string; ok?: boolean };
 type MyLoan = { id: bigint; kind: number; btc: bigint; nftId: bigint; debt: bigint; health: bigint; autoPay: boolean };
 type Nft = { id: bigint; amount: bigint; permanent: boolean };
+/** The wallet's open Mezo loan (a trove), which redemptions can reach. */
+type Trove = { coll: bigint; debt: bigint };
+/** Mezo burns its loans' debt less this gas reserve when a loan is closed. */
+const GAS_COMP = 200n * 10n ** 18n;
+/** The next day Mezo pools pay voters (Thursday, 00:00 UTC). */
+const nextPayout = () => {
+  const d = new Date();
+  const days = (4 - d.getUTCDay() + 7) % 7 || 7;
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days));
+  return t.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
 
 /** Live market numbers, read on the server so a visitor sees a real quote
  *  before connecting anything. */
@@ -60,6 +71,7 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
   const [bal, setBal] = useState<{ btc: bigint; musd: bigint; smusd: bigint } | null>(null);
   const [loans, setLoans] = useState<MyLoan[]>([]);
   const [nfts, setNfts] = useState<Nft[]>([]);
+  const [trove, setTrove] = useState<Trove | null>(null);
   const [demo, setDemo] = useState(false);
 
   const [btcIn, setBtcIn] = useState('0.002');
@@ -111,7 +123,18 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
     );
     if (stale()) return;
     setNfts(owned.filter((x) => x.amount > 0n));
-  }, [net.key, pub, MUSD, VAULT, MARKET, VE]);
+    const tm = net.mezo.troveManager;
+    const status = await pub.readContract({ address: tm, abi: troveAbi, functionName: 'getTroveStatus', args: [who] }).catch(() => 0n);
+    if (status !== 1n) {
+      if (!stale()) setTrove(null);
+      return;
+    }
+    const [coll, debt] = await Promise.all([
+      pub.readContract({ address: tm, abi: troveAbi, functionName: 'getTroveColl', args: [who] }),
+      pub.readContract({ address: tm, abi: troveAbi, functionName: 'getTroveDebt', args: [who] }),
+    ]);
+    if (!stale()) setTrove({ coll, debt });
+  }, [net.key, net.mezo.troveManager, pub, MUSD, VAULT, MARKET, VE]);
 
   const doConnect = async (): Promise<{ w: WalletClient; a: Address } | null> => {
     const c = await connect();
@@ -138,6 +161,7 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
     setBal(null);
     setLoans([]);
     setNfts([]);
+    setTrove(null);
     setNftPick('');
     setPoolPick(0);
     setLog([]);
@@ -156,6 +180,7 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
       setBal(null);
       setLoans([]);
       setNfts([]);
+      setTrove(null);
     }
   }, [account, refresh]);
 
@@ -231,6 +256,49 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
         await send(w, a, `Approve veBTC #${id}`, { address: VE, abi: veAbi, functionName: 'approve', args: [MARKET, id] });
         await send(w, a, `Deposit veBTC #${id} and borrow`, { address: MARKET, abi: marketAbi, functionName: 'openWithVeBTC', args: [id, debt] });
       }
+      setTab('loans');
+    });
+
+  // ----- moving a Mezo loan into Keel -----
+  // Keel pays the Mezo loan with MUSD it lends, Mezo sends the loan's BTC to
+  // Keel, and the same debt reopens in Keel, where redemptions can't reach it.
+  const moveDebt = trove ? trove.debt - GAS_COMP : 0n;
+  const moveDebtN = Number(formatUnits(moveDebt, 18));
+  const troveBtc = trove ? Number(formatUnits(trove.coll, 18)) : 0;
+  const maxLtv = market ? market.risk.btc[0] / 10_000 : NaN;
+  const liqLtv = market ? market.risk.btc[1] / 10_000 : NaN;
+  // BTC to add so the moved loan sits inside Keel's limit, with 2% to spare.
+  const topUp = market && trove ? Math.max(0, (moveDebtN / (market.btcPrice * maxLtv)) * 1.02 - troveBtc) : 0;
+  const topUpBig = topUp > 0 ? parseUnits(topUp.toFixed(6), 18) : 0n;
+  const moveHealth = market && trove ? ((troveBtc + topUp) * market.btcPrice * liqLtv) / moveDebtN : NaN;
+  const moveFits = room === null || room >= moveDebtN;
+
+  const moveTrove = () =>
+    act(async (w, a) => {
+      if (!trove) throw new Error('This wallet has no open Mezo loan to move.');
+      if (bal && topUpBig > 0n && topUpBig >= bal.btc)
+        throw new Error(`Moving needs ${topUp.toFixed(5)} more ${net.btcLabel} on top of the loan's, and this wallet has ${fmt(bal.btc, 18, 5)}.`);
+      const bos = net.mezo.bos;
+      const nonce = await pub.readContract({ address: bos, abi: troveAbi, functionName: 'getNonce', args: [a] });
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 30 * 60);
+      say({ text: 'Sign once: Mezo lets Keel close your Mezo loan and take its BTC' });
+      const sig = await w.signTypedData({
+        account: a,
+        domain: { name: 'BorrowerOperationsSignatures', version: '1', chainId: net.chain.id, verifyingContract: bos },
+        types: {
+          CloseTrove: [
+            { name: 'borrower', type: 'address' },
+            { name: 'recipient', type: 'address' },
+            { name: 'nonce', type: 'uint256' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+        },
+        primaryType: 'CloseTrove',
+        message: { borrower: a, recipient: MARKET, nonce, deadline },
+      });
+      say({ text: 'Signed. Nothing has moved yet', ok: true });
+      if (topUpBig > 0n) await send(w, a, `Approve ${topUp.toFixed(5)} BTC top up`, { address: BTC, abi: erc20Abi, functionName: 'approve', args: [MARKET, topUpBig] });
+      await send(w, a, 'Move my Mezo loan into Keel', { address: MARKET, abi: marketAbi, functionName: 'openFromTrove', args: [topUpBig, deadline, sig] });
       setTab('loans');
     });
 
@@ -330,6 +398,48 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
 
       {tab === 'borrow' && (
         <div className="app-body">
+          {trove && (
+            <div className="move-card">
+              <p className="move-k">You have a Mezo loan that redemptions can reach</p>
+              <dl className="quote">
+                <div>
+                  <dt>Your Mezo loan</dt>
+                  <dd>
+                    {money(troveBtc, 5)} BTC · {money(moveDebtN)} MUSD
+                  </dd>
+                </div>
+                <div>
+                  <dt>Move it to Keel</dt>
+                  <dd>Same BTC, same debt, no MUSD needed</dd>
+                </div>
+                {topUp > 0 && (
+                  <div>
+                    <dt>Add to fit Keel&apos;s limit</dt>
+                    <dd>{topUp.toFixed(5)} BTC</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Health after moving</dt>
+                  <dd>{money(moveHealth)}</dd>
+                </div>
+                <div>
+                  <dt>Can redemptions take it then?</dt>
+                  <dd className="ok">No</dd>
+                </div>
+              </dl>
+              {!moveFits && (
+                <p className="hint warn">
+                  Keel can lend {money(room!)} MUSD right now and this loan needs {money(moveDebtN)}. It fits once savers add more.
+                </p>
+              )}
+              <div className="actions">
+                <button className="btn" disabled={busy || !moveFits} onClick={moveTrove}>
+                  {busy ? 'Working…' : 'Move my Mezo loan to Keel'}
+                </button>
+              </div>
+              <p className="hint">One signature lets Mezo close your loan for Keel. Keel pays it off, Mezo sends its BTC here, and the same debt reopens in Keel.</p>
+            </div>
+          )}
           <div className="seg" role="radiogroup" aria-label="Collateral">
             <button role="radio" aria-checked={coll === 'btc'} onClick={() => setColl('btc')}>
               Bitcoin
@@ -528,8 +638,14 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
                               {l.autoPay ? 'Auto pay on' : 'Turn on auto pay'}
                             </button>
                           </div>
+                          <ol className="ve-loop">
+                            <li>Your lock votes for a Mezo pool.</li>
+                            <li>Every Thursday the pool pays its voters.</li>
+                            <li>Keel collects your share and turns its BTC into MUSD on Mezo&apos;s own pool.</li>
+                            <li>That MUSD pays this loan, interest first.</li>
+                          </ol>
                           <p className="ve-note">
-                            MUSD your lock earns pays this loan, interest first.{l.autoPay ? ' Keel claims it for you every day.' : ''}
+                            {l.autoPay ? `Auto pay is on: Keel collects for you. Next payout ${nextPayout()}.` : 'Turn on auto pay and Keel collects for you every week.'}
                           </p>
                         </td>
                       </tr>

@@ -7,7 +7,15 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {KeelMath} from "./libraries/KeelMath.sol";
 import {KeelStrategy} from "./KeelStrategy.sol";
-import {IVeBTC, IVoter, IPriceFeed} from "./interfaces/IMezo.sol";
+import {
+    IVeBTC,
+    IVoter,
+    IPriceFeed,
+    IBorrowerOperationsSignatures,
+    ITroveManager,
+    IBorrowerOperations,
+    ISwapPool
+} from "./interfaces/IMezo.sol";
 import {IPegOracle} from "./oracles/PegOracles.sol";
 
 /// @title KeelMarket
@@ -85,6 +93,13 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     KeelStrategy public immutable strategy;
     /// @notice Wait between proposing and applying a config change.
     uint256 public immutable configDelay;
+    /// @notice Mezo contracts used to move a Mezo loan (trove) into Keel.
+    ///         All zero means that move is switched off.
+    IBorrowerOperationsSignatures public immutable bos;
+    ITroveManager public immutable troveManager;
+    IBorrowerOperations public immutable borrowerOperations;
+    /// @notice Mezo's ActivePool, which pays a closed trove's BTC.
+    address public immutable activePool;
 
     Risk public btcRisk;
     Risk public veTimedRisk;
@@ -117,6 +132,16 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     /// @notice When the pending config may be applied (0 = nothing pending).
     uint256 public pendingEta;
 
+    /// @notice Mezo pool that turns a reward token into MUSD when rewards pay
+    ///         a loan (0 = forward the token instead).
+    mapping(address => address) public swapPool;
+    /// @notice How far below the PriceFeed value a reward swap may fill.
+    uint256 public maxSlippageBps = 200;
+    uint256 internal constant MAX_SLIPPAGE_BPS = 500;
+
+    /// @dev True only while a trove's BTC is on its way in.
+    bool internal moving;
+
     event LoanOpened(uint256 indexed id, address indexed owner, Kind kind, uint256 btc, uint256 nftId);
     event Borrowed(uint256 indexed id, uint256 amount);
     event Repaid(uint256 indexed id, address payer, uint256 amount, uint256 interestPart);
@@ -132,6 +157,10 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     event ConfigProposed(uint256 eta);
     event ConfigApplied();
     event ConfigCancelled();
+    event TroveMoved(uint256 indexed id, address indexed borrower, uint256 btc, uint256 debt);
+    event RewardsSwapped(uint256 indexed id, address token, uint256 amountIn, uint256 musdOut);
+    event SwapPoolSet(address indexed token, address pool);
+    event MaxSlippageSet(uint256 bps);
 
     error OnlyAdmin();
     error NotLoanOwner();
@@ -153,10 +182,19 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     error TooEarly(uint256 eta);
     error RateTooHigh();
     error NotAllowed();
+    error UnexpectedBtc();
+    error BadTroveMove();
+    error Slippage();
 
     modifier onlyAdmin() {
-        if (msg.sender != admin()) revert OnlyAdmin();
+        _onlyAdmin();
         _;
+    }
+
+    /// @dev Modifier bodies sit in functions so their code is not copied
+    ///      into every function that uses them.
+    function _onlyAdmin() internal view {
+        if (msg.sender != admin()) revert OnlyAdmin();
     }
 
     /// @notice The savings vault's owner, read through the strategy.
@@ -165,8 +203,12 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     }
 
     modifier onlyLoanOwner(uint256 id) {
-        if (loans[id].owner != msg.sender) revert NotLoanOwner();
+        _onlyLoanOwner(id);
         _;
+    }
+
+    function _onlyLoanOwner(uint256 id) internal view {
+        if (loans[id].owner != msg.sender) revert NotLoanOwner();
     }
 
     struct Deps {
@@ -179,7 +221,17 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         KeelStrategy strategy;
     }
 
-    constructor(Deps memory d, Config memory c, uint256 _configDelay) {
+    /// @notice Mezo's trove contracts, plus the pool that swaps BTC rewards
+    ///         to MUSD from the start (0 = none until governance sets one).
+    struct Mezo {
+        IBorrowerOperationsSignatures bos;
+        ITroveManager troveManager;
+        IBorrowerOperations borrowerOperations;
+        address activePool;
+        address btcSwapPool;
+    }
+
+    constructor(Deps memory d, Config memory c, uint256 _configDelay, Mezo memory z) {
         musd = d.musd;
         btc = d.btc;
         ve = d.ve;
@@ -187,6 +239,14 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         priceFeed = d.priceFeed;
         strategy = d.strategy;
         configDelay = _configDelay;
+        bos = z.bos;
+        troveManager = z.troveManager;
+        borrowerOperations = z.borrowerOperations;
+        activePool = z.activePool;
+        if (z.btcSwapPool != address(0)) {
+            swapPool[address(d.btc)] = z.btcSwapPool;
+            emit SwapPoolSet(address(d.btc), z.btcSwapPool);
+        }
         _setConfig(c);
         lastAccrual = block.timestamp;
     }
@@ -205,7 +265,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         loans[id] = Loan(msg.sender, Kind.Btc, uint64(block.number), btcAmount, 0, 0, 0);
         btc.safeTransferFrom(msg.sender, address(this), btcAmount);
         emit LoanOpened(id, msg.sender, Kind.Btc, btcAmount, 0);
-        if (borrowAmount > 0) _borrow(id, borrowAmount);
+        if (borrowAmount > 0) _borrow(id, borrowAmount, msg.sender);
     }
 
     /// @notice Deposits a veBTC NFT and optionally borrows MUSD in one call.
@@ -221,7 +281,63 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         loans[id] = Loan(msg.sender, Kind.Ve, uint64(block.number), 0, nftId, 0, 0);
         ve.transferFrom(msg.sender, address(this), nftId);
         emit LoanOpened(id, msg.sender, Kind.Ve, 0, nftId);
-        if (borrowAmount > 0) _borrow(id, borrowAmount);
+        if (borrowAmount > 0) _borrow(id, borrowAmount, msg.sender);
+    }
+
+    /// @notice Moves the caller's Mezo loan (trove) into Keel in one call.
+    ///         Keel draws the trove's debt from savings, pays the trove off
+    ///         through Mezo's signed close, takes its BTC as collateral and
+    ///         books the same debt here. `extraBtc` tops the collateral up.
+    /// @dev `sig` is the borrower's EIP712 CloseTrove signature for
+    ///      BorrowerOperationsSignatures, with this contract as recipient.
+    ///      The borrower is always msg.sender, so nobody else can use a
+    ///      leaked signature here, and `receive` refuses BTC outside a move,
+    ///      so a signature sent straight to Mezo with this recipient reverts.
+    ///      Every borrowing check runs as for any other loan.
+    function openFromTrove(
+        uint256 extraBtc,
+        uint256 deadline,
+        bytes calldata sig
+    ) external nonReentrant returns (uint256 id) {
+        if (address(bos) == address(0)) revert NotAllowed();
+        _accrue();
+        // Read the numbers exactly as Mezo's close will: it brings interest
+        // up to date first, then burns the debt less the gas compensation.
+        troveManager.updateSystemAndTroveInterest(msg.sender);
+        uint256 coll = troveManager.getTroveColl(msg.sender);
+        uint256 troveDebt = troveManager.getTroveDebt(msg.sender);
+        uint256 gasComp = borrowerOperations.MUSD_GAS_COMPENSATION();
+        if (troveDebt <= gasComp) revert NoDebt();
+        uint256 debt = troveDebt - gasComp;
+
+        id = nextLoanId++;
+        loans[id] = Loan(msg.sender, Kind.Btc, uint64(block.number), coll + extraBtc, 0, 0, 0);
+        if (extraBtc > 0) btc.safeTransferFrom(msg.sender, address(this), extraBtc);
+        emit LoanOpened(id, msg.sender, Kind.Btc, coll + extraBtc, 0);
+        _borrow(id, debt, address(this));
+        _closeTrove(coll, debt, deadline, sig);
+        emit TroveMoved(id, msg.sender, coll, debt);
+    }
+
+    /// @dev Pays off the caller's trove with the MUSD just drawn here and
+    ///      checks that all its BTC arrived and all that MUSD was burned.
+    function _closeTrove(uint256 coll, uint256 debt, uint256 deadline, bytes calldata sig) internal {
+        uint256 musdBefore = musd.balanceOf(address(this));
+        uint256 nativeBefore = address(this).balance;
+        uint256 btcBefore = btc.balanceOf(address(this));
+        moving = true;
+        bos.closeTroveWithSignature(msg.sender, address(this), sig, deadline);
+        moving = false;
+        if (
+            address(this).balance != nativeBefore + coll || btc.balanceOf(address(this)) != btcBefore + coll
+                || musd.balanceOf(address(this)) + debt != musdBefore
+        ) revert BadTroveMove();
+    }
+
+    /// @dev Mezo's ActivePool pays a closed trove's BTC with a plain call, so
+    ///      this contract takes BTC only from it and only during a move.
+    receive() external payable {
+        if (!moving || msg.sender != activePool) revert UnexpectedBtc();
     }
 
     // ---------------------------------------------------------------------
@@ -230,7 +346,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
 
     function borrow(uint256 id, uint256 amount) external nonReentrant onlyLoanOwner(id) {
         _accrue();
-        _borrow(id, amount);
+        _borrow(id, amount, msg.sender);
     }
 
     /// @notice Repays up to `amount` of a loan. Anyone can repay any loan.
@@ -325,9 +441,11 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     /// @notice Claims the NFT's fees or bribes and puts the MUSD among them
     ///         toward the loan's debt, applied exactly as `repay` applies a
     ///         payment: interest first, then principal, with savers paid
-    ///         through the strategy. MUSD beyond the debt and every other
-    ///         token go to the borrower. Only the borrower may call it unless
-    ///         they turned on `autoPay`, then anyone may.
+    ///         through the strategy. BTC rewards are first swapped to MUSD on
+    ///         their set Mezo pool when the fill is within `maxSlippageBps` of
+    ///         the PriceFeed value. MUSD beyond the debt and every token that
+    ///         wasn't swapped go to the borrower. Only the borrower may call
+    ///         it unless they turned on `autoPay`, then anyone may.
     /// @dev A payment never leaves a debt below `minLoan`: what would is held
     ///      back and goes to the borrower instead, so a keeper's call never
     ///      reverts on it.
@@ -343,8 +461,9 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
     }
 
     /// @dev Claims through the voter and measures what each listed token
-    ///      gained. With `toDebt`, MUSD gains are summed and applied to the
-    ///      debt after the loop; everything else is forwarded to the borrower.
+    ///      gained. With `toDebt`, MUSD gains, and tokens swapped to MUSD on
+    ///      their set pool, are summed and applied to the debt after the loop;
+    ///      everything else is forwarded to the borrower.
     function _claim(
         uint256 id,
         address[] calldata rewards,
@@ -380,12 +499,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
                 for (uint256 m = k + 1; m < n; ++m) {
                     if (flat[m] == flat[k]) before[m] += gained;
                 }
-                if (toDebt && flat[k] == address(musd)) {
-                    musdGained += gained;
-                } else {
-                    IERC20(flat[k]).safeTransfer(loan.owner, gained);
-                    emit RewardsForwarded(id, flat[k], gained);
-                }
+                musdGained += _takeGain(id, flat[k], gained, toDebt);
             }
         }
         if (musdGained == 0) return;
@@ -403,6 +517,53 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
             musd.safeTransfer(loan.owner, rest);
             emit RewardsForwarded(id, address(musd), rest);
         }
+    }
+
+    /// @dev Returns the MUSD a gained reward adds toward the debt, or forwards
+    ///      the reward to the borrower and returns 0.
+    function _takeGain(uint256 id, address token, uint256 gained, bool toDebt) internal returns (uint256) {
+        if (toDebt) {
+            if (token == address(musd)) return gained;
+            uint256 swapped = _swapToMusd(id, token, gained);
+            if (swapped > 0) return swapped;
+        }
+        IERC20(token).safeTransfer(loans[id].owner, gained);
+        emit RewardsForwarded(id, token, gained);
+        return 0;
+    }
+
+    /// @dev Swaps a reward to MUSD on its set pool and returns the MUSD, or
+    ///      returns 0 and leaves the token here to be forwarded: when no pool
+    ///      is set, when the token has no safe reference price (only BTC has
+    ///      one, the PriceFeed), or when the price read or swap fails or the
+    ///      swap fills too low.
+    function _swapToMusd(uint256 id, address token, uint256 amountIn) internal returns (uint256 out) {
+        address pool = swapPool[token];
+        if (pool == address(0) || token != address(btc)) return 0;
+        try this.swapForMusd(pool, amountIn) returns (uint256 o) {
+            out = o;
+            emit RewardsSwapped(id, token, amountIn, out);
+        } catch {}
+    }
+
+    /// @notice Swaps `amountIn` BTC to MUSD on `pool`, filling at least the
+    ///         PriceFeed value less `maxSlippageBps`. Only this contract may
+    ///         call it, from inside a claim: running the swap as its own call
+    ///         lets a failed swap undo itself, token transfer included, so the
+    ///         claim can forward the BTC instead.
+    function swapForMusd(address pool, uint256 amountIn) external returns (uint256 out) {
+        if (msg.sender != address(this)) revert NotAllowed();
+        uint256 minOut = (KeelMath.value(amountIn, _btcPrice()) * (BPS - maxSlippageBps)) / BPS;
+        ISwapPool p = ISwapPool(pool);
+        bool zeroIn = p.token0() == address(btc);
+        uint256 quoted = p.getAmountOut(amountIn, address(btc));
+        uint256 before = musd.balanceOf(address(this));
+        btc.safeTransfer(pool, amountIn);
+        p.swap(zeroIn ? 0 : quoted, zeroIn ? quoted : 0, address(this), "");
+        // Measured, not trusted: a pool that pays another token, or less
+        // than the PriceFeed value allows, fails here.
+        out = musd.balanceOf(address(this)) - before;
+        if (minOut == 0 || out < minOut) revert Slippage();
     }
 
     /// @notice Extends a timed lock, which keeps the collateral locked longer.
@@ -588,6 +749,25 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         return pending;
     }
 
+    /// @notice Sets the Mezo pool that swaps `token` rewards to MUSD (0 = stop
+    ///         swapping it). Only BTC is swapped today, as only BTC has a safe
+    ///         reference price. A pool can never fill below the PriceFeed value
+    ///         less `maxSlippageBps`, so a bad pool only makes the claim
+    ///         forward the token instead.
+    function setSwapPool(address token, address pool) external onlyAdmin {
+        swapPool[token] = pool;
+        emit SwapPoolSet(token, pool);
+    }
+
+    /// @notice Sets how far below the PriceFeed value a reward swap may fill,
+    ///         at most 5%. Every swap is still checked against that value, so
+    ///         this alone can't let a pool take more.
+    function setMaxSlippage(uint256 bps) external onlyAdmin {
+        if (bps > MAX_SLIPPAGE_BPS) revert BadParams();
+        maxSlippageBps = bps;
+        emit MaxSlippageSet(bps);
+    }
+
     function setThrottle(address pool, IERC20 token, uint256 floor) external onlyAdmin {
         watchPool = pool;
         watchToken = token;
@@ -621,7 +801,8 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         lastAccrual = block.timestamp;
     }
 
-    function _borrow(uint256 id, uint256 amount) internal {
+    /// @dev Books `amount` against loan `id` and draws it from savings to `to`.
+    function _borrow(uint256 id, uint256 amount, address to) internal {
         if (!borrowingOpen()) revert BorrowingPaused();
         Loan storage loan = loans[id];
         loan.scaled += KeelMath.scaledUp(amount, borrowIndex);
@@ -630,7 +811,7 @@ contract KeelMarket is ReentrancyGuard, IERC721Receiver {
         uint256 debt = KeelMath.debtOf(loan.scaled, borrowIndex);
         if (debt < minLoan) revert BelowMinLoan(debt, minLoan);
         _checkBorrowLimit(id);
-        strategy.draw(loan.owner, amount);
+        strategy.draw(to, amount);
         emit Borrowed(id, amount);
     }
 

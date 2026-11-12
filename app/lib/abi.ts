@@ -69,6 +69,29 @@ export const marketAbi = parseAbi([
   'function stepPeg()',
   'function liquidate(uint256 id, uint256 maxRepay)',
   'event LoanOpened(uint256 indexed id, address indexed owner, uint8 kind, uint256 btc, uint256 nftId)',
+  // Move a Mezo loan (trove) into Keel with one CloseTrove signature.
+  'function openFromTrove(uint256 extraBtc, uint256 deadline, bytes sig) returns (uint256)',
+  'function bos() view returns (address)',
+  'function troveManager() view returns (address)',
+  'function borrowerOperations() view returns (address)',
+  'function activePool() view returns (address)',
+  'event TroveMoved(uint256 indexed id, address indexed borrower, uint256 btc, uint256 debt)',
+  // Every reward pays the loan: BTC rewards swapped to MUSD on a Mezo pool.
+  'function swapPool(address token) view returns (address)',
+  'function setSwapPool(address token, address pool)',
+  'function maxSlippageBps() view returns (uint256)',
+  'function setMaxSlippage(uint256 bps)',
+  'event RewardsSwapped(uint256 indexed id, address token, uint256 amountIn, uint256 musdOut)',
+  'event SwapPoolSet(address indexed token, address pool)',
+]);
+
+/** Mezo's trove contracts, read to quote and sign a move into Keel. */
+export const troveAbi = parseAbi([
+  'function getTroveDebt(address) view returns (uint256)',
+  'function getTroveColl(address) view returns (uint256)',
+  'function getTroveStatus(address) view returns (uint256)',
+  'function getNonce(address) view returns (uint256)',
+  'function MUSD_GAS_COMPENSATION() view returns (uint256)',
 ]);
 
 export const veAbi = parseAbi([

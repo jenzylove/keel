@@ -6,6 +6,7 @@ import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockVeBTC, MockVoter, MockPriceFeed, MockPegOracle} from "./mocks/MezoMocks.sol";
 import {KeelStrategy} from "../src/KeelStrategy.sol";
 import {KeelMarket} from "../src/KeelMarket.sol";
+import {noMezo} from "./mocks/NoMezo.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVeBTC, IVoter, IPriceFeed} from "../src/interfaces/IMezo.sol";
 import {IPegOracle} from "../src/oracles/PegOracles.sol";
@@ -84,7 +85,7 @@ contract AuditRegression is Test {
         c.peg = KeelMarket.PegParams(0.995e18, 0.985e18, 0.04e18, 0.01e18, 7 days);
         c.pegOracle = IPegOracle(address(peg)); c.minLoan = 100e18;
         m = new KeelMarket(KeelMarket.Deps(IERC20(address(musd)), IERC20(address(btc)), IVeBTC(address(ve)),
-            IVoter(address(voter)), IPriceFeed(address(feed)), IPegOracle(address(peg)), strat), c, 2 days);
+            IVoter(address(voter)), IPriceFeed(address(feed)), IPegOracle(address(peg)), strat), c, 2 days, noMezo());
         strat.setMarket(address(m)); // admin = vault.owner() = this
 
         address[4] memory us = [saver, saver2, alice, whale];

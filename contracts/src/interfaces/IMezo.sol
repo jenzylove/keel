@@ -32,3 +32,32 @@ interface IVoter {
 interface IPriceFeed {
     function fetchPrice() external returns (uint256);
 }
+
+/// @notice Mezo's BorrowerOperationsSignatures: lets a signed message close a
+///         trove, with the BTC sent to a recipient the borrower chose.
+interface IBorrowerOperationsSignatures {
+    function closeTroveWithSignature(address borrower, address recipient, bytes calldata signature, uint256 deadline)
+        external;
+    function getNonce(address user) external view returns (uint256);
+}
+
+/// @notice The parts of Mezo's TroveManager that moving a trove reads.
+interface ITroveManager {
+    function updateSystemAndTroveInterest(address borrower) external;
+    function getTroveDebt(address borrower) external view returns (uint256);
+    function getTroveColl(address borrower) external view returns (uint256);
+}
+
+/// @notice The part of Mezo's BorrowerOperations that moving a trove reads.
+interface IBorrowerOperations {
+    function MUSD_GAS_COMPENSATION() external view returns (uint256);
+}
+
+/// @notice A Mezo basic pool (Solidly style): send the input in, then call
+///         swap for the output.
+interface ISwapPool {
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256);
+    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
+}

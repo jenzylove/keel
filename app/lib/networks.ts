@@ -22,6 +22,9 @@ export type Network = {
   addressUrl: (a: string) => string;
   contracts: { vault: Address; keelStrategy: Address; keelMarket: Address };
   tokens: { musd: Address; btc: Address; veBTC: Address };
+  /** Mezo's trove contracts, for moving a Mezo loan into Keel: the borrower
+   *  signs CloseTrove for `bos`, and `troveManager` gives the trove's debt. */
+  mezo: { bos: Address; troveManager: Address };
   pools: Pool[];
   faucet: string | null;
   hasDemo: boolean;
@@ -61,6 +64,10 @@ export const NETWORKS: Record<NetKey, Network> = {
       btc: testnetDeployment.mezo.btc as Address,
       veBTC: testnetDeployment.mezo.veBTC as Address,
     },
+    mezo: {
+      bos: '0xD757e3646AF370b15f32EB557F0F8380Df7D639e',
+      troveManager: '0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0',
+    },
     pools: TESTNET_POOLS,
     faucet: 'https://faucet.test.mezo.org',
     hasDemo: true,
@@ -86,6 +93,10 @@ export const NETWORKS: Record<NetKey, Network> = {
       musd: mainnetDeployment.mezo.musd as Address,
       btc: mainnetDeployment.mezo.btc as Address,
       veBTC: mainnetDeployment.mezo.veBTC as Address,
+    },
+    mezo: {
+      bos: '0xB57ab578BF20b3e318f3EFAA587C51DBccE5df7a',
+      troveManager: '0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193',
     },
     pools: MAINNET_POOLS,
     faucet: null,
