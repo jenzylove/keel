@@ -160,7 +160,8 @@ export default async function Page() {
           <p className="chapter-lede">
             A test wallet locked BTC as veBTC #{wave2.nftId}, borrowed against it on Keel, and voted for Mezo&apos;s MUSD/BTC pool through
             Keel, on Mezo&apos;s own voter. With auto pay on, the keeper claims what the lock earns each day, and the MUSD among it pays the
-            loan, interest first.
+            loan, interest first. On Nov 12, after the weekly epoch turned, it did exactly that: the lock&apos;s bribe rewards paid down
+            loan #{wave2.loanId} with no one touching it.
           </p>
           <Txs rows={wave2.steps.map((st) => ({ what: st.what, hash: st.hash }))} />
         </div>

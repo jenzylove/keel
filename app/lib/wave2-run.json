@@ -65,6 +65,12 @@
       "what": "Loan #4 turns on auto pay",
       "from": "0x44439fF8686b5ee8a4D293659aD61630206E259f",
       "hash": "0x4c1953b8e6159f4f65e0524a27bff0d8204997f480ff4647491028e198da58a3"
+    },
+    {
+      "key": "rewards-repaid",
+      "what": "After the weekly epoch turned, the keeper claimed loan #4's bribe rewards and 0.0027 MUSD paid the loan, nobody touching it (RewardsRepaid)",
+      "from": "0x5941fe7A986a07083bbE17acE9d93568bd6E10E2",
+      "hash": "0x27ae334af6adaeb50ea02fb68b7994366ce586cb73f4a81af5e02b8fb92b96cd"
     }
   ],
   "nftId": 422,

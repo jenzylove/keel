@@ -114,4 +114,4 @@ A demo run that Vercel cuts off mid-loan used to block every later run. Here a d
 
 ## Still to run live
 
-- Reward claim forwarded to the borrower (needs gauge fees or bribes on testnet)
+- Done on 2026-11-12: the keeper claimed veBTC #422's bribe rewards and they paid loan #4, tx `0x27ae334af6adaeb50ea02fb68b7994366ce586cb73f4a81af5e02b8fb92b96cd`

@@ -119,7 +119,6 @@ export const testnetGroups: ProofGroup[] = [
 ];
 
 export const notYet = [
-  'Forwarding a gauge reward to a borrower is unit-tested, but testnet gauges have no fees or bribes to claim yet.',
   "The mainnet peg oracle (the wall pool's average) is proven on a mainnet fork. On testnet the same mechanism reads a test pool.",
 ];
 

@@ -20,7 +20,7 @@ Tick an item only from the live app or a real transaction, never from intent.
 - [x] Testnet: savings vault copy with KeelStrategy plugged in; saver deposits and withdraws with yield
 - [x] Testnet: BTC-collateral borrow, repay, liquidation
 - [x] Testnet: veBTC deposit, vote passthrough, repay, return
-- [ ] Testnet: reward claim forwarded to the borrower (unit-tested; the bribe posted on the old deployment can't be claimed, its owner key isn't here)
+- [x] Testnet: veBTC rewards paid the loan through auto pay (keeper, 2026-11-12, tx 0x27ae…96cd)
 - [ ] Testnet: keeper liquidates loan #1 from its float (loan unhealthy since 2026-10-21; cron runs daily 06:17 UTC)
 - [ ] Mainnet: opt-in vault (script dry-run passes on a fork; waiting on funding)
 - [x] Testnet: permanent veBTC liquidation path
