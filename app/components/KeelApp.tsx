@@ -239,7 +239,6 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
   const collValue = market ? collBtc * market.btcPrice : NaN;
   const collLimit = risk ? (collValue * risk[0]) / 10_000 : NaN;
   const roomBound = room !== null && Number.isFinite(collLimit) && room < collLimit;
-  const maxBorrow = roomBound ? room! : collLimit;
   const want = num(borrowIn);
   const health = risk && want > 0 ? (collValue * risk[1]) / 10_000 / want : NaN;
   const tooMuch = Number.isFinite(want) && Number.isFinite(collLimit) && want > collLimit;
@@ -426,6 +425,10 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
                   <dt>Rate on Keel now</dt>
                   <dd>{market ? `${pct(market.rate)} a year, never redeemed` : '—'}</dd>
                 </div>
+                <div>
+                  <dt>With Mezo&apos;s savings vault behind Keel</dt>
+                  <dd>About 3% a year: lending this loan would use a sliver of 1.3M MUSD</dd>
+                </div>
                 {topUp > 0 && (
                   <div>
                     <dt>Add to fit Keel&apos;s limit</dt>
@@ -504,8 +507,12 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
 
           <dl className="quote">
             <div>
-              <dt>Most you can borrow</dt>
-              <dd>{Number.isFinite(maxBorrow) ? `${money(maxBorrow)} MUSD` : '—'}</dd>
+              <dt>Your collateral can back</dt>
+              <dd>{Number.isFinite(collLimit) ? `${money(collLimit)} MUSD` : '—'}</dd>
+            </div>
+            <div>
+              <dt>Keel can lend now</dt>
+              <dd>{room === null ? '—' : `${money(room)} MUSD`}</dd>
             </div>
             <div>
               <dt>Rate now</dt>

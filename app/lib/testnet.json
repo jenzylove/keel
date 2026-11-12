@@ -19,7 +19,7 @@
   "params": {
     "governance": "the vault owner, read live",
     "configDelaySeconds": 600,
-    "maxLentBps": 2000,
+    "maxLentBps": 5000,
     "reserveBps": 1000,
     "risk": {
       "btc": [
@@ -57,7 +57,8 @@
     "throttle": "off",
     "minLiquidBps": 1000,
     "feeBps": 0,
-    "feeRecipient": "none"
+    "feeRecipient": "none",
+    "maxLentNote": "Raised from 2000 to 5000 on 2026-11-12 so a minimum Mezo loan fits the testnet vault"
   },
   "txs": {
     "vaultImplementation": "0x2a61d72976f744561f74ad79dc5acb429928975b66dcea42033d1994b872e762",
