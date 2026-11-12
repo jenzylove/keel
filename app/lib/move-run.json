@@ -34,6 +34,16 @@
       "key": "deposit",
       "what": "That MUSD is deposited as savings, so a 1,800 MUSD minimum Mezo loan fits",
       "hash": "0x0512abd68159d60e040e0e75e69dacc3d14c62c5c7f3d69034cdbb756a29dbc8"
+    },
+    {
+      "key": "funder2-trove",
+      "what": "A test wallet opens a second Mezo loan to mint more MUSD for savers",
+      "hash": "0x2d64e3c9b07dcae043b6398fa80c6878a86b5e143e197a58288e5f76267ba95f"
+    },
+    {
+      "key": "deposit2",
+      "what": "2,110 MUSD more saved: Keel lends a smaller share and its rate falls to about 5.5%",
+      "hash": "0x5dc9327f353eebad597950d105ea4797a7bdd0dc9f7523c1c05c79009867a90d"
     }
   ]
 }
