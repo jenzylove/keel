@@ -28,7 +28,7 @@
 
 ## The problem, read from Mezo mainnet
 
-- **MUSD has traded under $0.9925 since July.** Redeeming 1 MUSD pays $1 of BTC minus 0.75%, so below that price anyone can buy MUSD cheap and redeem it against the weakest loan.
+- **MUSD has traded mostly under $0.9925 since July.** Redeeming 1 MUSD pays $1 of BTC minus 0.75%, so below that price anyone can buy MUSD cheap and redeem it against the weakest loan.
 - **That emptied the loan book.** There were 49 MUSD loans in June and 1 on 2026-10-20.
 - **Savers are paid by that same process.** The vault's idle savings, 1.30M MUSD on 2026-11-08, are lent to no one. In the 30 days to 2026-10-21 savers earned about 3% a year, and 65% of it arrived as BTC fees that redemptions pay. With almost no loans left, that income is running out.
 - **Locked Bitcoin can't be borrowed against.** 806 BTC sits in veBTC, and Mezo's own FAQ says it can't be used as collateral.
@@ -43,7 +43,7 @@ Keel is a drop in strategy for Mezo's MUSD Savings Vault. One call, `setStrategy
 4. **The rate leans against the peg.** Below $0.995 it steps up, at most 1 point a week, read from a 24 hour average of Mezo's own mUSDC/MUSD pool. New borrowing pauses when that pool's dollar side runs thin.
 5. **Settings only change after a delay**, and only the vault's owner can propose them. Keel adds no new party to trust. On the opt in mainnet vault that owner is a 48 hour TimelockController, so no admin call lands in less than two days.
 6. **Move a Mezo loan into Keel with one signature.** A borrower signs one message for Mezo's own loan contracts (BorrowerOperationsSignatures). In one transaction Keel pays the Mezo loan off with savers' MUSD, Mezo sends its BTC to Keel, and the same debt opens in Keel, outside redemptions. No MUSD needed up front. A real Mezo testnet loan moved this way on 2026-11-12 (tx `0x4e8da82a06c84f1ebb32dc99d2c63a8a88b3817ec6c5a311005898e7b6300fe0`), and the fork tests run it against Mezo mainnet's loan contracts.
-7. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. Every Thursday its pool pays voters; Keel collects the lock's share, swaps BTC rewards into MUSD on Mezo's own BTC/MUSD pool (priced against Mezo's PriceFeed, 2% at most off), and pays the loan, interest first. With auto pay on, the keeper does it for you; the first payment landed on 2026-11-12.
+7. **Rewards pay the loan.** A veBTC lock keeps voting through Keel. Every Thursday its pool pays voters; Keel collects the lock's share, swaps BTC rewards into MUSD on Mezo's own BTC/MUSD pool (priced against Mezo's PriceFeed, 2% at most off), and pays the loan, interest first. With auto pay on, the keeper does it for you. The first payment landed on 2026-11-12: 0.0027 MUSD of MUSD rewards paid testnet loan #4 (tx `0x27ae334af6adaeb50ea02fb68b7994366ce586cb73f4a81af5e02b8fb92b96cd`). The BTC swap runs against Mezo mainnet's real BTC/MUSD pool in the fork tests (0.001 BTC to 73.16 MUSD).
 8. **Withdrawals degrade gracefully.** `withdrawable()` says exactly what can leave now, the reserve covers a leaving saver, and new borrowing pauses before liquid savings fall under a 10% buffer.
 9. **A protocol share pays the keeper.** A timelocked share of interest, 5% on the mainnet vault and 0 on testnet, pays for the keeper and hosting. Savers get the rest.
 

@@ -92,6 +92,7 @@ export const troveAbi = parseAbi([
   'function getTroveStatus(address) view returns (uint256)',
   'function getNonce(address) view returns (uint256)',
   'function MUSD_GAS_COMPENSATION() view returns (uint256)',
+  'function interestRate() view returns (uint16)',
 ]);
 
 export const veAbi = parseAbi([

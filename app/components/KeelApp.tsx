@@ -72,6 +72,8 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
   const [loans, setLoans] = useState<MyLoan[]>([]);
   const [nfts, setNfts] = useState<Nft[]>([]);
   const [trove, setTrove] = useState<Trove | null>(null);
+  /** Mezo's own loan rate, read live, to set beside Keel's on the move card. */
+  const [mezoRate, setMezoRate] = useState<number | null>(null);
   const [demo, setDemo] = useState(false);
 
   const [btcIn, setBtcIn] = useState('0.002');
@@ -134,6 +136,10 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
       pub.readContract({ address: tm, abi: troveAbi, functionName: 'getTroveDebt', args: [who] }),
     ]);
     if (!stale()) setTrove({ coll, debt });
+    const bps = await pub
+      .readContract({ address: net.mezo.interestRateManager, abi: troveAbi, functionName: 'interestRate' })
+      .catch(() => null);
+    if (!stale() && bps !== null) setMezoRate(Number(bps) / 10_000);
   }, [net.key, net.mezo.troveManager, pub, MUSD, VAULT, MARKET, VE]);
 
   const doConnect = async (): Promise<{ w: WalletClient; a: Address } | null> => {
@@ -409,8 +415,16 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
                   </dd>
                 </div>
                 <div>
-                  <dt>Move it to Keel</dt>
-                  <dd>Same BTC, same debt, no MUSD needed</dd>
+                  <dt>What moves</dt>
+                  <dd>Your BTC and your debt, no MUSD needed</dd>
+                </div>
+                <div>
+                  <dt>Rate on Mezo now</dt>
+                  <dd>{mezoRate === null ? '—' : `${pct(mezoRate)} a year, and it can be redeemed`}</dd>
+                </div>
+                <div>
+                  <dt>Rate on Keel now</dt>
+                  <dd>{market ? `${pct(market.rate)} a year, never redeemed` : '—'}</dd>
                 </div>
                 {topUp > 0 && (
                   <div>
@@ -437,7 +451,10 @@ export function KeelApp({ markets }: { markets: Record<NetKey, Market | null> })
                   {busy ? 'Working…' : 'Move my Mezo loan to Keel'}
                 </button>
               </div>
-              <p className="hint">One signature lets Mezo close your loan for Keel. Keel pays it off, Mezo sends its BTC here, and the same debt reopens in Keel.</p>
+              <p className="hint">
+                One signature lets Mezo close your loan for Keel. Keel pays it off, Mezo sends its BTC here, and the same debt reopens in Keel. Keel&apos;s rate pays
+                its savers, so it is higher than Mezo&apos;s, and it falls as more savers add MUSD; what you buy is a loan no redemption can sell.
+              </p>
             </div>
           )}
           <div className="seg" role="radiogroup" aria-label="Collateral">

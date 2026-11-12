@@ -21,7 +21,7 @@ MUSD is the asset lent and the yield savers earn; MEZO isn't used.
 
 **Chain deployed on:** Mezo mainnet (opt in vault, capped at 2,000 MUSD, owned by a 48 hour timelock) and Mezo testnet
 
-**Project status:** Entirely new
+**Project status:** Existing product, continued from Wave 1
 
 **Project readiness:** Mainnet deployment (small opt in vault) plus testnet
 

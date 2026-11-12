@@ -38,7 +38,7 @@ export default async function Home() {
       title: 'Your interest pays savers.',
       body: 'It is released to the savings vault over a week. A tenth builds a reserve that takes any loss before savers do.',
       figure: keel ? usd(keel.principal) : '—',
-      caption: 'MUSD of savings lent through Keel',
+      caption: 'MUSD of savings in Keel on testnet',
     },
     {
       name: 'Repay',
@@ -99,7 +99,7 @@ export default async function Home() {
           </h2>
           <p className="chapter-lede">
             Redeeming 1 MUSD pays $1 of BTC minus a 0.75% fee. While MUSD trades below $0.9925, anyone can buy it cheap and redeem it
-            against the weakest loan, and that borrower loses their Bitcoin. MUSD has sat under that line since July.
+            against the weakest loan, and that borrower&apos;s Bitcoin is sold out from under them at par, less a fee. MUSD has traded mostly under that line since July.
           </p>
           <div className="drop">
             <strong>

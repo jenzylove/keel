@@ -24,7 +24,7 @@ export type Network = {
   tokens: { musd: Address; btc: Address; veBTC: Address };
   /** Mezo's trove contracts, for moving a Mezo loan into Keel: the borrower
    *  signs CloseTrove for `bos`, and `troveManager` gives the trove's debt. */
-  mezo: { bos: Address; troveManager: Address };
+  mezo: { bos: Address; troveManager: Address; interestRateManager: Address };
   pools: Pool[];
   faucet: string | null;
   hasDemo: boolean;
@@ -67,12 +67,13 @@ export const NETWORKS: Record<NetKey, Network> = {
     mezo: {
       bos: '0xD757e3646AF370b15f32EB557F0F8380Df7D639e',
       troveManager: '0xE47c80e8c23f6B4A1aE41c34837a0599D5D16bb0',
+      interestRateManager: '0xD4D6c36A592A2c5e86035A6bca1d57747a567f37',
     },
     pools: TESTNET_POOLS,
     faucet: 'https://faucet.test.mezo.org',
     hasDemo: true,
-    lendShare: 'a fifth',
-    liquidPct: 80,
+    lendShare: 'half',
+    liquidPct: 50,
     btcLabel: 'test BTC',
     lowBtc: 1_000_000_000_000_000n, // 0.001 BTC
   },
@@ -97,6 +98,7 @@ export const NETWORKS: Record<NetKey, Network> = {
     mezo: {
       bos: '0xB57ab578BF20b3e318f3EFAA587C51DBccE5df7a',
       troveManager: '0x94AfB503dBca74aC3E4929BACEeDfCe19B93c193',
+      interestRateManager: '0x4a453700d157717Fe02fB62E7700ED7845048285',
     },
     pools: MAINNET_POOLS,
     faucet: null,
