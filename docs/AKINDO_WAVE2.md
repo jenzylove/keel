@@ -19,7 +19,7 @@ Every item answers a note from the Wave 1 review.
 - veBTC rewards pay the loan. A lock keeps voting through Keel on Mezo's voter; the app has Vote, Claim rewards to loan and an auto pay switch, and the keeper claims for loans that opt in. A testnet veBTC loan voted for the MUSD/BTC pool with auto pay on, and after the weekly epoch turned the keeper claimed its bribe rewards and they paid the loan with no one touching it: https://explorer.test.mezo.org/tx/0x27ae334af6adaeb50ea02fb68b7994366ce586cb73f4a81af5e02b8fb92b96cd
 - Withdrawals degrade gracefully. withdrawable() shows exactly what can leave now, the reserve covers a leaving saver, borrowing pauses before liquid savings fall under a 10% buffer, and the app caps withdrawals at that amount.
 - Who pays for the keeper and hosting: a timelocked protocol share of interest, 5% on the mainnet vault.
-- Verified: Keel's contracts, the mainnet timelock and the vault's idle strategy are verified on Sourcify with an exact match; the vault runs Mezo's own savings vault source, vendored unchanged (Mezo's explorer verifier lists no compilers yet).
+- Verified on Mezo's explorer: every Keel contract on mainnet and testnet (strategy, market, peg oracle, vault) and the mainnet timelock, plus exact matches on Sourcify.
 - New users: a wallet with no BTC gets a guide to free test BTC, or USDC/ETH to BTC through Mezo's own bridge.
 - Materials: a PDF deck in the repo, the video's script and subtitles committed, team and roles named.
 - 119 contract tests (108 unit and fuzz, 11 on copies of Mezo mainnet and testnet) and 235 numbers checked against an independent answer key.

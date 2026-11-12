@@ -99,7 +99,7 @@ No keys needed.
 | Mainnet integration | Proven on a copy of mainnet with Mezo's real savings vault |
 | Opt in vault on Mezo mainnet | Live with real money on Mezo's own MUSD, PriceFeed and pool price. Keel's own wallet made the first deposit (10 MUSD) and loan (5 MUSD against BTC); the vault is owned by a 48 hour timelock |
 | veBTC votes and auto pay | Real testnet transactions on Mezo's own voter, through Keel; the keeper claims rewards to the loan after each weekly epoch |
-| Contracts | Keel's contracts, the mainnet timelock and idle strategy verified on Sourcify, exact match; the vault runs Mezo's own savings vault source, vendored unchanged |
+| Contracts | Every Keel contract on mainnet and testnet, and the mainnet timelock, verified on Mezo's own explorer and on Sourcify; the vault runs Mezo's own savings vault source, vendored unchanged |
 | Home page numbers | Read live from Mezo testnet and mainnet |
 | Demo wallet loan | Real testnet transactions |
 | Loop run | Real testnet transactions, fresh wallets playing both sides |
@@ -136,9 +136,9 @@ A live wallet test on the deployed site on 2026-10-24 ran save, borrow, repay an
 | [`KeelMath`](contracts/src/libraries/KeelMath.sol) | Interest, health, liquidation and the rate curve |
 | [`PegOracles`](contracts/src/oracles/PegOracles.sol) | MUSD price from Mezo pools: concentrated liquidity TWAP on mainnet, basic pool `quote()` on testnet |
 
-Mainnet: [vault](https://explorer.mezo.org/address/0x9450b4a37fd7f247194f0eb0e18d0fe3a671483d), [KeelStrategy](https://repo.sourcify.dev/31612/0x0298c746fc52f1b9bb1449de0464bf4056806509), [KeelMarket](https://repo.sourcify.dev/31612/0x3d6e71dfc30fdf24b8d2a9f9d564c3dc7c29d0d9), [peg oracle](https://repo.sourcify.dev/31612/0x557cfccd083f26150189ecb07cc945bcf3698eb5), all verified on Sourcify; addresses and the first run in [deployments/mainnet.json](deployments/mainnet.json) and [deployments/mainnet-run.json](deployments/mainnet-run.json).
+Mainnet, verified on Mezo's explorer: [vault](https://explorer.mezo.org/address/0x9450b4a37fd7f247194f0eb0e18d0fe3a671483d?tab=contract), [KeelStrategy](https://explorer.mezo.org/address/0x0298c746fc52f1b9bb1449de0464bf4056806509?tab=contract), [KeelMarket](https://explorer.mezo.org/address/0x3d6e71dfc30fdf24b8d2a9f9d564c3dc7c29d0d9?tab=contract), [peg oracle](https://explorer.mezo.org/address/0x557cfccd083f26150189ecb07cc945bcf3698eb5?tab=contract), [timelock](https://explorer.mezo.org/address/0x2f131C3e4aE7BcBB291859559c9bC720533a778a?tab=contract); addresses in [deployments/mainnet.json](deployments/mainnet.json).
 
-Testnet addresses are in [deployments/testnet.json](deployments/testnet.json). Verified on Sourcify: [KeelStrategy](https://repo.sourcify.dev/31611/0xdab084ebfd118489ada2021c5e60afd5e2fc26f9) · [KeelMarket](https://repo.sourcify.dev/31611/0x32a94a9af2751afc771aa09d00d95faa6629135e) · [peg oracle](https://repo.sourcify.dev/31611/0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7) · [vault](https://repo.sourcify.dev/31611/0x40d5b453eb25dd8b1dfd484c0b80f7ede0dc7def). Reverify any deployment with `node script/verify.mjs testnet`.
+Testnet addresses are in [deployments/testnet.json](deployments/testnet.json). Verified on Mezo's explorer: [KeelStrategy](https://explorer.test.mezo.org/address/0xdab084ebfd118489ada2021c5e60afd5e2fc26f9?tab=contract) · [KeelMarket](https://explorer.test.mezo.org/address/0xc325f2d30a8ee121906391160ab1cbaeb75d9bf3?tab=contract) · [peg oracle](https://explorer.test.mezo.org/address/0x8e64a1f8c51b10648eb744925a1ed91b2aeb25f7?tab=contract) · [vault](https://explorer.test.mezo.org/address/0x40d5b453eb25dd8b1dfd484c0b80f7ede0dc7def?tab=contract).
 
 ## Run it
 

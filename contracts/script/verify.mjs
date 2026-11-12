@@ -30,7 +30,8 @@ const build = srcAt >= 0 ? resolve(args.splice(srcAt, 2)[1]) : root;
 const network = args[0];
 const net = NETWORKS[network];
 if (!net) throw new Error('usage: node script/verify.mjs <testnet|mainnet> [contractKey ...] [--src <contracts dir>]');
-const only = args.slice(1);
+const explorerOnly = args.includes('--explorer');
+const only = args.slice(1).filter((a) => a !== '--explorer');
 
 const record = JSON.parse(readFileSync(join(root, '..', 'deployments', `${network}.json`), 'utf8'));
 const v2 = net.api.replace(/api\/$/, 'api/v2');
@@ -79,7 +80,7 @@ for (const [key, pick] of Object.entries(TARGETS)) {
     results.push([key, address, 'verified on explorer']);
     continue;
   }
-  if (isExact(await sourcify(address))) {
+  if (!explorerOnly && isExact(await sourcify(address))) {
     results.push([key, address, 'verified on sourcify']);
     continue;
   }

@@ -99,15 +99,15 @@ export default async function Page() {
             Keel&apos;s opt in vault runs on Mezo mainnet against Mezo&apos;s own MUSD, PriceFeed and pool price. Keel&apos;s own wallet made the
             first deposit, 10 MUSD bought on Mezo&apos;s BTC/MUSD pool, and the first loan, 5 MUSD against locked BTC outside the redemption
             system, so the whole path has run with real money before anyone else&apos;s. The vault now belongs to a 48 hour timelock, and
-            the daily keeper watches it. Keel&apos;s contracts, the timelock and the vault&apos;s idle strategy are verified on Sourcify; the
-            vault itself runs Mezo&apos;s own savings vault source, unchanged.
+            the daily keeper watches it. Every Keel contract and the timelock are verified on Mezo&apos;s
+            explorer.
           </p>
           <Txs rows={main.steps.map((st) => ({ what: st.what, hash: st.hash }))} link={mainTx} />
           <p className="contracts-line">
             <a href={`https://explorer.mezo.org/address/${mainContracts.vault}`} target="_blank" rel="noreferrer">Vault ↗</a>
             <a href={`https://explorer.mezo.org/address/${mainContracts.keelStrategy}`} target="_blank" rel="noreferrer">KeelStrategy ↗</a>
             <a href={`https://explorer.mezo.org/address/${mainContracts.keelMarket}`} target="_blank" rel="noreferrer">KeelMarket ↗</a>
-            <a href={`https://repo.sourcify.dev/31612/${mainContracts.keelMarket}`} target="_blank" rel="noreferrer">Source on Sourcify ↗</a>
+            <a href={`https://explorer.mezo.org/address/${mainContracts.keelMarket}?tab=contract`} target="_blank" rel="noreferrer">Verified source ↗</a>
           </p>
         </div>
       </section>
