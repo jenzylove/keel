@@ -1,0 +1,191 @@
+1
+00:00:00,410 --> 00:00:00,940
+In June,
+
+2
+00:00:00,960 --> 00:00:02,940
+49 people on Mezo had
+
+3
+00:00:02,960 --> 00:00:05,450
+a MUSD loan against their Bitcoin.
+
+4
+00:00:05,700 --> 00:00:07,600
+By October, one was left.
+
+5
+00:00:07,850 --> 00:00:09,180
+They didn't repay.
+
+6
+00:00:09,430 --> 00:00:10,780
+They were redeemed.
+
+7
+00:00:11,650 --> 00:00:12,440
+In wave one,
+
+8
+00:00:12,460 --> 00:00:15,150
+Keel gave new borrowers a safe place.
+
+9
+00:00:15,400 --> 00:00:16,070
+This wave,
+
+10
+00:00:16,090 --> 00:00:19,290
+Keel goes after the loans Mezo already has.
+
+11
+00:00:19,540 --> 00:00:21,170
+Three things are new.
+
+12
+00:00:22,030 --> 00:00:23,350
+Here's a wallet with a
+
+13
+00:00:23,370 --> 00:00:25,180
+real Mezo loan on testnet.
+
+14
+00:00:25,430 --> 00:00:27,030
+Redemptions can reach it.
+
+15
+00:00:27,280 --> 00:00:29,430
+Keel reads it and offers a move:
+
+16
+00:00:29,450 --> 00:00:31,500
+the same Bitcoin, the same debt,
+
+17
+00:00:31,520 --> 00:00:33,050
+and no MUSD needed.
+
+18
+00:00:33,890 --> 00:00:35,480
+One signature lets Mezo
+
+19
+00:00:35,500 --> 00:00:37,400
+close the loan for Keel.
+
+20
+00:00:37,650 --> 00:00:40,000
+Keel pays it off with savers' MUSD,
+
+21
+00:00:40,020 --> 00:00:42,060
+Mezo sends the Bitcoin across,
+
+22
+00:00:42,080 --> 00:00:44,990
+and the same debt opens again in Keel.
+
+23
+00:00:45,860 --> 00:00:46,660
+Done.
+
+24
+00:00:46,910 --> 00:00:48,360
+The Mezo loan is gone,
+
+25
+00:00:48,380 --> 00:00:50,760
+and the same debt now lives in Keel,
+
+26
+00:00:50,780 --> 00:00:53,100
+where redemptions can't reach it.
+
+27
+00:00:53,940 --> 00:00:56,480
+Here's that move on Mezo's explorer.
+
+28
+00:00:56,730 --> 00:00:59,100
+One transaction, start to finish.
+
+29
+00:01:00,470 --> 00:01:03,150
+Second, locked Bitcoin pays its own loan.
+
+30
+00:01:03,400 --> 00:01:04,830
+A veBTC lock keeps
+
+31
+00:01:04,850 --> 00:01:06,860
+voting for a Mezo pool.
+
+32
+00:01:07,110 --> 00:01:09,840
+Every Thursday the pool pays its voters.
+
+33
+00:01:10,090 --> 00:01:11,810
+Keel collects that share,
+
+34
+00:01:11,830 --> 00:01:13,430
+swaps any Bitcoin into
+
+35
+00:01:13,450 --> 00:01:15,070
+MUSD on Mezo's own pool,
+
+36
+00:01:15,090 --> 00:01:16,690
+and the debt drops.
+
+37
+00:01:17,560 --> 00:01:19,660
+This is the first real payment.
+
+38
+00:01:19,910 --> 00:01:21,480
+The lock's rewards came in,
+
+39
+00:01:21,500 --> 00:01:23,540
+and the loan's debt went down.
+
+40
+00:01:23,790 --> 00:01:25,250
+Nobody touched it.
+
+41
+00:01:26,400 --> 00:01:26,780
+Third,
+
+42
+00:01:26,800 --> 00:01:29,840
+Keel runs on Mezo mainnet with real money.
+
+43
+00:01:30,090 --> 00:01:32,760
+A 48 hour timelock owns the vault,
+
+44
+00:01:32,780 --> 00:01:35,540
+and a keeper checks every loan each day.
+
+45
+00:01:36,400 --> 00:01:37,300
+Keel.
+
+46
+00:01:37,550 --> 00:01:39,170
+Borrow against your Bitcoin,
+
+47
+00:01:39,190 --> 00:01:40,800
+and never get redeemed.
+
+48
+00:01:41,050 --> 00:01:45,030
+Try it at keel-psi-seven.vercel.app.

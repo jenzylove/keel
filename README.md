@@ -73,12 +73,10 @@ Redemptions only reach loans in Mezo's TroveManager. A Keel loan lives in KeelMa
 | **Use it** | [/app](https://keel-psi-seven.vercel.app/app): Borrow, Save and Loans, quote before any wallet, Connect wallet top right |
 | **Run a real loan, no wallet** | press "No wallet? Watch our demo wallet run a real loan" in the panel on [/app](https://keel-psi-seven.vercel.app/app), or open [/demo](https://keel-psi-seven.vercel.app/demo): a demo wallet locks BTC, borrows, repays and gets its BTC back, each step a real testnet transaction |
 | **Proof** | [/proof](https://keel-psi-seven.vercel.app/proof) and [docs/proof/testnet-runs.md](docs/proof/testnet-runs.md): every result with its evidence: testnet transactions, mainnet copy tests and the eval |
-| **Product spec** | [docs/PRD.md](docs/PRD.md), including the questions the Mezo team will ask |
-| **Audit notes** | [docs/AUDIT.md](docs/AUDIT.md) |
 | **Eval** | [docs/eval/RESULTS.md](docs/eval/RESULTS.md): the contracts against an answer key, peg term on and off |
 | **Security** | [SECURITY.md](SECURITY.md): scope, protections and how to report |
 | **Verified contracts** | KeelStrategy, KeelMarket, the peg oracle and the vault on Sourcify (links under Contracts) |
-| **Video script** | [docs/video/script.md](docs/video/script.md) and [subtitles](docs/video/keel-demo.srt) |
+| **Video script** | [docs/video/script-wave2.md](docs/video/script-wave2.md) and [subtitles](docs/video/keel-wave2.srt) |
 
 ## Judge fast path
 
@@ -157,7 +155,7 @@ node script/loop.mjs close
 # deploy to Mezo testnet (mainnet dry run on a fork passes)
 node script/deploy.mjs testnet
 
-# eval: recompute every number from the PRD's rules and compare
+# eval: recompute every number from Keel's rules and compare
 cd .. && python3 eval/answer_key.py
 
 # app

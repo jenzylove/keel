@@ -27,6 +27,6 @@ The web app and the daily keeper are in scope where they could make a user sign 
 - **No new admin.** Keel is governed by whoever owns the savings vault, read live, and settings change only after a fixed delay (600 seconds on testnet, 48 hours on mainnet). On mainnet the vault owner is itself a 48 hour [TimelockController](https://explorer.mezo.org/address/0x2f131C3e4aE7BcBB291859559c9bC720533a778a), so no admin call lands in less than two days.
 - **Repaying always stays open,** even when new borrowing is paused.
 - **A keeper on both networks.** A daily keeper with its own key and MUSD float liquidates unhealthy loans on testnet and on the mainnet vault.
-- **Tests:** 108 unit and fuzz tests, 11 tests on copies of Mezo mainnet and testnet with the real vault, and 235 numbers checked against a separately computed answer key. Internal review notes are in [docs/AUDIT.md](docs/AUDIT.md).
+- **Tests:** 108 unit and fuzz tests, 11 tests on copies of Mezo mainnet and testnet with the real vault, and 235 numbers checked against a separately computed answer key.
 
 The contracts have not had an external audit. That comes before any mainnet deposit beyond the principal cap.
