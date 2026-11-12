@@ -422,5 +422,5 @@ section.first { border-top: 0; padding-top: 32px; }
 
 .move-card { margin: 4px 0 22px; padding: 16px 0 18px; border-top: 1px solid var(--red); border-bottom: 1px solid var(--rule); }
 .move-card .move-k { margin: 0 0 6px; font: 600 13px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--red); }
-.ve-loop { margin: 10px 0 6px; padding-left: 20px; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
+.ve-loop { margin: 10px 0 6px; padding-left: 28px; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
 .ve-loop li::marker { color: var(--red); font-family: var(--mono); }
