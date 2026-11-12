@@ -4,7 +4,9 @@ Keel lets you borrow MUSD against your Bitcoin, or a locked veBTC, without ever 
 
 It is built as a drop in strategy for Mezo's own MUSD savings vault. One `setStrategy` call by the multisig that owns the vault moves its idle MUSD into Keel. At least 80% stays liquid for withdrawals, and up to 20% is lent (half on the small opt in mainnet vault) in Keel's own market, where redemptions can't reach. veBTC borrowers keep voting and keep their rewards.
 
-Try it at https://keel-psi-seven.vercel.app: the app shows a live quote before you connect anything, and a no wallet demo runs a real loan on Mezo testnet.
+Already have a Mezo loan? Move it into Keel with one signature: Keel pays it off with savers' MUSD, Mezo sends its BTC across, and the same debt opens in Keel, out of redemption's reach. Locked veBTC pays its own loan: Keel collects the lock's weekly rewards, swaps BTC into MUSD on Mezo's own pool and pays the debt.
+
+Keel runs on Mezo mainnet in a small opt in vault with real BTC and MUSD, owned by a 48 hour timelock, and on Mezo testnet for free tries. Try it at https://keel-psi-seven.vercel.app: the app shows a live quote before you connect anything.
 
 ## The problem it solves
 
