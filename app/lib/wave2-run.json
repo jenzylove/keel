@@ -71,6 +71,21 @@
       "what": "After the weekly epoch turned, the keeper claimed loan #4's bribe rewards and 0.0027 MUSD paid the loan, nobody touching it (RewardsRepaid)",
       "from": "0x5941fe7A986a07083bbE17acE9d93568bd6E10E2",
       "hash": "0x27ae334af6adaeb50ea02fb68b7994366ce586cb73f4a81af5e02b8fb92b96cd"
+    },
+    {
+      "key": "cur-open",
+      "what": "On the current market: a fresh veBTC lock #424 is deposited as loan #3 against 10 MUSD",
+      "hash": "0xc8189a713d7edfd09458bed569c57aff05daaca490d332a751de2741469f2c4a"
+    },
+    {
+      "key": "cur-vote",
+      "what": "Loan #3's lock votes for Mezo's MUSD/BTC pool through Keel, on the current market",
+      "hash": "0x6f98e970acf9e51dfe7bc813fab140233b97c853ccd5a84091674fd791e1d0bc"
+    },
+    {
+      "key": "cur-autopay",
+      "what": "Loan #3 turns on auto pay: its weekly rewards will pay it down",
+      "hash": "0x50470ae004d65b263a4ea1889e42486ad3143c388870be28a5d19baa3dcdbcea"
     }
   ],
   "nftId": 422,
